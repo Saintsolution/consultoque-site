@@ -59,10 +59,15 @@ export function Telemedicine() {
               })}
             </div>
 
-            <button className="group bg-white text-blue-600 px-8 py-4 rounded-full text-lg font-semibold hover:bg-blue-50 transition-all duration-300 shadow-xl inline-flex items-center gap-2">
+            <a 
+              href="https://pay.hotmart.com/Y103466160C"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group bg-white text-blue-600 px-8 py-4 rounded-full text-lg font-semibold hover:bg-blue-50 transition-all duration-300 shadow-xl inline-flex items-center gap-2"
+            >
               Começar Agora
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </button>
+            </a>
           </div>
 
           <div className="relative">

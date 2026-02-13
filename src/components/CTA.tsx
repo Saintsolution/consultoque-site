@@ -29,15 +29,20 @@ export function CTA() {
             Tudo que você precisa por apenas
           </p>
 
-          {/* PREÇO – CAIXA AMARELA */}
-          <div className="inline-block bg-amber-400 border-2 border-amber-300 px-10 py-5 rounded-2xl mb-6 shadow-xl">
+          {/* PREÇO – CAIXA AMARELA (AGORA COM LINK) */}
+          <a 
+            href="https://pay.hotmart.com/Y103466160C"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block bg-amber-400 border-2 border-amber-300 px-10 py-5 rounded-2xl mb-6 shadow-xl transition-transform hover:scale-105 active:scale-95"
+          >
             <p className="text-5xl md:text-6xl font-black text-white leading-none">
               R$ 33,00
             </p>
             <p className="text-lg font-semibold text-white/90">
               por mês
             </p>
-          </div>
+          </a>
         </div>
 
         {/* Benefícios */}
