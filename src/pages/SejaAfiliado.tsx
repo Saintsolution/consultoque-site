@@ -1,0 +1,221 @@
+import { Link } from 'react-router-dom';
+
+export function SejaAfiliado() {
+  return (
+    <div className="min-h-screen bg-white">
+
+      {/* VOLTAR */}
+      <div className="p-6">
+        <Link to="/" className="text-blue-600 font-semibold">
+          ← Voltar para o site
+        </Link>
+      </div>
+
+      {/* HERO AFILIADO */}
+      <section className="bg-gradient-to-br from-green-600 via-emerald-600 to-green-500 text-white py-24 px-6 text-center">
+        <h1 className="text-4xl md:text-6xl font-extrabold mb-6">
+          Seja um afiliado ConsulToque
+        </h1>
+
+        <p className="text-xl md:text-3xl font-semibold max-w-5xl mx-auto mb-6">
+          Construa sua aposentadoria muito antes do que você imagina
+        </p>
+
+        <p className="text-lg md:text-2xl max-w-4xl mx-auto text-green-50">
+          Ganhe comissões <strong>recorrentes</strong> todos os meses,
+          vendendo um plano popular, acessível e de fácil aceitação.
+        </p>
+
+        {/* CTA HERO */}
+        <div className="mt-10">
+          <a
+            href="https://affiliate.hotmart.com/affiliate-recruiting/view/0884P103466181"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="
+              inline-flex items-center justify-center
+              bg-[#22C55E] hover:bg-[#16a34a]
+              text-white
+              px-14 py-6 md:px-20
+              rounded-full
+              shadow-[0_18px_40px_rgba(0,0,0,0.35)]
+              transition-all duration-300
+              transform hover:scale-105 active:scale-95
+              border-b-4 border-green-800
+              text-xl md:text-2xl font-black
+            "
+          >
+            Quero me afiliar agora
+          </a>
+        </div>
+      </section>
+
+      {/* PROVA / GANHO RECORRENTE */}
+      <section className="py-20 px-6 max-w-6xl mx-auto">
+        <div className="grid md:grid-cols-2 gap-10 items-center">
+
+          <div className="flex justify-center">
+            <img
+              src="/vendedor.png"
+              alt="Ganhos recorrentes com afiliados"
+              className="w-full max-w-sm rounded-2xl shadow-2xl object-contain"
+            />
+          </div>
+
+          <div>
+            <h2 className="text-3xl md:text-4xl font-extrabold mb-6">
+              Comissão recorrente que constrói renda fixa
+            </h2>
+
+            <p className="text-lg md:text-xl mb-4">
+              Indicando <strong>apenas 1 cliente por dia</strong>, em menos de
+              <strong> 8 meses</strong> você pode alcançar uma renda mensal
+              equivalente a <strong>1 salário mínimo</strong>.
+            </p>
+
+            <p className="text-lg md:text-xl">
+              Essa renda vem das <strong>mensalidades recorrentes</strong> pagas
+              pelos clientes que você indicou.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* CONTEXTO AZUL */}
+      <section className="py-24 px-6 bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-500">
+        <div className="max-w-6xl mx-auto text-center bg-white/10 backdrop-blur-sm border border-white/20 rounded-3xl p-12 text-white shadow-[0_30px_80px_rgba(0,0,0,0.35)]">
+          <h2 className="text-3xl md:text-4xl font-extrabold mb-8">
+            Por que a Telemedicina vende fácil?
+          </h2>
+
+          <p className="text-lg md:text-xl max-w-4xl mx-auto mb-10 text-blue-50">
+            Produto de <strong>baixo custo</strong>, alta aceitação popular,
+            atendimento rápido, remoto e acessível.
+          </p>
+
+          <a
+            href="/play"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center bg-white text-blue-700 px-12 py-5 rounded-full text-xl font-black shadow-2xl hover:scale-105 transition-transform"
+          >
+            ▶ Vídeo de apresentação
+          </a>
+        </div>
+      </section>
+
+      {/* MANUAL PASSO A PASSO */}
+      <section className="py-24 px-6 max-w-6xl mx-auto">
+        <h2 className="text-3xl md:text-4xl font-extrabold mb-16 text-center">
+          Como se tornar afiliado e começar a vender
+        </h2>
+
+        {/* PASSO 1 */}
+        <div className="mb-20 grid md:grid-cols-2 gap-10 items-center">
+          <div>
+            <h3 className="text-2xl font-bold mb-4">1. Cadastre-se na Hotmart</h3>
+            <p className="text-lg">
+              Acesse <strong>hotmart.com.br</strong> e faça seu cadastro gratuito
+              como afiliado.
+            </p>
+          </div>
+          <div className="h-56 bg-gray-200 rounded-xl flex items-center justify-center">
+            Print cadastro Hotmart
+          </div>
+        </div>
+
+        {/* PASSO 2 */}
+        <div className="mb-20 grid md:grid-cols-2 gap-10 items-center">
+          <div>
+            <h3 className="text-2xl font-bold mb-4">2. Solicite a afiliação</h3>
+            <p className="text-lg">
+              Acesse o link de associação e solicite sua afiliação ao ConsulToque.
+            </p>
+            <a
+              href="https://affiliate.hotmart.com/affiliate-recruiting/view/0884P103466181"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block mt-4 text-green-600 font-bold underline"
+            >
+              Link de afiliação ConsulToque
+            </a>
+          </div>
+          <div className="h-56 bg-gray-200 rounded-xl flex items-center justify-center">
+            Print solicitação
+          </div>
+        </div>
+
+        {/* PASSO 3 */}
+        <div className="mb-20 grid md:grid-cols-2 gap-10 items-center">
+          <div>
+            <h3 className="text-2xl font-bold mb-4">3. Encontre o produto</h3>
+            <p className="text-lg">
+              Vá em <strong>Produtos</strong> e procure por
+              <strong> ConsulToque SESSP</strong>.
+            </p>
+          </div>
+          <div className="h-56 bg-gray-200 rounded-xl flex items-center justify-center">
+            Print produto
+          </div>
+        </div>
+
+        {/* PASSO 4 */}
+        <div className="mb-20 grid md:grid-cols-2 gap-10 items-center">
+          <div>
+            <h3 className="text-2xl font-bold mb-4">4. Baixe os materiais</h3>
+            <p className="text-lg">
+              Baixe vídeos, textos para WhatsApp, e-mails e redes sociais.
+            </p>
+          </div>
+          <div className="h-56 bg-gray-200 rounded-xl flex items-center justify-center">
+            Print materiais
+          </div>
+        </div>
+
+        {/* PASSO 5 */}
+        <div className="mb-20 grid md:grid-cols-2 gap-10 items-center">
+          <div>
+            <h3 className="text-2xl font-bold mb-4">5. Divulgue seus links</h3>
+            <p className="text-lg">
+              Cada link identifica o cliente como seu e garante comissão
+              recorrente.
+            </p>
+          </div>
+          <div className="h-56 bg-gray-200 rounded-xl flex items-center justify-center">
+            Print links
+          </div>
+        </div>
+
+        {/* PASSO 6 */}
+        <div className="grid md:grid-cols-2 gap-10 items-center">
+          <div>
+            <h3 className="text-2xl font-bold mb-4">6. Receba suas comissões</h3>
+            <p className="text-lg">
+              As comissões aparecem na Hotmart e são transferidas para sua conta.
+            </p>
+          </div>
+          <div className="h-56 bg-gray-200 rounded-xl flex items-center justify-center">
+            Print comissões
+          </div>
+        </div>
+      </section>
+
+      {/* CTA FINAL */}
+      <section className="bg-gradient-to-r from-green-600 to-emerald-600 py-24 px-6 text-center text-white">
+        <h2 className="text-3xl md:text-4xl font-extrabold mb-6">
+          Comece hoje a construir sua renda recorrente
+        </h2>
+
+        <a
+          href="https://affiliate.hotmart.com/affiliate-recruiting/view/0884P103466181"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-block bg-white text-green-700 px-16 py-6 rounded-full text-2xl font-black shadow-2xl hover:scale-105 transition-transform"
+        >
+          Quero me afiliar agora
+        </a>
+      </section>
+
+    </div>
+  );
+}
