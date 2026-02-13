@@ -115,7 +115,7 @@ export function SejaAfiliado() {
           <div>
             <h3 className="text-2xl font-bold mb-4">1. Cadastre-se na Hotmart</h3>
             <p className="text-lg">
-              Faça seu cadastro gratuito como afiliado no portal oficial. Entre no link. Nas telas seguintes, escolha ser afiliado, vender produtos, e entre com seus dados, rede social, telefone e endereço.
+              Faça seu cadastro gratuito como afiliado no portal oficial. Entre no link. Nas telas seguintes, escolha ser afiliado, vender produtos, e entre com seus dados, rede social (preferencialmente YouTube, se não tiver nenhuma), telefone e endereço.Feito isso, aguarde alguns minutos enquanto o HOTMART valida suas infos. Feita a afiliação, saia e  passe a etapa seguinte, acessando o link de afiliação direto da Consultoque.
             </p>
             <a
               href="https://hotmart.com/pt-br"
@@ -136,7 +136,7 @@ export function SejaAfiliado() {
           <div>
             <h3 className="text-2xl font-bold mb-4">2. Solicite a afiliação</h3>
             <p className="text-lg">
-              Acesse o link de associação e solicite sua afiliação ao ConsulToque. Ao final o sistema avisa que você está afiliado.
+              Feita a sua associação, acesse o link disponível aqui e solicite sua afiliação ao ConsulToque. Ao final, o sistema avisa que você está afiliado.
             </p>
             <a
               href="https://affiliate.hotmart.com/affiliate-recruiting/view/0884P103466181"
@@ -157,7 +157,7 @@ export function SejaAfiliado() {
           <div>
             <h3 className="text-2xl font-bold mb-4">3. Encontre o produto</h3>
             <p className="text-lg">
-              Você irá direto para os links de afiliados e material de divulgação. Se não, vá em <strong>Produtos</strong> e procure por
+              Você irá direto para os links de afiliados e material de divulgação. Se não, pode sair e entrar de novo e vá em <strong>Produtos</strong> e procure por
               <strong> ConsulToque SESSP</strong>.
             </p>
           </div>
@@ -184,7 +184,7 @@ export function SejaAfiliado() {
           <div>
             <h3 className="text-2xl font-bold mb-4">5. Vá em MATERIAL DE DIVULGAÇÃO.</h3>
             <p className="text-lg">
-              Descarregue materiais de vendas, textos, pdfs, imagens, baners e vídeos para suas redes. 
+              Descarregue materiais de vendas, textos, pdfs, imagens, baners e vídeos para suas redes. Estes materiais devem ser distribuidos junto com seus liniks de divulgação, pois é com eles que o sistema reconhece a sua venda.
             </p>
           </div>
           <div className="flex items-center justify-center">
