@@ -115,12 +115,19 @@ export function SejaAfiliado() {
           <div>
             <h3 className="text-2xl font-bold mb-4">1. Cadastre-se na Hotmart</h3>
             <p className="text-lg">
-              Acesse <strong>hotmart.com.br</strong> e faça seu cadastro gratuito
-              como afiliado.
+              Faça seu cadastro gratuito como afiliado no portal oficial. Entre no link. Nas telas seguintes, escolha ser afiliado, vender produtos, e entre com seus dados, rede social, telefone e endereço.
             </p>
+            <a
+              href="https://hotmart.com/pt-br"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block mt-4 text-green-600 font-bold underline"
+            >
+              Associe-se a Hotmart
+            </a>
           </div>
-          <div className="h-56 bg-gray-200 rounded-xl flex items-center justify-center">
-            Print cadastro Hotmart
+          <div className="flex items-center justify-center">
+            <img src="/tela01.webp" alt="Cadastro Hotmart" className="w-full rounded-xl shadow-lg" />
           </div>
         </div>
 
@@ -129,7 +136,7 @@ export function SejaAfiliado() {
           <div>
             <h3 className="text-2xl font-bold mb-4">2. Solicite a afiliação</h3>
             <p className="text-lg">
-              Acesse o link de associação e solicite sua afiliação ao ConsulToque.
+              Acesse o link de associação e solicite sua afiliação ao ConsulToque. Ao final o sistema avisa que você está afiliado.
             </p>
             <a
               href="https://affiliate.hotmart.com/affiliate-recruiting/view/0884P103466181"
@@ -140,8 +147,8 @@ export function SejaAfiliado() {
               Link de afiliação ConsulToque
             </a>
           </div>
-          <div className="h-56 bg-gray-200 rounded-xl flex items-center justify-center">
-            Print solicitação
+          <div className="flex items-center justify-center">
+            <img src="/tela02.webp" alt="Solicitação de Afiliação" className="w-full rounded-xl shadow-lg" />
           </div>
         </div>
 
@@ -150,39 +157,38 @@ export function SejaAfiliado() {
           <div>
             <h3 className="text-2xl font-bold mb-4">3. Encontre o produto</h3>
             <p className="text-lg">
-              Vá em <strong>Produtos</strong> e procure por
+              Você irá direto para os links de afiliados e material de divulgação. Se não, vá em <strong>Produtos</strong> e procure por
               <strong> ConsulToque SESSP</strong>.
             </p>
           </div>
-          <div className="h-56 bg-gray-200 rounded-xl flex items-center justify-center">
-            Print produto
+          <div className="flex items-center justify-center">
+            <img src="/tela03.webp" alt="Encontrar Produto" className="w-full rounded-xl shadow-lg" />
           </div>
         </div>
 
         {/* PASSO 4 */}
         <div className="mb-20 grid md:grid-cols-2 gap-10 items-center">
           <div>
-            <h3 className="text-2xl font-bold mb-4">4. Baixe os materiais</h3>
+            <h3 className="text-2xl font-bold mb-4">4. Vá em LINKS DE AFILIADOS.</h3>
             <p className="text-lg">
-              Baixe vídeos, textos para WhatsApp, e-mails e redes sociais.
+              Ao entrar na pagina de produtos você verá duas opções, uma de LINKS PARA AFILIADOS. Estes links voce irá espalhar pelas suas redes sociais. Todos eles detém informações de que as comissões geradas pelos links serão suas.
             </p>
           </div>
-          <div className="h-56 bg-gray-200 rounded-xl flex items-center justify-center">
-            Print materiais
+          <div className="flex items-center justify-center">
+            <img src="/tela04.webp" alt="Links de Afiliados" className="w-full rounded-xl shadow-lg" />
           </div>
         </div>
 
         {/* PASSO 5 */}
         <div className="mb-20 grid md:grid-cols-2 gap-10 items-center">
           <div>
-            <h3 className="text-2xl font-bold mb-4">5. Divulgue seus links</h3>
+            <h3 className="text-2xl font-bold mb-4">5. Vá em MATERIAL DE DIVULGAÇÃO.</h3>
             <p className="text-lg">
-              Cada link identifica o cliente como seu e garante comissão
-              recorrente.
+              Descarregue materiais de vendas, textos, pdfs, imagens, baners e vídeos para suas redes. 
             </p>
           </div>
-          <div className="h-56 bg-gray-200 rounded-xl flex items-center justify-center">
-            Print links
+          <div className="flex items-center justify-center">
+            <img src="/tela05.webp" alt="Material de Divulgação" className="w-full rounded-xl shadow-lg" />
           </div>
         </div>
 
@@ -194,8 +200,8 @@ export function SejaAfiliado() {
               As comissões aparecem na Hotmart e são transferidas para sua conta.
             </p>
           </div>
-          <div className="h-56 bg-gray-200 rounded-xl flex items-center justify-center">
-            Print comissões
+          <div className="flex items-center justify-center">
+            <img src="/tela06.webp" alt="Receber Comissões" className="w-full rounded-xl shadow-lg" />
           </div>
         </div>
       </section>
