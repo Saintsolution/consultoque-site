@@ -1,4 +1,5 @@
-import { Clock, Shield, Heart, CreditCard } from 'lucide-react';
+import { useState } from 'react';
+import { Clock, Shield, Heart, CreditCard, Play } from 'lucide-react';
 
 const benefits = [
   {
@@ -24,9 +25,41 @@ const benefits = [
 ];
 
 export function Benefits() {
+  const [isPlaying, setIsPlaying] = useState(false);
+
   return (
     <section className="py-20 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        {/* VÍDEO DE VENDA COM CAPA CUSTOMIZADA */}
+        <div className="mb-20">
+          <div className="max-w-5xl mx-auto overflow-hidden rounded-3xl shadow-2xl border-4 border-white bg-black relative group">
+            
+            <div className="aspect-video w-full">
+              <iframe
+                src={`https://fast.wistia.net/embed/iframe/6a7aa410u4?videoFoam=true&autoPlay=${isPlaying}&muted=false&controlsVisibleOnLoad=false&playbar=false&fullscreenButton=true`}
+                title="Vídeo de Apresentação ConsulToque"
+                allow="autoplay; fullscreen"
+                frameBorder="0"
+                className="w-full h-full"
+              ></iframe>
+            </div>
+
+            {/* OVERLAY DO BOTÃO CUSTOMIZADO - SOME QUANDO DÁ PLAY */}
+            {!isPlaying && (
+              <div 
+                className="absolute inset-0 bg-black/40 flex items-center justify-center cursor-pointer group-hover:bg-black/50 transition-colors"
+                onClick={() => setIsPlaying(true)}
+              >
+                <button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-full font-black text-xl md:text-2xl shadow-2xl transform hover:scale-110 transition-all flex items-center gap-3 border-2 border-white/50">
+                  <Play fill="white" size={32} />
+                  CONHEÇA A CONSULTOQUE
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
             Tudo que você precisa em um só lugar
