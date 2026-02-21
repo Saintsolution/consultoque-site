@@ -4,12 +4,13 @@ export function AffiliateCall() {
   return (
     <section className="bg-gradient-to-r from-green-500 to-emerald-600 text-white py-20 px-6 text-center">
       <h2 className="text-3xl md:text-5xl font-extrabold mb-6">
-        Ganhe dinheiro indicando a ConsulToque
+        Seja um Afiliado e lucre todos os meses!
       </h2>
 
       <p className="text-lg md:text-2xl max-w-4xl mx-auto mb-10">
-        Torne-se afiliado e receba comissões recorrentes vendendo um plano de
-        telemedicina acessível, fácil de explicar e com alta conversão.
+        Ganhe comissões recorrentes sobre cada assinatura indicada. 
+        Cadastro grátis, rápido e com material de divulgação pronto. 
+        Comece a faturar agora!
       </p>
 
       <Link

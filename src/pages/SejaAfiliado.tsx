@@ -68,9 +68,9 @@ export function SejaAfiliado() {
             </h2>
 
             <p className="text-lg md:text-xl mb-4">
-              Indicando <strong>apenas 1 cliente por dia</strong>, em menos de
-              <strong> 8 meses</strong> você pode alcançar uma renda mensal
-              equivalente a <strong>1 salário mínimo</strong>.
+              Sua Renda Fixa com Comissão Recorrente.<strong> Faça 1 venda por dia</strong>, e em menos de um ano
+              <strong> conquiste R$ 2.000,00 mensais.</strong> Lucre até quando  
+estiver de férias. <strong>Liberdade real</strong>.
             </p>
 
             <p className="text-lg md:text-xl">
@@ -81,26 +81,55 @@ export function SejaAfiliado() {
         </div>
       </section>
 
-      {/* CONTEXTO AZUL */}
+      {/* CONTEXTO AZUL - ATUALIZADO COM VÍDEO VERTICAL (ESTILO TIKTOK) */}
       <section className="py-24 px-6 bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-500">
-        <div className="max-w-6xl mx-auto text-center bg-white/10 backdrop-blur-sm border border-white/20 rounded-3xl p-12 text-white shadow-[0_30px_80px_rgba(0,0,0,0.35)]">
-          <h2 className="text-3xl md:text-4xl font-extrabold mb-8">
-            Por que a Telemedicina vende fácil?
+        <div className="max-w-6xl mx-auto text-center bg-white/10 backdrop-blur-sm border border-white/20 rounded-3xl p-8 md:p-12 text-white shadow-[0_30px_80px_rgba(0,0,0,0.35)]">
+          <h2 className="text-3xl md:text-4xl font-extrabold mb-8 uppercase">
+            PORQUÊ VENDER TELEMEDICINA?
           </h2>
 
-          <p className="text-lg md:text-xl max-w-4xl mx-auto mb-10 text-blue-50">
+          <p className="text-lg md:text-xl max-w-4xl mx-auto mb-12 text-blue-50">
             Produto de <strong>baixo custo</strong>, alta aceitação popular,
             atendimento rápido, remoto e acessível.
           </p>
 
-          <a
-            href="/play"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center bg-white text-blue-700 px-12 py-5 rounded-full text-xl font-black shadow-2xl hover:scale-105 transition-transform"
-          >
-            ▶ Vídeo de apresentação
-          </a>
+          {/* GRID DE VÍDEOS */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+            
+            {/* Vídeo 1 - Quadrado */}
+            <div className="aspect-square w-full bg-black/20 rounded-xl overflow-hidden shadow-lg border border-white/10">
+              <iframe 
+                src="https://fast.wistia.net/embed/iframe/54eu0gg5vq?videoFoam=true" 
+                title="Wistia video player" 
+                allow="autoplay; fullscreen" 
+                frameBorder="0" 
+                className="w-full h-full"
+              ></iframe>
+            </div>
+
+            {/* Vídeo 2 - Vertical (TikTok Style 9:16) */}
+            <div className="aspect-[9/16] w-full max-w-[300px] mx-auto bg-black/20 rounded-xl overflow-hidden shadow-2xl border border-white/20">
+              <iframe 
+                src="https://fast.wistia.net/embed/iframe/c7gl82cath?videoFoam=true" 
+                title="Wistia video player" 
+                allow="autoplay; fullscreen" 
+                frameBorder="0" 
+                className="w-full h-full"
+              ></iframe>
+            </div>
+
+            {/* Vídeo 3 - Quadrado */}
+            <div className="aspect-square w-full bg-black/20 rounded-xl overflow-hidden shadow-lg border border-white/10">
+              <iframe 
+                src="https://fast.wistia.net/embed/iframe/mxjr8nkqqe?videoFoam=true" 
+                title="Wistia video player" 
+                allow="autoplay; fullscreen" 
+                frameBorder="0" 
+                className="w-full h-full"
+              ></iframe>
+            </div>
+
+          </div>
         </div>
       </section>
 
