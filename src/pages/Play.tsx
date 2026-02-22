@@ -15,10 +15,10 @@ export function Play() {
   const wistiaId = "efxptifhnp";
 
   useEffect(() => {
-    // Força o fundo preto e remove scrolls desnecessários
+    // Fundo preto, mas permitindo o scroll (overflow-y: auto)
     document.documentElement.style.backgroundColor = "black";
     document.body.style.backgroundColor = "black";
-    document.body.style.overflow = "hidden";
+    document.body.style.overflowY = "auto"; 
 
     window._wq = window._wq || [];
     window._wq.push({
@@ -26,21 +26,16 @@ export function Play() {
       options: {
         autoPlay: true,
         playerColor: "2566af",
-        copyLinkAndContext: false,
       },
       onReady: (video: any) => {
         setVideoReady(true);
-        
-        // Monitora o fim do vídeo para exibir o CTA
         video.bind("end", () => {
           setShowButton(true);
         });
-
         video.play();
       },
     });
 
-    // Injeção dos scripts do Wistia
     const script1 = document.createElement("script");
     script1.src = `https://fast.wistia.com/embed/medias/${wistiaId}.jsonp`;
     script1.async = true;
@@ -52,34 +47,31 @@ export function Play() {
     document.body.appendChild(script2);
 
     return () => {
-      // Limpeza ao sair da página para não afetar o resto do site
       document.documentElement.style.backgroundColor = "";
       document.body.style.backgroundColor = "";
-      document.body.style.overflow = "auto";
       if (document.body.contains(script1)) document.body.removeChild(script1);
       if (document.body.contains(script2)) document.body.removeChild(script2);
     };
   }, []);
 
   const goToSite = () => {
-    // Captura parâmetros de afiliado (?src=... etc) e leva para a Home
     const searchParams = window.location.search;
     window.location.href = "/" + searchParams;
   };
 
   return (
-    <div className="min-h-screen w-full bg-black flex flex-col items-center justify-center relative p-4 overflow-hidden">
+    /* Tiramos o justify-center para o vídeo não ficar "preso" e permitimos scroll */
+    <div className="min-h-screen w-full bg-black flex flex-col items-center pt-8 pb-20 relative">
       
-      {/* Container Principal com limites de tamanho para Desk e Mobile */}
-      <div className="w-full max-w-lg md:max-w-3xl lg:max-w-4xl relative shadow-2xl">
+      {/* O container agora tem uma largura máxima, mas permite que você role a página */}
+      <div className="w-[95%] max-w-lg md:max-w-xl lg:max-w-2xl relative shadow-2xl">
         
-        {/* Wrapper do Wistia com proporção 16:9 corrigida */}
         <div 
           className="wistia_responsive_wrapper" 
           style={{ 
             height: "auto", 
             width: "100%", 
-            aspectRatio: "16/9", 
+            aspectRatio: "9/16", /* Mantém a bitola vertical */
             position: "relative",
             backgroundColor: "black" 
           }}
@@ -88,32 +80,26 @@ export function Play() {
             className={`wistia_embed wistia_async_${wistiaId} seo=true videoFoam=true`} 
             style={{ height: "100%", width: "100%", position: "relative" }}
           >
-            {/* O player será injetado aqui */}
           </div>
         </div>
 
-        {/* Botão Central de "Saber Mais" (Só aparece no final) */}
+        {/* Botão de "Saber Mais" */}
         {showButton && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/30 z-50">
+          <div className="absolute inset-0 flex items-center justify-center bg-black/20 z-50">
             <button
               onClick={goToSite}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-8 md:px-12 py-4 md:py-6 rounded-full text-xl md:text-3xl font-black flex items-center gap-3 shadow-[0_0_50px_rgba(37,99,235,0.7)] animate-bounce transition-all hover:scale-110 active:scale-95 border-2 border-white/20"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-full text-xl md:text-2xl font-bold flex items-center gap-3 shadow-2xl animate-bounce"
             >
-              <PlayIcon className="w-6 h-6 md:w-8 md:h-8" fill="white" /> 
-              CLIQUE AQUI PARA SABER MAIS
+              <PlayIcon fill="white" /> CLIQUE PARA SABER MAIS
             </button>
           </div>
         )}
 
-        {/* Overlay de carregamento */}
         {!videoReady && (
-          <div className="absolute inset-0 bg-black flex flex-col items-center justify-center z-40">
-            <div className="text-white text-lg md:text-xl animate-pulse font-light tracking-[0.2em] text-center">
-              PREPARANDO APRESENTAÇÃO...
-            </div>
+          <div className="absolute inset-0 bg-black flex items-center justify-center z-40">
+            <div className="text-white text-xl animate-pulse">Carregando...</div>
           </div>
         )}
-
       </div>
     </div>
   );
