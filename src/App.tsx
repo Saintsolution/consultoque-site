@@ -16,6 +16,7 @@ import { AffiliateCall } from './components/AffiliateCall';
 
 import { SejaAfiliado } from './pages/SejaAfiliado';
 import { Play } from './pages/Play';
+import { VideoAfiliados } from './pages/VideoAfiliados'; // <--- Importação da nova página
 
 function Home() {
   return (
@@ -45,6 +46,8 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/seja-afiliado" element={<SejaAfiliado />} />
         <Route path="/play" element={<Play />} />
+        {/* Rota para o vídeo de captação de afiliados */}
+        <Route path="/videoafiliados" element={<VideoAfiliados />} />
       </Routes>
     </>
   );
