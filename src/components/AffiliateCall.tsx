@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 
 export function AffiliateCall() {
   return (
-    <section className="bg-gradient-to-r from-green-500 to-emerald-600 text-white py-20 px-6 text-center">
+    <section id="affiliate" className="bg-gradient-to-r from-green-500 to-emerald-600 text-white py-20 px-6 text-center">
       <h2 className="text-3xl md:text-5xl font-extrabold mb-6">
         Seja um Afiliado e lucre todos os meses!
       </h2>

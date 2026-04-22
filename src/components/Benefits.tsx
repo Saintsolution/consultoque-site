@@ -28,7 +28,7 @@ export function Benefits() {
   const [isPlaying, setIsPlaying] = useState(false);
 
   return (
-    <section className="py-20 bg-gray-50">
+    <section id="benefits" className="py-20 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* VÍDEO DE VENDA COM CAPA CUSTOMIZADA */}

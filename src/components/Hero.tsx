@@ -1,6 +1,6 @@
 export function Hero() {
   return (
-    <section className="relative w-full bg-gradient-to-br from-blue-500 via-blue-400 to-cyan-400 text-white overflow-hidden">
+    <section id="hero" className="relative w-full bg-gradient-to-br from-blue-500 via-blue-400 to-cyan-400 text-white overflow-hidden">
 
       <div className="w-full px-6 pt-20 pb-32 text-center">
 
