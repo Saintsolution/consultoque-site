@@ -12,7 +12,7 @@ export function Extra() {
         
         {/* Título da Seção */}
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-5xl font-bold mb-4 text-white uppercase italic tracking-tighter">
+          <h2 className="text-3xl md:text-5xl font-bold mb-4 text-white">
             Compromisso com a Legalidade
           </h2>
           <p className="text-xl text-blue-50 max-w-3xl mx-auto font-medium">
@@ -27,7 +27,7 @@ export function Extra() {
             
             {/* Registro CRM */}
             <div className="flex flex-col items-center text-center">
-              <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mb-6 shadow-inner transition-transform hover:scale-110">
+              <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mb-6 shadow-inner">
                 <ShieldCheck className="w-9 h-9 text-blue-600" />
               </div>
               <h4 className="text-xl font-bold text-slate-800 mb-3">Profissionais Habilitados</h4>
@@ -38,7 +38,7 @@ export function Extra() {
 
             {/* Base Legal */}
             <div className="flex flex-col items-center text-center">
-              <div className="w-16 h-16 bg-cyan-100 rounded-2xl flex items-center justify-center mb-6 shadow-inner transition-transform hover:scale-110">
+              <div className="w-16 h-16 bg-cyan-100 rounded-2xl flex items-center justify-center mb-6 shadow-inner">
                 <Scale className="w-9 h-9 text-cyan-600" />
               </div>
               <h4 className="text-xl font-bold text-slate-800 mb-3">Lei Federal 13.989/2020</h4>
@@ -47,13 +47,15 @@ export function Extra() {
               </p>
             </div>
 
-            {/* Responsabilidade Técnica - AQUI ENTRA O TEXTO DO CLIENTE */}
+            {/* Responsabilidade Técnica - Dr. Maicon */}
             <div className="flex flex-col items-center text-center">
-              <div className="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center mb-6 shadow-inner transition-transform hover:scale-110 border-2 border-amber-200">
+              <div className="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center mb-6 shadow-inner">
                 <Stethoscope className="w-9 h-9 text-amber-600" />
               </div>
               <h4 className="text-xl font-bold text-slate-800 mb-2">Responsabilidade Técnica</h4>
-              <p className="text-blue-600 font-bold text-xs uppercase mb-2 tracking-widest">Dr. Maicon Gonçalves Primo | CRM-SP 163.013</p>
+              <p className="text-blue-600 font-bold text-xs uppercase mb-2 tracking-widest leading-tight">
+                Dr. Maicon Gonçalves Primo <br /> CRM-SP 163.013
+              </p>
               <p className="text-slate-600 leading-relaxed text-xs">
                 Médico e pesquisador em Saúde Digital, especialista em gestão médica e na implantação de protocolos avançados de telemedicina.
               </p>
@@ -61,7 +63,7 @@ export function Extra() {
 
           </div>
 
-          {/* Link para Termos */}
+          {/* Selo de Garantia / Link para Termos */}
           <div className="mt-12 pt-8 border-t border-slate-200 text-center">
             <p className="text-slate-400 text-[10px] uppercase font-bold tracking-[0.2em] mb-4">
               Operação Técnica: Click Life Saúde (CNPJ 39.549.271/0001-36)
