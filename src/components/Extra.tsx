@@ -1,6 +1,5 @@
 import React from 'react';
-// Adicionei o "Check" aqui na lista abaixo ⬇️
-import { ShieldCheck, Scale, FileCheck2, Check } from 'lucide-react';
+import { ShieldCheck, Scale, Stethoscope, Check } from 'lucide-react';
 
 export function Extra() {
   return (
@@ -13,7 +12,7 @@ export function Extra() {
         
         {/* Título da Seção */}
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-5xl font-bold mb-4 text-white">
+          <h2 className="text-3xl md:text-5xl font-bold mb-4 text-white uppercase italic tracking-tighter">
             Compromisso com a Legalidade
           </h2>
           <p className="text-xl text-blue-50 max-w-3xl mx-auto font-medium">
@@ -21,54 +20,55 @@ export function Extra() {
           </p>
         </div>
 
-        {/* Caixa Branca/Transparente Centralizada (Glassmorphism) */}
+        {/* Caixa Branca (Glassmorphism) */}
         <div className="max-w-5xl mx-auto bg-white/95 backdrop-blur-md rounded-[2.5rem] p-8 md:p-14 shadow-2xl border-2 border-white/20">
           
           <div className="grid md:grid-cols-3 gap-12">
             
             {/* Registro CRM */}
             <div className="flex flex-col items-center text-center">
-              <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mb-6 shadow-inner">
+              <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mb-6 shadow-inner transition-transform hover:scale-110">
                 <ShieldCheck className="w-9 h-9 text-blue-600" />
               </div>
               <h4 className="text-xl font-bold text-slate-800 mb-3">Profissionais Habilitados</h4>
-              <p className="text-slate-600 leading-relaxed">
-                Todos os atendimentos são feitos por <strong>médicos com CRM ativo</strong>. Receitas, atestados e pedidos de exames têm validade em todo o Brasil.
+              <p className="text-slate-600 leading-relaxed text-sm">
+                Todos os atendimentos são feitos por <strong>médicos com CRM ativo</strong>. Receitas e atestados têm validade em todo o Brasil.
               </p>
             </div>
 
             {/* Base Legal */}
             <div className="flex flex-col items-center text-center">
-              <div className="w-16 h-16 bg-cyan-100 rounded-2xl flex items-center justify-center mb-6 shadow-inner">
+              <div className="w-16 h-16 bg-cyan-100 rounded-2xl flex items-center justify-center mb-6 shadow-inner transition-transform hover:scale-110">
                 <Scale className="w-9 h-9 text-cyan-600" />
               </div>
               <h4 className="text-xl font-bold text-slate-800 mb-3">Lei Federal 13.989/2020</h4>
-              <p className="text-slate-600 leading-relaxed">
-                Operamos sob a <strong>Lei da Telemedicina</strong> e a Resolução CFM nº 2.314/2022, garantindo ética e sigilo total dos seus dados de saúde.
+              <p className="text-slate-600 leading-relaxed text-sm">
+                Operamos sob a <strong>Lei da Telemedicina</strong> e a Resolução CFM nº 2.314/2022, garantindo ética e sigilo total dos dados.
               </p>
             </div>
 
-            {/* Responsabilidade Técnica */}
+            {/* Responsabilidade Técnica - AQUI ENTRA O TEXTO DO CLIENTE */}
             <div className="flex flex-col items-center text-center">
-              <div className="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center mb-6 shadow-inner">
-                <FileCheck2 className="w-9 h-9 text-amber-600" />
+              <div className="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center mb-6 shadow-inner transition-transform hover:scale-110 border-2 border-amber-200">
+                <Stethoscope className="w-9 h-9 text-amber-600" />
               </div>
-              <h4 className="text-xl font-bold text-slate-800 mb-3">Responsabilidade Técnica</h4>
-              <p className="text-slate-600 leading-relaxed">
-                A operação técnica e médica é garantida pela <strong>CLICK LIFE SAÚDE</strong> (CNPJ 39.549.271/0001-36), referência em tecnologia e cuidado.
+              <h4 className="text-xl font-bold text-slate-800 mb-2">Responsabilidade Técnica</h4>
+              <p className="text-blue-600 font-bold text-xs uppercase mb-2 tracking-widest">Dr. Maicon Gonçalves Primo | CRM-SP 163.013</p>
+              <p className="text-slate-600 leading-relaxed text-xs">
+                Médico e pesquisador em Saúde Digital, especialista em gestão médica e na implantação de protocolos avançados de telemedicina.
               </p>
             </div>
 
           </div>
 
-          {/* Selo de Garantia / Link para Termos */}
+          {/* Link para Termos */}
           <div className="mt-12 pt-8 border-t border-slate-200 text-center">
-            <p className="text-slate-500 text-sm mb-4">
-              Atendimento disponível 24h por dia, 7 dias por semana.
+            <p className="text-slate-400 text-[10px] uppercase font-bold tracking-[0.2em] mb-4">
+              Operação Técnica: Click Life Saúde (CNPJ 39.549.271/0001-36)
             </p>
             <a 
               href="/termos" 
-              className="inline-flex items-center gap-2 text-blue-600 font-bold hover:underline"
+              className="inline-flex items-center gap-2 text-blue-600 font-black uppercase italic text-sm hover:text-blue-800 transition-colors"
             >
               Consultar Termos de Adesão e Normas de Uso
               <Check className="w-4 h-4 bg-blue-600 text-white rounded-full p-0.5" />
