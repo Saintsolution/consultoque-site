@@ -4,14 +4,15 @@ export function Hero() {
 
       <div className="w-full px-6 pt-20 pb-32 text-center">
 
-        <p className="text-2xl md:text-4xl lg:text-5xl font-extrabold leading-tight max-w-5xl mx-auto mb-6 text-blue-50">
-          Consultas médicas a qualquer hora,<br className="hidden md:block" />
-          em qualquer lugar
-        </p>
+       <p className="text-3xl md:text-5xl lg:text-7xl font-extrabold leading-tight max-w-5xl mx-auto mb-6 text-blue-50">
+  CONSULTA <br className="hidden md:block" />
+  por R$ 33,00
+</p>
 
         <p className="text-lg md:text-2xl lg:text-3xl font-medium max-w-4xl mx-auto text-blue-100/95 leading-relaxed mb-14">
-          Atendimento 24 horas por dia, 7 dias por semana<br className="hidden md:block" />
-          + 250 parceiros com descontos exclusivos
+          Teleconsulta: Saúde na palma da sua mão, sem esperas.
+Consultas 24 horas, 7 dias por semana, inclusive feriados.
+Sem carência e sem limite de idade.
         </p>
 
         {/* CTA */}
@@ -33,13 +34,13 @@ export function Hero() {
             "
           >
             <span className="text-xs md:text-sm font-bold tracking-[0.25em] uppercase">
-              ASSOCIE-SE
+              Consultar AGORA
             </span>
             <span className="text-3xl md:text-4xl font-black my-1">
               R$ 33,00
             </span>
             <span className="text-xs md:text-sm font-bold uppercase opacity-90">
-              por mês
+              mensais
             </span>
           </a>
         </div>

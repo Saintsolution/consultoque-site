@@ -89,7 +89,7 @@ export function Footer() {
             <a href="https://instagram.com/consultoque" target="_blank" rel="noreferrer" className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-pink-600 transition-colors text-white">
               <Instagram className="w-5 h-5" />
             </a>
-            <a href="https://tiktok.com/@consuloquereal" target="_blank" rel="noreferrer" className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-black transition-colors text-white">
+            <a href="https://www.tiktok.com/@consultoquereal?_r=1&_t=ZS-95lgbypZ7wK" target="_blank" rel="noreferrer" className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-black transition-colors text-white">
               <TikTokIcon />
             </a>
           </div>
