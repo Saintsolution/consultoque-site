@@ -68,13 +68,15 @@ export function Extra() {
             <p className="text-slate-400 text-[10px] uppercase font-bold tracking-[0.2em] mb-4">
               Operação Técnica: Click Life Saúde (CNPJ 39.549.271/0001-36)
             </p>
-            <a 
-              href="/termos" 
-              className="inline-flex items-center gap-2 text-blue-600 font-black uppercase italic text-sm hover:text-blue-800 transition-colors"
-            >
-              Consultar Termos de Adesão e Normas de Uso
-              <Check className="w-4 h-4 bg-blue-600 text-white rounded-full p-0.5" />
-            </a>
+           <a 
+  href="/termos" 
+  target="_blank" 
+  rel="noopener noreferrer" 
+  className="inline-flex items-center gap-2 text-blue-600 font-black uppercase italic text-sm hover:text-blue-800 transition-colors"
+>
+  Consultar Termos de Adesão e Normas de Uso
+  <Check className="w-4 h-4 bg-blue-600 text-white rounded-full p-0.5" />
+</a>
           </div>
         </div>
 
