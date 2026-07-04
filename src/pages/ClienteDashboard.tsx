@@ -19,7 +19,6 @@ type ClienteItem = {
   dia_vencimento?: string;
   dt_vencimento?: string;
   url_pagamento?: string;
-  pode_editar?: boolean;
 };
 
 export function ClienteDashboard() {
@@ -57,6 +56,44 @@ export function ClienteDashboard() {
     return [];
   }
 
+  function formatarNascimento(data: string) {
+    const numeros = data.replace(/\D/g, '');
+
+    if (numeros.length !== 8) return data.trim();
+
+    return `${numeros.substring(0, 2)}-${numeros.substring(2, 4)}-${numeros.substring(4, 8)}`;
+  }
+
+  function nomePlano(cod?: string) {
+    switch (cod) {
+      case 'p1380':
+      case '1380':
+        return 'Plano Individual';
+      case 'p1382':
+      case '1382':
+        return 'Plano Familiar';
+      case 'coletivo':
+        return 'Plano Coletivo';
+      default:
+        return cod || 'Plano ConsulToque';
+    }
+  }
+
+  function formatarMoeda(valor?: number | string) {
+    if (valor === undefined || valor === null || valor === '') return '';
+
+    return Number(valor).toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    });
+  }
+
+  function statusAtivo(status?: string) {
+    return ['ativo', 'pago', 'adimplente'].includes(
+      String(status || '').toLowerCase()
+    );
+  }
+
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -67,20 +104,17 @@ export function ClienteDashboard() {
         WEBHOOK_LOGIN_CLIENTE,
         {
           assoc_cpf: loginData.assoc_cpf.replace(/\D/g, ''),
-          assoc_nasc: loginData.assoc_nasc.trim(),
+          assoc_nasc: formatarNascimento(loginData.assoc_nasc),
         },
         { timeout: 20000 }
       );
 
       console.log('Resposta login cliente:', response.data);
 
-      const lista = normalizarResposta(response.data);
+      const resposta = response.data;
+      const lista = normalizarResposta(resposta);
 
-      if (response.data?.pode_editar === false) {
-        setPodeEditar(false);
-      } else {
-        setPodeEditar(true);
-      }
+      setPodeEditar(resposta?.pode_editar !== false);
 
       if (lista.length > 0) {
         setDados(lista);
@@ -207,8 +241,8 @@ export function ClienteDashboard() {
         <div className="grid gap-4">
           {dados.map((d, i) => {
             const status = d.status_titular || d.status_venda || 'pendente';
-            const ativo = status === 'ativo' || status === 'pago';
-            const valor = d.valor || d.vl_total;
+            const ativo = statusAtivo(status);
+            const valor = d.valor ?? d.vl_total;
 
             return (
               <div
@@ -222,12 +256,12 @@ export function ClienteDashboard() {
                     </p>
 
                     <p className="text-sm text-gray-600">
-                      Plano: {d.plano_nome || d.cod_plano || 'Plano ConsulToque'}
+                      Plano: {d.plano_nome || nomePlano(d.cod_plano)}
                     </p>
 
-                    {valor && (
+                    {valor !== undefined && valor !== '' && (
                       <p className="text-sm text-gray-600">
-                        Mensalidade: R$ {valor}
+                        Mensalidade: {formatarMoeda(valor)}
                       </p>
                     )}
 
@@ -257,14 +291,14 @@ export function ClienteDashboard() {
                   </div>
 
                   <div className="flex flex-col gap-2 md:items-end">
-                    {d.url_pagamento && status !== 'pago' && (
+                    {d.url_pagamento && !ativo && (
                       <a
                         href={d.url_pagamento}
                         target="_blank"
                         rel="noreferrer"
                         className="bg-green-600 text-white px-4 py-2 rounded-lg font-bold text-center"
                       >
-                        Pagar mensalidade
+                        2ª via do boleto
                       </a>
                     )}
 
