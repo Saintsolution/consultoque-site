@@ -13,7 +13,6 @@ export function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid md:grid-cols-5 gap-8 mb-8">
           
-          {/* Branding */}
           <div className="flex flex-col items-center md:items-start text-center md:text-left">
             <Link to="/" className="flex flex-col items-center gap-2 mb-4 hover:opacity-80 transition-opacity">
               <img src="/consultoque_logo_fundo_branco_final.png" alt="CONSULTOQUE" className="h-16 w-16 object-contain bg-white rounded-full p-1" />
@@ -22,18 +21,15 @@ export function Footer() {
             <p className="text-sm text-gray-400 max-w-[200px]">Telemedicina e vantagens para toda família.</p>
           </div>
 
-         {/* Serviços */}
-<div>
-  <h3 className="text-white font-semibold mb-4 text-base">Serviços</h3>
-  <ul className="space-y-2 text-sm">
-    <li><a href="/#hero" className="hover:text-blue-400 transition-colors">Telemedicina</a></li>
-    {/* Alteração feita na linha abaixo: */}
-    <li><a href="/#club-benefits" className="hover:text-blue-400 transition-colors">Vantagens</a></li>
-    <li><Link to="/seja-afiliado" className="hover:text-blue-400 transition-colors font-bold text-blue-300">Quero ser Colaborador</Link></li>
-  </ul>
-</div>
+          <div>
+            <h3 className="text-white font-semibold mb-4 text-base">Serviços</h3>
+            <ul className="space-y-2 text-sm">
+              <li><a href="/#hero" className="hover:text-blue-400 transition-colors">Telemedicina</a></li>
+              <li><a href="/#club-benefits" className="hover:text-blue-400 transition-colors">Vantagens</a></li>
+              <li><Link to="/seja-afiliado" className="hover:text-blue-400 transition-colors font-bold text-blue-300">Quero ser Colaborador</Link></li>
+            </ul>
+          </div>
 
-          {/* Institucional */}
           <div>
             <h3 className="text-white font-semibold mb-4 text-base">Institucional</h3>
             <ul className="space-y-2 text-sm">
@@ -44,17 +40,15 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Acesso Restrito (Dashboard e Áreas) */}
           <div>
             <h3 className="text-white font-semibold mb-4 text-base">Acesso Restrito</h3>
             <ul className="space-y-2 text-sm">
-              <li><Link to="/login" className="hover:text-amber-400 text-amber-500 font-bold">Área Administrativa</Link></li>
-              <li><Link to="/login" className="hover:text-blue-400 transition-colors">Área do Colaborador</Link></li>
-              <li><Link to="/login" className="hover:text-blue-400 transition-colors">Área do Associado</Link></li>
+              <li><Link to="/admin" className="hover:text-amber-400 text-amber-500 font-bold">Área Administrativa</Link></li>
+              <li><Link to="/colaborador" className="hover:text-blue-400 transition-colors">Área do Colaborador</Link></li>
+              <li><Link to="/cliente" className="hover:text-blue-400 transition-colors">Área do Associado</Link></li>
             </ul>
           </div>
 
-          {/* Atendimento */}
           <div>
             <h3 className="text-white font-semibold mb-4 text-base">Atendimento</h3>
             <ul className="space-y-3 text-sm">
@@ -70,7 +64,6 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Rodapé Final */}
         <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-xs text-gray-500 text-center md:text-left">© 2026 CONSULTOQUE / SESSP. Todos os direitos reservados.</p>
           <div className="flex gap-4">
