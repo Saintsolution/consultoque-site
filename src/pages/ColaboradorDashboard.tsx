@@ -4,6 +4,9 @@ import axios from 'axios';
 const WEBHOOK_UPDATE_COLAB =
   'https://n8n.saintsolution.com.br/webhook/edita-colab';
 
+const LINK_MATERIAL_PROMOCIONAL =
+  'https://drive.google.com/drive/folders/1Nb4VhRqS7m1VAAmmP_uWR23qo0PqpoJ_?usp=sharing';
+
 function formatCod(value: any) {
   if (value === null || value === undefined || value === '') return '';
   return String(value).replace(/\D/g, '').padStart(4, '0');
@@ -96,13 +99,21 @@ export function ColaboradorDashboard() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-100 p-4">
         <div className="p-8 bg-white rounded-2xl shadow-xl w-full max-w-sm">
-          <h2 className="text-xl font-bold mb-6 text-center">Acesso Colaborador</h2>
+          <a href="/" className="text-blue-600 font-bold mb-4 block underline">
+            ← Voltar ao site
+          </a>
+
+          <h2 className="text-xl font-bold mb-6 text-center">
+            Acesso Colaborador
+          </h2>
 
           <input
             className="w-full p-3 mb-4 border rounded-lg"
             placeholder="CPF"
             value={formData.cpf_colab}
-            onChange={(e) => setFormData({ ...formData, cpf_colab: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, cpf_colab: e.target.value })
+            }
           />
 
           <input
@@ -110,7 +121,9 @@ export function ColaboradorDashboard() {
             type="password"
             placeholder="Senha"
             value={formData.senha_login}
-            onChange={(e) => setFormData({ ...formData, senha_login: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, senha_login: e.target.value })
+            }
           />
 
           <button
@@ -245,25 +258,36 @@ export function ColaboradorDashboard() {
             Você pertence à célula: <strong>{codPai || '0001'}</strong>
           </p>
 
-          <button
-            type="button"
-            onClick={abrirEdicaoDados}
-            className="mt-3 text-sm bg-blue-700 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-800"
-          >
-            Editar meus dados
-          </button>
+          <div className="mt-3 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={abrirEdicaoDados}
+              className="text-sm bg-blue-700 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-800"
+            >
+              Editar meus dados
+            </button>
+
+            <a
+              href={LINK_MATERIAL_PROMOCIONAL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm bg-green-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-green-700"
+            >
+              Material promocional
+            </a>
+          </div>
 
           <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
             <p className="text-xs font-semibold text-blue-800 uppercase mb-1">
               Seu link de vendas:
             </p>
             <a
-              href={`https://sistema.consultoque.com.br/${codLogado}`}
+              href={`https://consultoque.com.br/${codLogado}`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-700 font-bold hover:underline break-all"
             >
-              https://sistema.consultoque.com.br/{codLogado}
+              https://consultoque.com.br/{codLogado}
             </a>
           </div>
 
@@ -274,35 +298,50 @@ export function ColaboradorDashboard() {
               </h3>
 
               <div className="space-y-3">
-                <input
-                  type="email"
-                  value={editData.email_colab}
-                  onChange={(e) =>
-                    setEditData({ ...editData, email_colab: e.target.value })
-                  }
-                  className="w-full border rounded-lg p-3"
-                  placeholder="E-mail"
-                />
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">
+                    E-mail
+                  </label>
+                  <input
+                    type="email"
+                    value={editData.email_colab}
+                    onChange={(e) =>
+                      setEditData({ ...editData, email_colab: e.target.value })
+                    }
+                    className="w-full border rounded-lg p-3"
+                    placeholder="Digite seu e-mail"
+                  />
+                </div>
 
-                <input
-                  type="tel"
-                  value={editData.tel_colab}
-                  onChange={(e) =>
-                    setEditData({ ...editData, tel_colab: e.target.value })
-                  }
-                  className="w-full border rounded-lg p-3"
-                  placeholder="Telefone"
-                />
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">
+                    Telefone / WhatsApp
+                  </label>
+                  <input
+                    type="tel"
+                    value={editData.tel_colab}
+                    onChange={(e) =>
+                      setEditData({ ...editData, tel_colab: e.target.value })
+                    }
+                    className="w-full border rounded-lg p-3"
+                    placeholder="Digite seu telefone"
+                  />
+                </div>
 
-                <input
-                  type="text"
-                  value={editData.pix_colab}
-                  onChange={(e) =>
-                    setEditData({ ...editData, pix_colab: e.target.value })
-                  }
-                  className="w-full border rounded-lg p-3"
-                  placeholder="Chave Pix"
-                />
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">
+                    Chave Pix
+                  </label>
+                  <input
+                    type="text"
+                    value={editData.pix_colab}
+                    onChange={(e) =>
+                      setEditData({ ...editData, pix_colab: e.target.value })
+                    }
+                    className="w-full border rounded-lg p-3"
+                    placeholder="Digite sua chave Pix"
+                  />
+                </div>
 
                 <div className="flex gap-3">
                   <button
@@ -414,7 +453,7 @@ export function ColaboradorDashboard() {
             c.num_contrato,
             c.tipo_plano,
             c.tipo_comissao,
-            dinheiro(c.vl_base),
+            dinheiro(c.vl_total || c.vl_base),
             `${c.perc_comissao || 0}%`,
             dinheiro(c.vl_comissao),
             c.status_comissao,
