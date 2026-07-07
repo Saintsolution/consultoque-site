@@ -2,14 +2,12 @@ import { useState } from 'react';
 import axios from 'axios';
 
 const WEBHOOK_LOGIN_CLIENTE = 'https://n8n.saintsolution.com.br/webhook/login-cliente';
-const WEBHOOK_EDITA_TITULAR = 'https://n8n.saintsolution.com.br/webhook/edita-titular';
 const WEBHOOK_EDITA_ASSOCIADO = 'https://n8n.saintsolution.com.br/webhook/edita-associado';
 
 type ClienteItem = {
   num_contrato: number | string;
   cod_plano?: string;
   plano_nome?: string;
-
   status_venda?: string;
   status_titular?: string;
 
@@ -43,17 +41,7 @@ export function ClienteDashboard() {
 
   const [dados, setDados] = useState<ClienteItem[]>([]);
   const [podeEditar, setPodeEditar] = useState(true);
-
-  const [editandoTitular, setEditandoTitular] = useState<ClienteItem | null>(null);
   const [editandoAssociado, setEditandoAssociado] = useState<ClienteItem | null>(null);
-
-  const [editTitularData, setEditTitularData] = useState({
-    tit_nome: '',
-    tit_cpf: '',
-    tit_nasc: '',
-    tit_email: '',
-    tit_tel: '',
-  });
 
   const [editAssocData, setEditAssocData] = useState({
     assoc_email: '',
@@ -155,17 +143,6 @@ export function ClienteDashboard() {
     });
   }
 
-  function abrirEdicaoTitular(d: ClienteItem) {
-    setEditandoTitular(d);
-    setEditTitularData({
-      tit_nome: d.tit_nome || '',
-      tit_cpf: d.tit_cpf || '',
-      tit_nasc: d.tit_nasc || '',
-      tit_email: d.tit_email || '',
-      tit_tel: d.tit_tel || '',
-    });
-  }
-
   async function salvarAssociado() {
     if (!editandoAssociado) return;
 
@@ -191,37 +168,6 @@ export function ClienteDashboard() {
     } catch (error) {
       console.error(error);
       alert('Erro ao salvar dados do responsável.');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function salvarTitular() {
-    if (!editandoTitular) return;
-
-    setLoading(true);
-
-    try {
-      await axios.post(WEBHOOK_EDITA_TITULAR, {
-        num_contrato: editandoTitular.num_contrato,
-        tit_cpf_original: editandoTitular.tit_cpf,
-        ...editTitularData,
-      });
-
-      setDados((prev) =>
-        prev.map((item) =>
-          item.num_contrato === editandoTitular.num_contrato &&
-          item.tit_cpf === editandoTitular.tit_cpf
-            ? { ...item, ...editTitularData }
-            : item
-        )
-      );
-
-      setEditandoTitular(null);
-      alert('Dados do titular atualizados com sucesso!');
-    } catch (error) {
-      console.error(error);
-      alert('Erro ao salvar dados do titular.');
     } finally {
       setLoading(false);
     }
@@ -387,7 +333,7 @@ export function ClienteDashboard() {
                           onClick={() => abrirEdicaoAssociado(d)}
                           className="mt-3 bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-sm"
                         >
-                          Editar responsável
+                          Editar e-mail / telefone
                         </button>
                       )}
                     </div>
@@ -421,14 +367,9 @@ export function ClienteDashboard() {
                         TITULAR: {String(statusTitular).toUpperCase()}
                       </p>
 
-                      {podeEditar && (
-                        <button
-                          onClick={() => abrirEdicaoTitular(d)}
-                          className="mt-3 bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-sm"
-                        >
-                          Editar titular
-                        </button>
-                      )}
+                      <p className="mt-3 text-xs text-gray-500">
+                        Para alterar o titular, será necessário cancelar este plano e realizar uma nova adesão.
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -476,90 +417,6 @@ export function ClienteDashboard() {
 
               <button
                 onClick={() => setEditandoAssociado(null)}
-                disabled={loading}
-                className="flex-1 bg-gray-200 p-2 rounded"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {editandoTitular && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white p-6 rounded-2xl w-full max-w-sm space-y-3">
-            <h2 className="font-black">Editar Titular</h2>
-
-            <label className="block text-sm font-bold">Nome</label>
-            <input
-              type="text"
-              value={editTitularData.tit_nome}
-              onChange={(e) =>
-                setEditTitularData({ ...editTitularData, tit_nome: e.target.value })
-              }
-              className="w-full border p-2 rounded"
-              placeholder="Nome do titular"
-            />
-
-            <label className="block text-sm font-bold">CPF</label>
-            <input
-              type="text"
-              value={editTitularData.tit_cpf}
-              onChange={(e) =>
-                setEditTitularData({ ...editTitularData, tit_cpf: e.target.value })
-              }
-              className="w-full border p-2 rounded"
-              placeholder="CPF do titular"
-            />
-
-            <label className="block text-sm font-bold">Nascimento</label>
-            <input
-              type="text"
-              value={editTitularData.tit_nasc}
-              onChange={(e) =>
-                setEditTitularData({
-                  ...editTitularData,
-                  tit_nasc: formatarNascimento(e.target.value),
-                })
-              }
-              className="w-full border p-2 rounded"
-              placeholder="DD-MM-AAAA"
-            />
-
-            <label className="block text-sm font-bold">E-mail</label>
-            <input
-              type="email"
-              value={editTitularData.tit_email}
-              onChange={(e) =>
-                setEditTitularData({ ...editTitularData, tit_email: e.target.value })
-              }
-              className="w-full border p-2 rounded"
-              placeholder="E-mail do titular"
-            />
-
-            <label className="block text-sm font-bold">Telefone</label>
-            <input
-              type="text"
-              value={editTitularData.tit_tel}
-              onChange={(e) =>
-                setEditTitularData({ ...editTitularData, tit_tel: e.target.value })
-              }
-              className="w-full border p-2 rounded"
-              placeholder="Telefone do titular"
-            />
-
-            <div className="flex gap-2 pt-2">
-              <button
-                onClick={salvarTitular}
-                disabled={loading}
-                className="flex-1 bg-green-600 disabled:opacity-60 text-white p-2 rounded"
-              >
-                {loading ? 'Salvando...' : 'Salvar'}
-              </button>
-
-              <button
-                onClick={() => setEditandoTitular(null)}
                 disabled={loading}
                 className="flex-1 bg-gray-200 p-2 rounded"
               >
