@@ -4,6 +4,12 @@ import axios from 'axios';
 const WEBHOOK_UPDATE_COLAB =
   'https://n8n.saintsolution.com.br/webhook/edita-colab';
 
+const WEBHOOK_DADOS_COLAB =
+  'https://n8n.saintsolution.com.br/webhook/get-dados-colaborador';
+
+const WEBHOOK_LOGIN_COLAB =
+  'https://n8n.saintsolution.com.br/webhook/login_dash_colab';
+
 const LINK_MATERIAL_PROMOCIONAL =
   'https://drive.google.com/drive/folders/1Nb4VhRqS7m1VAAmmP_uWR23qo0PqpoJ_?usp=sharing';
 
@@ -17,6 +23,29 @@ function dinheiro(valor: any) {
     style: 'currency',
     currency: 'BRL',
   });
+}
+
+function asArray(value: any) {
+  return Array.isArray(value) ? value : [];
+}
+
+function normalizarPayload(data: any) {
+  let payload = data;
+
+  if (Array.isArray(payload)) payload = payload[0];
+  if (payload?.json) payload = payload.json;
+  if (payload?.body) payload = payload.body;
+
+  return {
+    status: payload?.status || 'sucesso',
+    cod_colab: formatCod(payload?.cod_colab),
+    colaborador: payload?.colaborador || {},
+    vendas: asArray(payload?.vendas),
+    titulares: asArray(payload?.titulares),
+    colaboradores: asArray(payload?.colaboradores),
+    comissoes: asArray(payload?.comissoes),
+    resumo: payload?.resumo || {},
+  };
 }
 
 export function ColaboradorDashboard() {
@@ -36,6 +65,7 @@ export function ColaboradorDashboard() {
 
   useEffect(() => {
     const cod = localStorage.getItem('cod_colab');
+
     if (cod) {
       setLogado(true);
       buscarDados(cod);
@@ -44,18 +74,15 @@ export function ColaboradorDashboard() {
 
   const buscarDados = async (cod: string) => {
     setLoading(true);
+
     try {
       const response = await axios.post(
-        'https://n8n.saintsolution.com.br/webhook/get-dados-colaborador',
+        WEBHOOK_DADOS_COLAB,
         { cod_colab: formatCod(cod) },
         { timeout: 15000 }
       );
 
-      const payload = Array.isArray(response.data)
-        ? response.data[0]
-        : response.data;
-
-      setDados(payload);
+      setDados(normalizarPayload(response.data));
     } catch (e) {
       console.error(e);
       alert('Erro ao buscar dados do dashboard.');
@@ -66,9 +93,10 @@ export function ColaboradorDashboard() {
 
   const handleLogin = async () => {
     setLoading(true);
+
     try {
       const response = await axios.post(
-        'https://n8n.saintsolution.com.br/webhook/login_dash_colab',
+        WEBHOOK_LOGIN_COLAB,
         {
           cpf_colab: formData.cpf_colab,
           senha_login: formData.senha_login,
@@ -76,11 +104,15 @@ export function ColaboradorDashboard() {
         { timeout: 15000 }
       );
 
-      if (response.data.status === 'sucesso') {
-        const codFormatado = formatCod(response.data.cod_colab);
+      const login = Array.isArray(response.data)
+        ? response.data[0]
+        : response.data;
+
+      if (login?.status === 'sucesso') {
+        const codFormatado = formatCod(login.cod_colab);
 
         localStorage.setItem('cod_colab', codFormatado);
-        localStorage.setItem('nome_colab', response.data.nome_colab || '');
+        localStorage.setItem('nome_colab', login.nome_colab || '');
 
         setLogado(true);
         await buscarDados(codFormatado);
@@ -148,37 +180,41 @@ export function ColaboradorDashboard() {
     );
   }
 
-  const codLogado = formatCod(dados.cod_colab || localStorage.getItem('cod_colab'));
+  const codLogado = formatCod(
+    dados.cod_colab || localStorage.getItem('cod_colab')
+  );
+
   const colaboradorLogado = dados.colaborador || {};
   const codPai = formatCod(colaboradorLogado.cod_pai || '');
 
-  const vendas = dados.vendas || [];
-  const titulares = dados.titulares || [];
-  const colaboradores = dados.colaboradores || [];
-  const comissoes = dados.comissoes || [];
+  const vendas = asArray(dados.vendas);
+  const titulares = asArray(dados.titulares);
+  const colaboradores = asArray(dados.colaboradores);
+  const comissoes = asArray(dados.comissoes);
+  const resumo = dados.resumo || {};
 
-  const totalVendas = vendas.reduce(
-    (acc: number, v: any) => acc + Number(v.vl_total || 0),
-    0
-  );
+  const totalVendas =
+    resumo.total_vendas ??
+    resumo.total_vendido ??
+    vendas.reduce((acc: number, v: any) => acc + Number(v.vl_total || 0), 0);
 
-  const comissoesPendentes = comissoes.filter(
-    (c: any) => String(c.status_comissao || '').toLowerCase() === 'pendente'
-  );
+  const totalAReceber =
+    resumo.total_a_receber ??
+    comissoes
+      .filter(
+        (c: any) =>
+          String(c.status_comissao || '').toLowerCase() === 'pendente'
+      )
+      .reduce((acc: number, c: any) => acc + Number(c.vl_comissao || 0), 0);
 
-  const comissoesPagas = comissoes.filter(
-    (c: any) => String(c.status_comissao || '').toLowerCase() === 'paga'
-  );
-
-  const totalAReceber = comissoesPendentes.reduce(
-    (acc: number, c: any) => acc + Number(c.vl_comissao || 0),
-    0
-  );
-
-  const totalRecebido = comissoesPagas.reduce(
-    (acc: number, c: any) => acc + Number(c.vl_comissao || 0),
-    0
-  );
+  const totalRecebido =
+    resumo.total_recebido ??
+    comissoes
+      .filter((c: any) => {
+        const status = String(c.status_comissao || '').toLowerCase();
+        return status === 'paga' || status === 'pago';
+      })
+      .reduce((acc: number, c: any) => acc + Number(c.vl_comissao || 0), 0);
 
   function abrirEdicaoDados() {
     setEditData({
@@ -186,6 +222,7 @@ export function ColaboradorDashboard() {
       tel_colab: colaboradorLogado.tel_colab || '',
       pix_colab: colaboradorLogado.pix_colab || '',
     });
+
     setEditandoDados(true);
   }
 
@@ -247,7 +284,10 @@ export function ColaboradorDashboard() {
           </p>
 
           <h1 className="text-2xl font-black">
-            Olá, {localStorage.getItem('nome_colab') || 'colaborador'}
+            Olá,{' '}
+            {localStorage.getItem('nome_colab') ||
+              colaboradorLogado.nome_colab ||
+              'colaborador'}
           </h1>
 
           <p className="text-sm text-slate-500 mt-1">
@@ -281,6 +321,7 @@ export function ColaboradorDashboard() {
             <p className="text-xs font-semibold text-blue-800 uppercase mb-1">
               Seu link de vendas:
             </p>
+
             <a
               href={`https://consultoque.com.br/${codLogado}`}
               target="_blank"
@@ -298,50 +339,32 @@ export function ColaboradorDashboard() {
               </h3>
 
               <div className="space-y-3">
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1">
-                    E-mail
-                  </label>
-                  <input
-                    type="email"
-                    value={editData.email_colab}
-                    onChange={(e) =>
-                      setEditData({ ...editData, email_colab: e.target.value })
-                    }
-                    className="w-full border rounded-lg p-3"
-                    placeholder="Digite seu e-mail"
-                  />
-                </div>
+                <InputEdit
+                  label="E-mail"
+                  type="email"
+                  value={editData.email_colab}
+                  onChange={(value: string) =>
+                    setEditData({ ...editData, email_colab: value })
+                  }
+                />
 
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1">
-                    Telefone / WhatsApp
-                  </label>
-                  <input
-                    type="tel"
-                    value={editData.tel_colab}
-                    onChange={(e) =>
-                      setEditData({ ...editData, tel_colab: e.target.value })
-                    }
-                    className="w-full border rounded-lg p-3"
-                    placeholder="Digite seu telefone"
-                  />
-                </div>
+                <InputEdit
+                  label="Telefone / WhatsApp"
+                  type="tel"
+                  value={editData.tel_colab}
+                  onChange={(value: string) =>
+                    setEditData({ ...editData, tel_colab: value })
+                  }
+                />
 
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1">
-                    Chave Pix
-                  </label>
-                  <input
-                    type="text"
-                    value={editData.pix_colab}
-                    onChange={(e) =>
-                      setEditData({ ...editData, pix_colab: e.target.value })
-                    }
-                    className="w-full border rounded-lg p-3"
-                    placeholder="Digite sua chave Pix"
-                  />
-                </div>
+                <InputEdit
+                  label="Chave Pix"
+                  type="text"
+                  value={editData.pix_colab}
+                  onChange={(value: string) =>
+                    setEditData({ ...editData, pix_colab: value })
+                  }
+                />
 
                 <div className="flex gap-3">
                   <button
@@ -384,16 +407,28 @@ export function ColaboradorDashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
-        <Card titulo="Vendas Realizadas" valor={vendas.length} />
-        <Card titulo="Titulares" valor={titulares.length} />
-        <Card titulo="Colaboradores na Rede" valor={colaboradores.length} />
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-6 mb-10">
+        <Card titulo="Vendas" valor={resumo.qtd_vendas ?? vendas.length} />
+        <Card titulo="Planos Pagos" valor={resumo.qtd_planos_pagos ?? 0} />
+        <Card titulo="Não Pagos" valor={resumo.qtd_planos_nao_pagos ?? 0} />
         <Card titulo="A Receber" valor={dinheiro(totalAReceber)} destaque />
+        <Card titulo="Recebido" valor={dinheiro(totalRecebido)} />
+        <Card titulo="Filhos" valor={resumo.qtd_filhos ?? colaboradores.length} />
       </div>
 
       <Toggle id="vendas" titulo="Vendas realizadas">
         <Tabela
-          colunas={['Contrato', 'Data', 'Associado', 'CPF Pagador', 'Tipo Plano', 'Tit. Ind', 'Tit. Fam', 'Valor', 'Status']}
+          colunas={[
+            'Contrato',
+            'Data',
+            'Associado',
+            'CPF Pagador',
+            'Tipo Plano',
+            'Tit. Ind',
+            'Tit. Fam',
+            'Valor',
+            'Status',
+          ]}
           linhas={vendas.map((v: any) => [
             v.num_contrato,
             v.dt_venda,
@@ -410,7 +445,16 @@ export function ColaboradorDashboard() {
 
       <Toggle id="titulares" titulo="Titulares vinculados">
         <Tabela
-          colunas={['Contrato', 'Titular', 'CPF', 'Nascimento', 'E-mail', 'Telefone', 'Código Plano', 'Status']}
+          colunas={[
+            'Contrato',
+            'Titular',
+            'CPF',
+            'Nascimento',
+            'E-mail',
+            'Telefone',
+            'Código Plano',
+            'Status',
+          ]}
           linhas={titulares.map((t: any) => [
             t.num_contrato,
             t.tit_nome,
@@ -424,7 +468,7 @@ export function ColaboradorDashboard() {
         />
       </Toggle>
 
-      <Toggle id="rede" titulo="Colaboradores na rede">
+      <Toggle id="rede" titulo="Filhos diretos">
         <Tabela
           colunas={['Código', 'Nome', 'E-mail', 'Telefone', 'Código Pai', 'CPF']}
           linhas={colaboradores.map((c: any) => [
@@ -440,14 +484,51 @@ export function ColaboradorDashboard() {
 
       <Toggle id="comissoes" titulo="Comissões e valores">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Card titulo="Valor total em vendas" valor={dinheiro(totalVendas)} />
-          <Card titulo="Comissões geradas" valor={comissoes.length} />
-          <Card titulo="Total recebido" valor={dinheiro(totalRecebido)} />
+          <Card titulo="Total vendido" valor={dinheiro(totalVendas)} />
+          <Card
+            titulo="Comissões"
+            valor={resumo.qtd_comissoes ?? comissoes.length}
+          />
+          <Card titulo="Recebido" valor={dinheiro(totalRecebido)} />
           <Card titulo="A receber" valor={dinheiro(totalAReceber)} destaque />
         </div>
 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div className="bg-slate-50 border rounded-xl p-4">
+            <h3 className="font-bold mb-3">Comissões por tipo</h3>
+
+            <Tabela
+              colunas={['Tipo', 'Valor']}
+              linhas={Object.entries(resumo.comissoes_por_tipo || {}).map(
+                ([tipo, valor]: any) => [tipo, dinheiro(valor)]
+              )}
+            />
+          </div>
+
+          <div className="bg-slate-50 border rounded-xl p-4">
+            <h3 className="font-bold mb-3">Comissões por pagamento</h3>
+
+            <Tabela
+              colunas={['Data', 'Valor']}
+              linhas={(resumo.comissoes_por_pagamento || []).map(
+                (item: any) => [item.data, dinheiro(item.valor)]
+              )}
+            />
+          </div>
+        </div>
+
         <Tabela
-          colunas={['Data', 'Contrato', 'Tipo Plano', 'Tipo Comissão', 'Base', '%', 'Comissão', 'Status', 'Pagamento']}
+          colunas={[
+            'Data',
+            'Contrato',
+            'Tipo Plano',
+            'Tipo Comissão',
+            'Base',
+            '%',
+            'Comissão',
+            'Status',
+            'Pagamento',
+          ]}
           linhas={comissoes.map((c: any) => [
             c.dt_comissao,
             c.num_contrato,
@@ -457,10 +538,27 @@ export function ColaboradorDashboard() {
             `${c.perc_comissao || 0}%`,
             dinheiro(c.vl_comissao),
             c.status_comissao,
-            c.dt_pagamento || '-',
+            c.dt_prev__pagamento || c.dt_pagamento || '-',
           ])}
         />
       </Toggle>
+    </div>
+  );
+}
+
+function InputEdit({ label, type, value, onChange }: any) {
+  return (
+    <div>
+      <label className="block text-sm font-bold text-slate-700 mb-1">
+        {label}
+      </label>
+
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full border rounded-lg p-3"
+      />
     </div>
   );
 }
@@ -469,7 +567,11 @@ function Card({ titulo, valor, destaque = false }: any) {
   return (
     <div className="p-6 bg-white rounded-xl shadow border border-slate-200">
       <p className="text-slate-500 text-sm">{titulo}</p>
-      <p className={`text-3xl font-bold mt-2 ${destaque ? 'text-blue-700' : ''}`}>
+      <p
+        className={`text-3xl font-bold mt-2 ${
+          destaque ? 'text-blue-700' : ''
+        }`}
+      >
         {valor}
       </p>
     </div>

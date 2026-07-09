@@ -199,7 +199,7 @@ export function ClienteDashboard() {
           <form onSubmit={handleLogin} className="space-y-4">
             <input
               type="text"
-              placeholder="CPF"
+              placeholder="CPF apenas números"
               value={loginData.assoc_cpf}
               onChange={(e) =>
                 setLoginData({ ...loginData, assoc_cpf: e.target.value })
