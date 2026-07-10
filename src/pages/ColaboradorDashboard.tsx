@@ -15,7 +15,16 @@ const LINK_MATERIAL_PROMOCIONAL =
 
 function formatCod(value: any) {
   if (value === null || value === undefined || value === '') return '';
+
   return String(value).replace(/\D/g, '').padStart(4, '0');
+}
+
+function somenteNumeros(value: any) {
+  return String(value ?? '').replace(/\D/g, '');
+}
+
+function normalizarCpf(value: any) {
+  return somenteNumeros(value).slice(0, 11);
 }
 
 function dinheiro(valor: any) {
@@ -51,12 +60,20 @@ function normalizarPayload(data: any) {
 export function ColaboradorDashboard() {
   const [logado, setLogado] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({ cpf_colab: '', senha_login: '' });
+
+  const [formData, setFormData] = useState({
+    cpf_colab: '',
+    senha_login: '',
+  });
+
+  const [mostrarSenha, setMostrarSenha] = useState(false);
+
   const [dados, setDados] = useState<any>(null);
   const [aberto, setAberto] = useState<string | null>('vendas');
 
   const [editandoDados, setEditandoDados] = useState(false);
   const [salvandoDados, setSalvandoDados] = useState(false);
+
   const [editData, setEditData] = useState({
     email_colab: '',
     tel_colab: '',
@@ -78,8 +95,12 @@ export function ColaboradorDashboard() {
     try {
       const response = await axios.post(
         WEBHOOK_DADOS_COLAB,
-        { cod_colab: formatCod(cod) },
-        { timeout: 15000 }
+        {
+          cod_colab: formatCod(cod),
+        },
+        {
+          timeout: 15000,
+        }
       );
 
       setDados(normalizarPayload(response.data));
@@ -92,16 +113,33 @@ export function ColaboradorDashboard() {
   };
 
   const handleLogin = async () => {
+    if (loading) return;
+
+    const cpfNormalizado = normalizarCpf(formData.cpf_colab);
+    const senha = formData.senha_login;
+
+    if (cpfNormalizado.length !== 11) {
+      alert('Digite um CPF válido com 11 números.');
+      return;
+    }
+
+    if (!senha.trim()) {
+      alert('Digite sua senha.');
+      return;
+    }
+
     setLoading(true);
 
     try {
       const response = await axios.post(
         WEBHOOK_LOGIN_COLAB,
         {
-          cpf_colab: formData.cpf_colab,
-          senha_login: formData.senha_login,
+          cpf_colab: cpfNormalizado,
+          senha_login: senha,
         },
-        { timeout: 15000 }
+        {
+          timeout: 15000,
+        }
       );
 
       const login = Array.isArray(response.data)
@@ -115,6 +153,7 @@ export function ColaboradorDashboard() {
         localStorage.setItem('nome_colab', login.nome_colab || '');
 
         setLogado(true);
+
         await buscarDados(codFormatado);
       } else {
         alert('CPF ou senha incorretos.');
@@ -127,11 +166,23 @@ export function ColaboradorDashboard() {
     }
   };
 
+  const handleLoginKeyDown = (
+    event: React.KeyboardEvent<HTMLInputElement>
+  ) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      handleLogin();
+    }
+  };
+
   if (!logado) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-100 p-4">
         <div className="p-8 bg-white rounded-2xl shadow-xl w-full max-w-sm">
-          <a href="/" className="text-blue-600 font-bold mb-4 block underline">
+          <a
+            href="/"
+            className="text-blue-600 font-bold mb-4 block underline"
+          >
             ← Voltar ao site
           </a>
 
@@ -141,24 +192,50 @@ export function ColaboradorDashboard() {
 
           <input
             className="w-full p-3 mb-4 border rounded-lg"
+            type="text"
+            inputMode="numeric"
+            autoComplete="username"
             placeholder="CPF"
+            maxLength={14}
             value={formData.cpf_colab}
             onChange={(e) =>
-              setFormData({ ...formData, cpf_colab: e.target.value })
+              setFormData({
+                ...formData,
+                cpf_colab: e.target.value,
+              })
             }
+            onKeyDown={handleLoginKeyDown}
           />
 
-          <input
-            className="w-full p-3 mb-6 border rounded-lg"
-            type="password"
-            placeholder="Senha"
-            value={formData.senha_login}
-            onChange={(e) =>
-              setFormData({ ...formData, senha_login: e.target.value })
-            }
-          />
+          <div className="relative mb-6">
+            <input
+              className="w-full p-3 pr-24 border rounded-lg"
+              type={mostrarSenha ? 'text' : 'password'}
+              autoComplete="current-password"
+              placeholder="Senha"
+              value={formData.senha_login}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  senha_login: e.target.value,
+                })
+              }
+              onKeyDown={handleLoginKeyDown}
+            />
+
+            <button
+              type="button"
+              onClick={() => setMostrarSenha((valorAtual) => !valorAtual)}
+              className="absolute inset-y-0 right-0 px-3 text-sm font-bold text-blue-700 hover:text-blue-900"
+              aria-label={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
+              title={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
+            >
+              {mostrarSenha ? 'Ocultar' : 'Mostrar'}
+            </button>
+          </div>
 
           <button
+            type="button"
             className={`w-full p-3 font-bold rounded-lg text-white ${
               loading ? 'bg-gray-400' : 'bg-blue-700 hover:bg-blue-800'
             }`}
@@ -196,7 +273,10 @@ export function ColaboradorDashboard() {
   const totalVendas =
     resumo.total_vendas ??
     resumo.total_vendido ??
-    vendas.reduce((acc: number, v: any) => acc + Number(v.vl_total || 0), 0);
+    vendas.reduce(
+      (acc: number, v: any) => acc + Number(v.vl_total || 0),
+      0
+    );
 
   const totalAReceber =
     resumo.total_a_receber ??
@@ -205,16 +285,23 @@ export function ColaboradorDashboard() {
         (c: any) =>
           String(c.status_comissao || '').toLowerCase() === 'pendente'
       )
-      .reduce((acc: number, c: any) => acc + Number(c.vl_comissao || 0), 0);
+      .reduce(
+        (acc: number, c: any) => acc + Number(c.vl_comissao || 0),
+        0
+      );
 
   const totalRecebido =
     resumo.total_recebido ??
     comissoes
       .filter((c: any) => {
         const status = String(c.status_comissao || '').toLowerCase();
+
         return status === 'paga' || status === 'pago';
       })
-      .reduce((acc: number, c: any) => acc + Number(c.vl_comissao || 0), 0);
+      .reduce(
+        (acc: number, c: any) => acc + Number(c.vl_comissao || 0),
+        0
+      );
 
   function abrirEdicaoDados() {
     setEditData({
@@ -238,7 +325,9 @@ export function ColaboradorDashboard() {
           tel_colab: editData.tel_colab,
           pix_colab: editData.pix_colab,
         },
-        { timeout: 15000 }
+        {
+          timeout: 15000,
+        }
       );
 
       setDados((prev: any) => ({
@@ -264,14 +353,22 @@ export function ColaboradorDashboard() {
   const Toggle = ({ id, titulo, children }: any) => (
     <div className="bg-white rounded-xl shadow border border-slate-200 mb-6 overflow-hidden">
       <button
+        type="button"
         onClick={() => setAberto(aberto === id ? null : id)}
         className="w-full flex justify-between items-center p-6 text-left"
       >
         <h2 className="text-xl font-bold">{titulo}</h2>
-        <span className="text-2xl">{aberto === id ? '−' : '+'}</span>
+
+        <span className="text-2xl">
+          {aberto === id ? '−' : '+'}
+        </span>
       </button>
 
-      {aberto === id && <div className="px-6 pb-6">{children}</div>}
+      {aberto === id && (
+        <div className="px-6 pb-6">
+          {children}
+        </div>
+      )}
     </div>
   );
 
@@ -344,7 +441,10 @@ export function ColaboradorDashboard() {
                   type="email"
                   value={editData.email_colab}
                   onChange={(value: string) =>
-                    setEditData({ ...editData, email_colab: value })
+                    setEditData({
+                      ...editData,
+                      email_colab: value,
+                    })
                   }
                 />
 
@@ -353,7 +453,10 @@ export function ColaboradorDashboard() {
                   type="tel"
                   value={editData.tel_colab}
                   onChange={(value: string) =>
-                    setEditData({ ...editData, tel_colab: value })
+                    setEditData({
+                      ...editData,
+                      tel_colab: value,
+                    })
                   }
                 />
 
@@ -362,7 +465,10 @@ export function ColaboradorDashboard() {
                   type="text"
                   value={editData.pix_colab}
                   onChange={(value: string) =>
-                    setEditData({ ...editData, pix_colab: value })
+                    setEditData({
+                      ...editData,
+                      pix_colab: value,
+                    })
                   }
                 />
 
@@ -390,11 +496,15 @@ export function ColaboradorDashboard() {
         </div>
 
         <div className="flex items-center gap-4">
-          <a href="/" className="text-sm text-blue-700 underline font-semibold">
+          <a
+            href="/"
+            className="text-sm text-blue-700 underline font-semibold"
+          >
             Início do Site
           </a>
 
           <button
+            type="button"
             className="text-sm text-red-600 underline"
             onClick={() => {
               localStorage.removeItem('cod_colab');
@@ -408,12 +518,36 @@ export function ColaboradorDashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-6 gap-6 mb-10">
-        <Card titulo="Vendas" valor={resumo.qtd_vendas ?? vendas.length} />
-        <Card titulo="Planos Pagos" valor={resumo.qtd_planos_pagos ?? 0} />
-        <Card titulo="Não Pagos" valor={resumo.qtd_planos_nao_pagos ?? 0} />
-        <Card titulo="A Receber" valor={dinheiro(totalAReceber)} destaque />
-        <Card titulo="Recebido" valor={dinheiro(totalRecebido)} />
-        <Card titulo="Filhos" valor={resumo.qtd_filhos ?? colaboradores.length} />
+        <Card
+          titulo="Vendas"
+          valor={resumo.qtd_vendas ?? vendas.length}
+        />
+
+        <Card
+          titulo="Planos Pagos"
+          valor={resumo.qtd_planos_pagos ?? 0}
+        />
+
+        <Card
+          titulo="Não Pagos"
+          valor={resumo.qtd_planos_nao_pagos ?? 0}
+        />
+
+        <Card
+          titulo="A Receber"
+          valor={dinheiro(totalAReceber)}
+          destaque
+        />
+
+        <Card
+          titulo="Recebido"
+          valor={dinheiro(totalRecebido)}
+        />
+
+        <Card
+          titulo="Filhos"
+          valor={resumo.qtd_filhos ?? colaboradores.length}
+        />
       </div>
 
       <Toggle id="vendas" titulo="Vendas realizadas">
@@ -470,7 +604,14 @@ export function ColaboradorDashboard() {
 
       <Toggle id="rede" titulo="Filhos diretos">
         <Tabela
-          colunas={['Código', 'Nome', 'E-mail', 'Telefone', 'Código Pai', 'CPF']}
+          colunas={[
+            'Código',
+            'Nome',
+            'E-mail',
+            'Telefone',
+            'Código Pai',
+            'CPF',
+          ]}
           linhas={colaboradores.map((c: any) => [
             formatCod(c.cod_colab),
             c.nome_colab,
@@ -484,34 +625,57 @@ export function ColaboradorDashboard() {
 
       <Toggle id="comissoes" titulo="Comissões e valores">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Card titulo="Total vendido" valor={dinheiro(totalVendas)} />
+          <Card
+            titulo="Total vendido"
+            valor={dinheiro(totalVendas)}
+          />
+
           <Card
             titulo="Comissões"
             valor={resumo.qtd_comissoes ?? comissoes.length}
           />
-          <Card titulo="Recebido" valor={dinheiro(totalRecebido)} />
-          <Card titulo="A receber" valor={dinheiro(totalAReceber)} destaque />
+
+          <Card
+            titulo="Recebido"
+            valor={dinheiro(totalRecebido)}
+          />
+
+          <Card
+            titulo="A receber"
+            valor={dinheiro(totalAReceber)}
+            destaque
+          />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div className="bg-slate-50 border rounded-xl p-4">
-            <h3 className="font-bold mb-3">Comissões por tipo</h3>
+            <h3 className="font-bold mb-3">
+              Comissões por tipo
+            </h3>
 
             <Tabela
               colunas={['Tipo', 'Valor']}
-              linhas={Object.entries(resumo.comissoes_por_tipo || {}).map(
-                ([tipo, valor]: any) => [tipo, dinheiro(valor)]
-              )}
+              linhas={Object.entries(
+                resumo.comissoes_por_tipo || {}
+              ).map(([tipo, valor]: any) => [
+                tipo,
+                dinheiro(valor),
+              ])}
             />
           </div>
 
           <div className="bg-slate-50 border rounded-xl p-4">
-            <h3 className="font-bold mb-3">Comissões por pagamento</h3>
+            <h3 className="font-bold mb-3">
+              Comissões por pagamento
+            </h3>
 
             <Tabela
               colunas={['Data', 'Valor']}
               linhas={(resumo.comissoes_por_pagamento || []).map(
-                (item: any) => [item.data, dinheiro(item.valor)]
+                (item: any) => [
+                  item.data,
+                  dinheiro(item.valor),
+                ]
               )}
             />
           </div>
@@ -566,7 +730,10 @@ function InputEdit({ label, type, value, onChange }: any) {
 function Card({ titulo, valor, destaque = false }: any) {
   return (
     <div className="p-6 bg-white rounded-xl shadow border border-slate-200">
-      <p className="text-slate-500 text-sm">{titulo}</p>
+      <p className="text-slate-500 text-sm">
+        {titulo}
+      </p>
+
       <p
         className={`text-3xl font-bold mt-2 ${
           destaque ? 'text-blue-700' : ''
@@ -585,7 +752,10 @@ function Tabela({ colunas, linhas }: any) {
         <thead>
           <tr className="bg-slate-100 text-left">
             {colunas.map((c: string, i: number) => (
-              <th key={i} className="p-3 border">
+              <th
+                key={i}
+                className="p-3 border"
+              >
                 {c}
               </th>
             ))}
@@ -597,7 +767,10 @@ function Tabela({ colunas, linhas }: any) {
             linhas.map((linha: any[], i: number) => (
               <tr key={i}>
                 {linha.map((celula: any, j: number) => (
-                  <td key={j} className="p-3 border">
+                  <td
+                    key={j}
+                    className="p-3 border"
+                  >
                     {celula || '-'}
                   </td>
                 ))}
@@ -605,7 +778,10 @@ function Tabela({ colunas, linhas }: any) {
             ))
           ) : (
             <tr>
-              <td className="p-3 border text-center" colSpan={colunas.length}>
+              <td
+                className="p-3 border text-center"
+                colSpan={colunas.length}
+              >
                 Nenhum registro encontrado.
               </td>
             </tr>
