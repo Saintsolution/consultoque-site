@@ -8,19 +8,32 @@ const WEBHOOK_CONSULTA_CPF =
 
 export function FormIndividual() {
   const [mesmoTitular, setMesmoTitular] = useState(true);
+
   const [loading, setLoading] = useState(false);
+
   const [consultandoCpf, setConsultandoCpf] = useState(false);
   const [dadosValidados, setDadosValidados] = useState(false);
   const [cpfBloqueado, setCpfBloqueado] = useState(false);
 
+  const [consultandoCpfTitular, setConsultandoCpfTitular] =
+    useState(false);
+
+  const [titularValidado, setTitularValidado] =
+    useState(false);
+
   const [erro, setErro] = useState('');
   const [erroValidacao, setErroValidacao] = useState('');
+  const [erroTitular, setErroTitular] = useState('');
+
   const [sucesso, setSucesso] = useState(false);
   const [mostrarTermos, setMostrarTermos] = useState(false);
   const [termosAceitos, setTermosAceitos] = useState(false);
 
   const ultimoCpfConsultadoRef = useRef('');
   const consultaAtualRef = useRef(0);
+
+  const ultimoCpfTitularConsultadoRef = useRef('');
+  const consultaTitularAtualRef = useRef(0);
 
   const [dadosPagamento, setDadosPagamento] = useState({
     message: '',
@@ -58,7 +71,7 @@ export function FormIndividual() {
     }
 
     const timer = window.setTimeout(() => {
-      consultarCpf(cpf);
+      consultarCpfAssociado(cpf);
     }, 700);
 
     return () => {
@@ -69,6 +82,37 @@ export function FormIndividual() {
     dadosValidados,
     cpfBloqueado,
     consultandoCpf,
+  ]);
+
+  useEffect(() => {
+    if (mesmoTitular) {
+      return;
+    }
+
+    const cpf = somenteNumeros(formData.tit_cpf);
+
+    if (
+      titularValidado ||
+      consultandoCpfTitular ||
+      cpf.length !== 11 ||
+      !cpfValido(cpf) ||
+      cpf === ultimoCpfTitularConsultadoRef.current
+    ) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      consultarCpfTitular(cpf);
+    }, 700);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [
+    formData.tit_cpf,
+    mesmoTitular,
+    titularValidado,
+    consultandoCpfTitular,
   ]);
 
   function formatarData(data: string) {
@@ -94,7 +138,10 @@ export function FormIndividual() {
 
     return numeros
       .replace(/^(\d{3})(\d)/, '$1.$2')
-      .replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
+      .replace(
+        /^(\d{3})\.(\d{3})(\d)/,
+        '$1.$2.$3'
+      )
       .replace(/\.(\d{3})(\d)/, '.$1-$2');
   }
 
@@ -155,13 +202,19 @@ export function FormIndividual() {
     const terceira = partes[2];
 
     if (primeira.length === 4) {
-      return `${primeira.padStart(4, '0')}-${segunda.padStart(
+      return `${primeira.padStart(
+        4,
+        '0'
+      )}-${segunda.padStart(
         2,
         '0'
       )}-${terceira.padStart(2, '0')}`;
     }
 
-    return `${terceira.padStart(4, '0')}-${segunda.padStart(
+    return `${terceira.padStart(
+      4,
+      '0'
+    )}-${segunda.padStart(
       2,
       '0'
     )}-${primeira.padStart(2, '0')}`;
@@ -176,7 +229,11 @@ export function FormIndividual() {
 
     if (!ano || !mes || !dia) return null;
 
-    const nascimento = new Date(ano, mes - 1, dia);
+    const nascimento = new Date(
+      ano,
+      mes - 1,
+      dia
+    );
 
     const dataValida =
       nascimento.getFullYear() === ano &&
@@ -217,6 +274,19 @@ export function FormIndividual() {
     setErroValidacao('');
   }
 
+  function limparDadosTitular() {
+    setFormData((prev) => ({
+      ...prev,
+      tit_nome: '',
+      tit_nasc: '',
+      tit_email: '',
+      tit_tel: '',
+    }));
+
+    setTitularValidado(false);
+    setErroTitular('');
+  }
+
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement>
   ) {
@@ -233,25 +303,73 @@ export function FormIndividual() {
       return;
     }
 
+    if (
+      titularValidado &&
+      (
+        name === 'tit_cpf' ||
+        name === 'tit_nome' ||
+        name === 'tit_nasc'
+      )
+    ) {
+      return;
+    }
+
     let novoValor = value;
 
-    if (name === 'assoc_cpf' || name === 'tit_cpf') {
+    if (
+      name === 'assoc_cpf' ||
+      name === 'tit_cpf'
+    ) {
       novoValor = formatarCpfVisual(value);
     }
 
     if (name === 'assoc_cpf') {
-      const cpfNovo = somenteNumeros(novoValor);
-      const cpfAnterior = somenteNumeros(formData.assoc_cpf);
+      const cpfNovo =
+        somenteNumeros(novoValor);
+
+      const cpfAnterior =
+        somenteNumeros(formData.assoc_cpf);
 
       if (cpfNovo !== cpfAnterior) {
         ultimoCpfConsultadoRef.current = '';
         limparDadosConsultados();
       }
 
-      if (cpfNovo.length === 11 && !cpfValido(cpfNovo)) {
-        setErroValidacao('Informe um CPF válido.');
+      if (
+        cpfNovo.length === 11 &&
+        !cpfValido(cpfNovo)
+      ) {
+        setErroValidacao(
+          'Informe um CPF válido.'
+        );
       } else {
         setErroValidacao('');
+      }
+    }
+
+    if (name === 'tit_cpf') {
+      const cpfNovo =
+        somenteNumeros(novoValor);
+
+      const cpfAnterior =
+        somenteNumeros(formData.tit_cpf);
+
+      if (cpfNovo !== cpfAnterior) {
+        ultimoCpfTitularConsultadoRef.current =
+          '';
+
+        limparDadosTitular();
+      }
+
+      if (
+        cpfNovo.length === 11 &&
+        !cpfValido(cpfNovo)
+      ) {
+        setErroTitular(
+          'Informe um CPF válido para o titular.'
+        );
+      } else {
+        setErroTitular('');
       }
     }
 
@@ -261,7 +379,9 @@ export function FormIndividual() {
     }));
   }
 
-  async function consultarCpf(cpfRecebido: string) {
+  async function consultarCpfAssociado(
+    cpfRecebido: string
+  ) {
     const cpf = somenteNumeros(cpfRecebido);
 
     if (cpf.length !== 11) {
@@ -269,13 +389,17 @@ export function FormIndividual() {
     }
 
     if (!cpfValido(cpf)) {
-      setErroValidacao('Informe um CPF válido.');
+      setErroValidacao(
+        'Informe um CPF válido.'
+      );
       return;
     }
 
     ultimoCpfConsultadoRef.current = cpf;
 
-    const numeroConsulta = consultaAtualRef.current + 1;
+    const numeroConsulta =
+      consultaAtualRef.current + 1;
+
     consultaAtualRef.current = numeroConsulta;
 
     setConsultandoCpf(true);
@@ -283,15 +407,19 @@ export function FormIndividual() {
     setErroValidacao('');
 
     try {
-      const response = await fetch(WEBHOOK_CONSULTA_CPF, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          cpf,
-        }),
-      });
+      const response = await fetch(
+        WEBHOOK_CONSULTA_CPF,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            cpf,
+            tipo_consulta: 'associado',
+          }),
+        }
+      );
 
       let data: any = null;
 
@@ -303,7 +431,10 @@ export function FormIndividual() {
         );
       }
 
-      if (numeroConsulta !== consultaAtualRef.current) {
+      if (
+        numeroConsulta !==
+        consultaAtualRef.current
+      ) {
         return;
       }
 
@@ -329,7 +460,9 @@ export function FormIndividual() {
         '';
 
       const nascimento =
-        converterNascimentoParaInput(nascimentoRecebido);
+        converterNascimentoParaInput(
+          nascimentoRecebido
+        );
 
       if (!nome || !nascimento) {
         throw new Error(
@@ -337,7 +470,8 @@ export function FormIndividual() {
         );
       }
 
-      const idade = calcularIdade(nascimento);
+      const idade =
+        calcularIdade(nascimento);
 
       if (idade === null) {
         throw new Error(
@@ -345,33 +479,16 @@ export function FormIndividual() {
         );
       }
 
-      if (idade < 18) {
-        setFormData((prev) => ({
-          ...prev,
-          assoc_nome: nome,
-          assoc_cpf: formatarCpfVisual(cpf),
-          assoc_nasc: nascimento,
-        }));
-
-        setCpfBloqueado(true);
-        setDadosValidados(false);
-
-        setErroValidacao(
-          data?.mensagem ||
-            'A contratação não pode continuar. O responsável precisa ser maior de 18 anos.'
-        );
-
-        return;
-      }
-
       if (
+        idade < 18 ||
         data?.maior_idade === false ||
         data?.status === 'bloqueado'
       ) {
         setFormData((prev) => ({
           ...prev,
           assoc_nome: nome,
-          assoc_cpf: formatarCpfVisual(cpf),
+          assoc_cpf:
+            formatarCpfVisual(cpf),
           assoc_nasc: nascimento,
         }));
 
@@ -389,7 +506,8 @@ export function FormIndividual() {
       setFormData((prev) => ({
         ...prev,
         assoc_nome: nome,
-        assoc_cpf: formatarCpfVisual(cpf),
+        assoc_cpf:
+          formatarCpfVisual(cpf),
         assoc_nasc: nascimento,
       }));
 
@@ -416,8 +534,147 @@ export function FormIndividual() {
           : 'Não foi possível consultar o CPF. Tente novamente.'
       );
     } finally {
-      if (numeroConsulta === consultaAtualRef.current) {
+      if (
+        numeroConsulta ===
+        consultaAtualRef.current
+      ) {
         setConsultandoCpf(false);
+      }
+    }
+  }
+
+  async function consultarCpfTitular(
+    cpfRecebido: string
+  ) {
+    const cpf = somenteNumeros(cpfRecebido);
+
+    if (cpf.length !== 11) {
+      return;
+    }
+
+    if (!cpfValido(cpf)) {
+      setErroTitular(
+        'Informe um CPF válido para o titular.'
+      );
+      return;
+    }
+
+    ultimoCpfTitularConsultadoRef.current =
+      cpf;
+
+    const numeroConsulta =
+      consultaTitularAtualRef.current + 1;
+
+    consultaTitularAtualRef.current =
+      numeroConsulta;
+
+    setConsultandoCpfTitular(true);
+    setErro('');
+    setErroTitular('');
+
+    try {
+      const response = await fetch(
+        WEBHOOK_CONSULTA_CPF,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            cpf,
+            tipo_consulta: 'titular',
+          }),
+        }
+      );
+
+      let data: any = null;
+
+      try {
+        data = await response.json();
+      } catch {
+        throw new Error(
+          'O servidor de consulta retornou uma resposta inválida.'
+        );
+      }
+
+      if (
+        numeroConsulta !==
+        consultaTitularAtualRef.current
+      ) {
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          data?.mensagem ||
+            'Não foi possível consultar o CPF do titular.'
+        );
+      }
+
+      const nome = somenteTexto(
+        data?.nome ||
+          data?.nome_completo ||
+          data?.name ||
+          ''
+      );
+
+      const nascimentoRecebido =
+        data?.data_nascimento ||
+        data?.nascimento ||
+        data?.birth_date ||
+        data?.birthdate ||
+        '';
+
+      const nascimento =
+        converterNascimentoParaInput(
+          nascimentoRecebido
+        );
+
+      if (!nome || !nascimento) {
+        throw new Error(
+          'A consulta não retornou nome e data de nascimento do titular.'
+        );
+      }
+
+      /*
+       * O titular pode ser menor de idade.
+       * Aqui não bloqueamos pela idade.
+       */
+      setFormData((prev) => ({
+        ...prev,
+        tit_nome: nome,
+        tit_cpf:
+          formatarCpfVisual(cpf),
+        tit_nasc: nascimento,
+      }));
+
+      setTitularValidado(true);
+      setErroTitular('');
+    } catch (error) {
+      console.error(error);
+
+      ultimoCpfTitularConsultadoRef.current =
+        '';
+
+      setFormData((prev) => ({
+        ...prev,
+        tit_nome: '',
+        tit_nasc: '',
+      }));
+
+      setTitularValidado(false);
+
+      setErroTitular(
+        error instanceof Error
+          ? error.message
+          : 'Não foi possível consultar o CPF do titular. Tente novamente.'
+      );
+    } finally {
+      if (
+        numeroConsulta ===
+        consultaTitularAtualRef.current
+      ) {
+        setConsultandoCpfTitular(false);
       }
     }
   }
@@ -428,8 +685,14 @@ export function FormIndividual() {
     const marcado = e.target.checked;
 
     setMesmoTitular(marcado);
+    setErroTitular('');
 
     if (marcado) {
+      ultimoCpfTitularConsultadoRef.current =
+        '';
+
+      setTitularValidado(false);
+
       setFormData((prev) => ({
         ...prev,
         tit_nome: '',
@@ -441,7 +704,9 @@ export function FormIndividual() {
     }
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(
+    e: React.FormEvent
+  ) {
     e.preventDefault();
 
     setErro('');
@@ -449,6 +714,16 @@ export function FormIndividual() {
     if (!dadosValidados) {
       setErro(
         'Consulte e valide o CPF do responsável antes de continuar.'
+      );
+      return;
+    }
+
+    if (
+      !mesmoTitular &&
+      !titularValidado
+    ) {
+      setErro(
+        'Consulte e valide o CPF do titular antes de continuar.'
       );
       return;
     }
@@ -467,30 +742,63 @@ export function FormIndividual() {
       return;
     }
 
+    if (
+      !mesmoTitular &&
+      !titularValidado
+    ) {
+      setErro(
+        'Os dados do titular ainda não foram validados.'
+      );
+
+      setMostrarTermos(false);
+      return;
+    }
+
     setLoading(true);
     setErro('');
 
     const codColab =
-      localStorage.getItem('referenciador_id') ||
-      '0001';
+      localStorage.getItem(
+        'referenciador_id'
+      ) || '0001';
 
     const titular = mesmoTitular
       ? {
-          tit_nome: somenteTexto(formData.assoc_nome),
-          tit_cpf: somenteNumeros(formData.assoc_cpf),
-          tit_nasc: formatarData(formData.assoc_nasc),
-          tit_email: somenteTexto(formData.assoc_email),
-          tit_tel: somenteTexto(formData.assoc_tel),
+          tit_nome: somenteTexto(
+            formData.assoc_nome
+          ),
+          tit_cpf: somenteNumeros(
+            formData.assoc_cpf
+          ),
+          tit_nasc: formatarData(
+            formData.assoc_nasc
+          ),
+          tit_email: somenteTexto(
+            formData.assoc_email
+          ),
+          tit_tel: somenteTexto(
+            formData.assoc_tel
+          ),
           cod_plano: 'p1380',
           tipo_plano: '1380',
           status_titular: 'inativo',
         }
       : {
-          tit_nome: somenteTexto(formData.tit_nome),
-          tit_cpf: somenteNumeros(formData.tit_cpf),
-          tit_nasc: formatarData(formData.tit_nasc),
-          tit_email: somenteTexto(formData.tit_email),
-          tit_tel: somenteTexto(formData.tit_tel),
+          tit_nome: somenteTexto(
+            formData.tit_nome
+          ),
+          tit_cpf: somenteNumeros(
+            formData.tit_cpf
+          ),
+          tit_nasc: formatarData(
+            formData.tit_nasc
+          ),
+          tit_email: somenteTexto(
+            formData.tit_email
+          ),
+          tit_tel: somenteTexto(
+            formData.tit_tel
+          ),
           cod_plano: 'p1380',
           tipo_plano: '1380',
           status_titular: 'inativo',
@@ -505,11 +813,21 @@ export function FormIndividual() {
       cod_plano: 'p1380',
       tipo_plano: '1380',
 
-      assoc_nome: somenteTexto(formData.assoc_nome),
-      assoc_cpf: somenteNumeros(formData.assoc_cpf),
-      assoc_nasc: formatarData(formData.assoc_nasc),
-      assoc_email: somenteTexto(formData.assoc_email),
-      assoc_tel: somenteTexto(formData.assoc_tel),
+      assoc_nome: somenteTexto(
+        formData.assoc_nome
+      ),
+      assoc_cpf: somenteNumeros(
+        formData.assoc_cpf
+      ),
+      assoc_nasc: formatarData(
+        formData.assoc_nasc
+      ),
+      assoc_email: somenteTexto(
+        formData.assoc_email
+      ),
+      assoc_tel: somenteTexto(
+        formData.assoc_tel
+      ),
 
       tit_ind: totalTitulares,
       tit_fam: 0,
@@ -523,21 +841,29 @@ export function FormIndividual() {
       titulares: [titular],
 
       termos_aceitos: true,
-      termos_aceitos_em: new Date().toISOString(),
-      versao_termos: '2026-06-26-individual',
+      termos_aceitos_em:
+        new Date().toISOString(),
+      versao_termos:
+        '2026-06-26-individual',
     };
 
     try {
-      const response = await fetch(WEBHOOK_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
+      const response = await fetch(
+        WEBHOOK_URL,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type':
+              'application/json',
+          },
+          body: JSON.stringify(payload),
+        }
+      );
 
       if (!response.ok) {
-        throw new Error('Erro ao enviar cadastro.');
+        throw new Error(
+          'Erro ao enviar cadastro.'
+        );
       }
 
       const data = await response.json();
@@ -607,17 +933,21 @@ export function FormIndividual() {
               <p className="text-gray-700 mb-2">
                 Vencimento do boleto:{' '}
                 <strong>
-                  {dadosPagamento.dt_vencimento}
+                  {
+                    dadosPagamento.dt_vencimento
+                  }
                 </strong>
               </p>
             )}
 
             {dadosPagamento.dia_vencimento && (
               <p className="text-gray-700 mb-6">
-                As próximas mensalidades vencerão
-                sempre no dia{' '}
+                As próximas mensalidades
+                vencerão sempre no dia{' '}
                 <strong>
-                  {dadosPagamento.dia_vencimento}
+                  {
+                    dadosPagamento.dia_vencimento
+                  }
                 </strong>
                 .
               </p>
@@ -625,7 +955,9 @@ export function FormIndividual() {
 
             {dadosPagamento.url_pagamento && (
               <a
-                href={dadosPagamento.url_pagamento}
+                href={
+                  dadosPagamento.url_pagamento
+                }
                 target="_blank"
                 rel="noreferrer"
                 className="inline-block bg-[#22C55E] hover:bg-[#16a34a] text-white font-black px-6 py-4 rounded-2xl uppercase"
@@ -651,20 +983,22 @@ export function FormIndividual() {
             >
               <div>
                 <h2 className="text-lg font-black text-gray-900">
-                  Associado responsável pelo pagamento
+                  Associado responsável pelo
+                  pagamento
                 </h2>
 
                 <div className="mt-3 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl px-4 py-3">
                   <p className="text-sm font-bold">
                     A contratação somente pode ser
-                    realizada por uma pessoa maior de
-                    18 anos.
+                    realizada por uma pessoa maior
+                    de 18 anos.
                   </p>
 
                   <p className="text-xs mt-1">
                     Ao informar o CPF, o sistema
-                    consultará automaticamente o nome e
-                    a data de nascimento do responsável.
+                    consultará automaticamente o
+                    nome e a data de nascimento do
+                    responsável.
                   </p>
                 </div>
               </div>
@@ -703,11 +1037,16 @@ export function FormIndividual() {
                 {!dadosValidados &&
                   !cpfBloqueado &&
                   !consultandoCpf &&
-                  somenteNumeros(formData.assoc_cpf).length > 0 &&
-                  somenteNumeros(formData.assoc_cpf).length < 11 && (
+                  somenteNumeros(
+                    formData.assoc_cpf
+                  ).length > 0 &&
+                  somenteNumeros(
+                    formData.assoc_cpf
+                  ).length < 11 && (
                     <p className="text-xs text-gray-500 mt-1">
-                      A consulta será iniciada quando
-                      os 11 números forem preenchidos.
+                      A consulta será iniciada
+                      quando os 11 números forem
+                      preenchidos.
                     </p>
                   )}
               </div>
@@ -725,7 +1064,8 @@ export function FormIndividual() {
                 </div>
               )}
 
-              {(dadosValidados || cpfBloqueado) && (
+              {(dadosValidados ||
+                cpfBloqueado) && (
                 <>
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-1">
@@ -734,7 +1074,9 @@ export function FormIndividual() {
 
                     <input
                       type="text"
-                      value={formData.assoc_nome}
+                      value={
+                        formData.assoc_nome
+                      }
                       disabled
                       className={`w-full border rounded-xl px-4 py-3 text-gray-700 cursor-not-allowed ${
                         dadosValidados
@@ -751,7 +1093,9 @@ export function FormIndividual() {
 
                     <input
                       type="date"
-                      value={formData.assoc_nasc}
+                      value={
+                        formData.assoc_nasc
+                      }
                       disabled
                       className={`w-full border rounded-xl px-4 py-3 text-gray-700 cursor-not-allowed ${
                         dadosValidados
@@ -788,7 +1132,9 @@ export function FormIndividual() {
                   <input
                     type="email"
                     name="assoc_email"
-                    value={formData.assoc_email}
+                    value={
+                      formData.assoc_email
+                    }
                     onChange={handleChange}
                     required
                     className="w-full border border-gray-300 rounded-xl px-4 py-3"
@@ -798,7 +1144,9 @@ export function FormIndividual() {
                   <input
                     type="tel"
                     name="assoc_tel"
-                    value={formData.assoc_tel}
+                    value={
+                      formData.assoc_tel
+                    }
                     onChange={handleChange}
                     required
                     className="w-full border border-gray-300 rounded-xl px-4 py-3"
@@ -809,7 +1157,9 @@ export function FormIndividual() {
                     <input
                       type="checkbox"
                       checked={mesmoTitular}
-                      onChange={handleMesmoTitular}
+                      onChange={
+                        handleMesmoTitular
+                      }
                       className="mt-1"
                     />
 
@@ -828,67 +1178,152 @@ export function FormIndividual() {
                         </h2>
 
                         <p className="text-sm text-gray-500 mt-1">
-                          Informe os dados da pessoa
-                          que utilizará o plano.
+                          Informe primeiro o CPF da
+                          pessoa que utilizará o
+                          plano.
                         </p>
                       </div>
 
-                      <input
-                        type="text"
-                        name="tit_nome"
-                        value={formData.tit_nome}
-                        onChange={handleChange}
-                        required={!mesmoTitular}
-                        className="w-full border border-gray-300 rounded-xl px-4 py-3"
-                        placeholder="Nome completo do titular"
-                      />
-
-                      <input
-                        type="text"
-                        name="tit_cpf"
-                        value={formData.tit_cpf}
-                        onChange={handleChange}
-                        required={!mesmoTitular}
-                        inputMode="numeric"
-                        maxLength={14}
-                        className="w-full border border-gray-300 rounded-xl px-4 py-3"
-                        placeholder="CPF do titular"
-                      />
-
                       <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1">
-                          Data de nascimento do titular
+                          CPF do titular
                         </label>
 
                         <input
-                          type="date"
-                          name="tit_nasc"
-                          value={formData.tit_nasc}
-                          onChange={handleChange}
-                          required={!mesmoTitular}
-                          className="w-full border border-gray-300 rounded-xl px-4 py-3 bg-white text-gray-900"
+                          type="text"
+                          name="tit_cpf"
+                          value={
+                            formData.tit_cpf
+                          }
+                          onChange={
+                            handleChange
+                          }
+                          required={
+                            !mesmoTitular
+                          }
+                          disabled={
+                            titularValidado ||
+                            consultandoCpfTitular
+                          }
+                          inputMode="numeric"
+                          autoComplete="off"
+                          maxLength={14}
+                          className={`w-full border rounded-xl px-4 py-3 ${
+                            titularValidado
+                              ? 'border-green-300 bg-green-50 text-gray-700 cursor-not-allowed'
+                              : consultandoCpfTitular
+                                ? 'border-blue-300 bg-blue-50 text-gray-700 cursor-wait'
+                                : 'border-gray-300 bg-white'
+                          }`}
+                          placeholder="Digite o CPF do titular"
                         />
+
+                        {!titularValidado &&
+                          !consultandoCpfTitular &&
+                          somenteNumeros(
+                            formData.tit_cpf
+                          ).length > 0 &&
+                          somenteNumeros(
+                            formData.tit_cpf
+                          ).length <
+                            11 && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              A consulta será
+                              iniciada quando os 11
+                              números forem
+                              preenchidos.
+                            </p>
+                          )}
                       </div>
 
-                      <input
-                        type="email"
-                        name="tit_email"
-                        value={formData.tit_email}
-                        onChange={handleChange}
-                        required={!mesmoTitular}
-                        className="w-full border border-gray-300 rounded-xl px-4 py-3"
-                        placeholder="E-mail do titular"
-                      />
+                      {consultandoCpfTitular && (
+                        <div className="bg-blue-50 border border-blue-200 text-blue-800 text-sm font-semibold px-4 py-3 rounded-xl">
+                          Consultando o CPF do
+                          titular...
+                        </div>
+                      )}
 
-                      <input
-                        type="tel"
-                        name="tit_tel"
-                        value={formData.tit_tel}
-                        onChange={handleChange}
-                        required={!mesmoTitular}
-                        className="w-full border border-gray-300 rounded-xl px-4 py-3"
-                        placeholder="Telefone / WhatsApp do titular"
-                      />
+                      {erroTitular && (
+                        <div className="bg-red-50 border border-red-200 text-red-700 text-sm font-semibold px-4 py-3 rounded-xl">
+                          {erroTitular}
+                        </div>
+                      )}
+
+                      {titularValidado && (
+                        <>
+                          <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">
+                              Nome completo do
+                              titular
+                            </label>
+
+                            <input
+                              type="text"
+                              value={
+                                formData.tit_nome
+                              }
+                              disabled
+                              className="w-full border border-green-300 bg-green-50 text-gray-700 cursor-not-allowed rounded-xl px-4 py-3"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">
+                              Data de nascimento
+                              do titular
+                            </label>
+
+                            <input
+                              type="date"
+                              value={
+                                formData.tit_nasc
+                              }
+                              disabled
+                              className="w-full border border-green-300 bg-green-50 text-gray-700 cursor-not-allowed rounded-xl px-4 py-3"
+                            />
+                          </div>
+
+                          <div className="bg-green-50 border border-green-200 text-green-800 rounded-xl px-4 py-3">
+                            <p className="text-sm font-black">
+                              CPF do titular
+                              confirmado com
+                              sucesso.
+                            </p>
+                          </div>
+
+                          <input
+                            type="email"
+                            name="tit_email"
+                            value={
+                              formData.tit_email
+                            }
+                            onChange={
+                              handleChange
+                            }
+                            required={
+                              !mesmoTitular
+                            }
+                            className="w-full border border-gray-300 rounded-xl px-4 py-3"
+                            placeholder="E-mail do titular"
+                          />
+
+                          <input
+                            type="tel"
+                            name="tit_tel"
+                            value={
+                              formData.tit_tel
+                            }
+                            onChange={
+                              handleChange
+                            }
+                            required={
+                              !mesmoTitular
+                            }
+                            className="w-full border border-gray-300 rounded-xl px-4 py-3"
+                            placeholder="Telefone / WhatsApp do titular"
+                          />
+                        </>
+                      )}
                     </div>
                   )}
 
@@ -896,7 +1331,8 @@ export function FormIndividual() {
                     <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 text-sm font-semibold px-4 py-3 rounded-xl">
                       Aguarde. Estamos cadastrando
                       seus dados e emitindo sua
-                      cobrança. Não feche esta página.
+                      cobrança. Não feche esta
+                      página.
                     </div>
                   )}
 
@@ -908,7 +1344,13 @@ export function FormIndividual() {
 
                   <button
                     type="submit"
-                    disabled={loading}
+                    disabled={
+                      loading ||
+                      (
+                        !mesmoTitular &&
+                        !titularValidado
+                      )
+                    }
                     className="w-full bg-[#22C55E] hover:bg-[#16a34a] disabled:opacity-60 text-white font-black py-4 rounded-2xl uppercase tracking-wide transition-all"
                   >
                     {loading
@@ -938,14 +1380,16 @@ export function FormIndividual() {
                 <p>
                   O serviço será operado pela CLICK
                   LIFE SAÚDE (CNPJ
-                  39.549.271/0001-36), responsável
-                  pela prestação de consultas médicas
-                  à distância, nos termos da Lei nº
-                  13.989/2020 e da Resolução CFM nº
-                  2.314. O atendimento está disponível
-                  24h por dia para médicos generalistas
-                  e especialidades conforme agendamento
-                  administrativo.
+                  39.549.271/0001-36),
+                  responsável pela prestação de
+                  consultas médicas à distância,
+                  nos termos da Lei nº
+                  13.989/2020 e da Resolução CFM
+                  nº 2.314. O atendimento está
+                  disponível 24h por dia para
+                  médicos generalistas e
+                  especialidades conforme
+                  agendamento administrativo.
                 </p>
               </div>
 
@@ -958,9 +1402,9 @@ export function FormIndividual() {
                   Disponibilizado pela plataforma
                   SERVIDA BENEFÍCIOS LTDA (CNPJ
                   62.849.702/0001-00). Oferece
-                  descontos em mais de 250 parceiros
-                  em todo o país, sendo continuamente
-                  atualizado.
+                  descontos em mais de 250
+                  parceiros em todo o país, sendo
+                  continuamente atualizado.
                 </p>
               </div>
 
@@ -970,13 +1414,14 @@ export function FormIndividual() {
                 </h3>
 
                 <p>
-                  O serviço é prestado exclusivamente
-                  online.
+                  O serviço é prestado
+                  exclusivamente online.
                 </p>
 
                 <p>
                   A adesão é validada mediante o
-                  pagamento da taxa associativa mensal.
+                  pagamento da taxa associativa
+                  mensal.
                 </p>
 
                 <p>
@@ -992,22 +1437,23 @@ export function FormIndividual() {
                 </p>
 
                 <p>
-                  O associado declara a veracidade de
-                  todos os dados digitados no momento
-                  da adesão.
+                  O associado declara a veracidade
+                  de todos os dados digitados no
+                  momento da adesão.
                 </p>
 
                 <p>
                   É facultado ao SESSP realizar a
-                  substituição de convênios e serviços,
-                  mantendo a qualidade da entrega.
+                  substituição de convênios e
+                  serviços, mantendo a qualidade da
+                  entrega.
                 </p>
 
                 <p className="font-bold">
                   IMPORTANTE: A telemedicina NÃO
-                  substitui prontos-socorros em casos
-                  de emergência grave. Em risco de
-                  vida, ligue 192.
+                  substitui prontos-socorros em
+                  casos de emergência grave. Em
+                  risco de vida, ligue 192.
                 </p>
               </div>
             </div>
@@ -1017,7 +1463,9 @@ export function FormIndividual() {
                 type="checkbox"
                 checked={termosAceitos}
                 onChange={(e) =>
-                  setTermosAceitos(e.target.checked)
+                  setTermosAceitos(
+                    e.target.checked
+                  )
                 }
                 className="mt-1"
               />

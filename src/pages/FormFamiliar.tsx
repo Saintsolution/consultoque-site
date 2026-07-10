@@ -9,18 +9,30 @@ const WEBHOOK_CONSULTA_CPF =
 export function FormFamiliar() {
   const [mesmoTitular, setMesmoTitular] = useState(true);
   const [loading, setLoading] = useState(false);
+
   const [consultandoCpf, setConsultandoCpf] = useState(false);
   const [dadosValidados, setDadosValidados] = useState(false);
   const [cpfBloqueado, setCpfBloqueado] = useState(false);
 
+  const [consultandoCpfTitular, setConsultandoCpfTitular] =
+    useState(false);
+
+  const [titularValidado, setTitularValidado] =
+    useState(false);
+
   const [erro, setErro] = useState('');
   const [erroValidacao, setErroValidacao] = useState('');
+  const [erroTitular, setErroTitular] = useState('');
+
   const [sucesso, setSucesso] = useState(false);
   const [mostrarTermos, setMostrarTermos] = useState(false);
   const [termosAceitos, setTermosAceitos] = useState(false);
 
   const ultimoCpfConsultadoRef = useRef('');
   const consultaAtualRef = useRef(0);
+
+  const ultimoCpfTitularConsultadoRef = useRef('');
+  const consultaTitularAtualRef = useRef(0);
 
   const [dadosPagamento, setDadosPagamento] = useState({
     message: '',
@@ -58,7 +70,7 @@ export function FormFamiliar() {
     }
 
     const timer = window.setTimeout(() => {
-      consultarCpf(cpf);
+      consultarCpfAssociado(cpf);
     }, 700);
 
     return () => {
@@ -69,6 +81,37 @@ export function FormFamiliar() {
     dadosValidados,
     cpfBloqueado,
     consultandoCpf,
+  ]);
+
+  useEffect(() => {
+    if (mesmoTitular) {
+      return;
+    }
+
+    const cpf = somenteNumeros(formData.tit_cpf);
+
+    if (
+      titularValidado ||
+      consultandoCpfTitular ||
+      cpf.length !== 11 ||
+      !cpfValido(cpf) ||
+      cpf === ultimoCpfTitularConsultadoRef.current
+    ) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      consultarCpfTitular(cpf);
+    }, 700);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [
+    formData.tit_cpf,
+    mesmoTitular,
+    titularValidado,
+    consultandoCpfTitular,
   ]);
 
   function formatarData(data: string) {
@@ -217,6 +260,19 @@ export function FormFamiliar() {
     setErroValidacao('');
   }
 
+  function limparDadosTitular() {
+    setFormData((prev) => ({
+      ...prev,
+      tit_nome: '',
+      tit_nasc: '',
+      tit_email: '',
+      tit_tel: '',
+    }));
+
+    setTitularValidado(false);
+    setErroTitular('');
+  }
+
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement>
   ) {
@@ -228,6 +284,17 @@ export function FormFamiliar() {
         name === 'assoc_cpf' ||
         name === 'assoc_nome' ||
         name === 'assoc_nasc'
+      )
+    ) {
+      return;
+    }
+
+    if (
+      titularValidado &&
+      (
+        name === 'tit_cpf' ||
+        name === 'tit_nome' ||
+        name === 'tit_nasc'
       )
     ) {
       return;
@@ -255,13 +322,33 @@ export function FormFamiliar() {
       }
     }
 
+    if (name === 'tit_cpf') {
+      const cpfNovo = somenteNumeros(novoValor);
+      const cpfAnterior = somenteNumeros(formData.tit_cpf);
+
+      if (cpfNovo !== cpfAnterior) {
+        ultimoCpfTitularConsultadoRef.current = '';
+        limparDadosTitular();
+      }
+
+      if (cpfNovo.length === 11 && !cpfValido(cpfNovo)) {
+        setErroTitular(
+          'Informe um CPF válido para o titular.'
+        );
+      } else {
+        setErroTitular('');
+      }
+    }
+
     setFormData((prev) => ({
       ...prev,
       [name]: novoValor,
     }));
   }
 
-  async function consultarCpf(cpfRecebido: string) {
+  async function consultarCpfAssociado(
+    cpfRecebido: string
+  ) {
     const cpf = somenteNumeros(cpfRecebido);
 
     if (cpf.length !== 11) {
@@ -275,7 +362,9 @@ export function FormFamiliar() {
 
     ultimoCpfConsultadoRef.current = cpf;
 
-    const numeroConsulta = consultaAtualRef.current + 1;
+    const numeroConsulta =
+      consultaAtualRef.current + 1;
+
     consultaAtualRef.current = numeroConsulta;
 
     setConsultandoCpf(true);
@@ -283,15 +372,19 @@ export function FormFamiliar() {
     setErroValidacao('');
 
     try {
-      const response = await fetch(WEBHOOK_CONSULTA_CPF, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          cpf,
-        }),
-      });
+      const response = await fetch(
+        WEBHOOK_CONSULTA_CPF,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            cpf,
+            tipo_consulta: 'associado',
+          }),
+        }
+      );
 
       let data: any = null;
 
@@ -329,7 +422,9 @@ export function FormFamiliar() {
         '';
 
       const nascimento =
-        converterNascimentoParaInput(nascimentoRecebido);
+        converterNascimentoParaInput(
+          nascimentoRecebido
+        );
 
       if (!nome || !nascimento) {
         throw new Error(
@@ -345,26 +440,8 @@ export function FormFamiliar() {
         );
       }
 
-      if (idade < 18) {
-        setFormData((prev) => ({
-          ...prev,
-          assoc_nome: nome,
-          assoc_cpf: formatarCpfVisual(cpf),
-          assoc_nasc: nascimento,
-        }));
-
-        setCpfBloqueado(true);
-        setDadosValidados(false);
-
-        setErroValidacao(
-          data?.mensagem ||
-            'A contratação não pode continuar. O responsável precisa ser maior de 18 anos.'
-        );
-
-        return;
-      }
-
       if (
+        idade < 18 ||
         data?.maior_idade === false ||
         data?.status === 'bloqueado'
       ) {
@@ -422,14 +499,147 @@ export function FormFamiliar() {
     }
   }
 
+  async function consultarCpfTitular(
+    cpfRecebido: string
+  ) {
+    const cpf = somenteNumeros(cpfRecebido);
+
+    if (cpf.length !== 11) {
+      return;
+    }
+
+    if (!cpfValido(cpf)) {
+      setErroTitular(
+        'Informe um CPF válido para o titular.'
+      );
+      return;
+    }
+
+    ultimoCpfTitularConsultadoRef.current = cpf;
+
+    const numeroConsulta =
+      consultaTitularAtualRef.current + 1;
+
+    consultaTitularAtualRef.current =
+      numeroConsulta;
+
+    setConsultandoCpfTitular(true);
+    setErro('');
+    setErroTitular('');
+
+    try {
+      const response = await fetch(
+        WEBHOOK_CONSULTA_CPF,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            cpf,
+            tipo_consulta: 'titular',
+          }),
+        }
+      );
+
+      let data: any = null;
+
+      try {
+        data = await response.json();
+      } catch {
+        throw new Error(
+          'O servidor de consulta retornou uma resposta inválida.'
+        );
+      }
+
+      if (
+        numeroConsulta !==
+        consultaTitularAtualRef.current
+      ) {
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          data?.mensagem ||
+            'Não foi possível consultar o CPF do titular.'
+        );
+      }
+
+      const nome = somenteTexto(
+        data?.nome ||
+          data?.nome_completo ||
+          data?.name ||
+          ''
+      );
+
+      const nascimentoRecebido =
+        data?.data_nascimento ||
+        data?.nascimento ||
+        data?.birth_date ||
+        data?.birthdate ||
+        '';
+
+      const nascimento =
+        converterNascimentoParaInput(
+          nascimentoRecebido
+        );
+
+      if (!nome || !nascimento) {
+        throw new Error(
+          'A consulta não retornou nome e data de nascimento do titular.'
+        );
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        tit_nome: nome,
+        tit_cpf: formatarCpfVisual(cpf),
+        tit_nasc: nascimento,
+      }));
+
+      setTitularValidado(true);
+      setErroTitular('');
+    } catch (error) {
+      console.error(error);
+
+      ultimoCpfTitularConsultadoRef.current = '';
+
+      setFormData((prev) => ({
+        ...prev,
+        tit_nome: '',
+        tit_nasc: '',
+      }));
+
+      setTitularValidado(false);
+
+      setErroTitular(
+        error instanceof Error
+          ? error.message
+          : 'Não foi possível consultar o CPF do titular. Tente novamente.'
+      );
+    } finally {
+      if (
+        numeroConsulta ===
+        consultaTitularAtualRef.current
+      ) {
+        setConsultandoCpfTitular(false);
+      }
+    }
+  }
+
   function handleMesmoTitular(
     e: React.ChangeEvent<HTMLInputElement>
   ) {
     const marcado = e.target.checked;
 
     setMesmoTitular(marcado);
+    setErroTitular('');
 
     if (marcado) {
+      ultimoCpfTitularConsultadoRef.current = '';
+      setTitularValidado(false);
+
       setFormData((prev) => ({
         ...prev,
         tit_nome: '',
@@ -453,6 +663,13 @@ export function FormFamiliar() {
       return;
     }
 
+    if (!mesmoTitular && !titularValidado) {
+      setErro(
+        'Consulte e valide o CPF do titular antes de continuar.'
+      );
+      return;
+    }
+
     setTermosAceitos(false);
     setMostrarTermos(true);
   }
@@ -461,6 +678,15 @@ export function FormFamiliar() {
     if (!dadosValidados) {
       setErro(
         'Os dados do responsável ainda não foram validados.'
+      );
+
+      setMostrarTermos(false);
+      return;
+    }
+
+    if (!mesmoTitular && !titularValidado) {
+      setErro(
+        'Os dados do titular ainda não foram validados.'
       );
 
       setMostrarTermos(false);
@@ -828,67 +1054,119 @@ export function FormFamiliar() {
                         </h2>
 
                         <p className="text-sm text-gray-500 mt-1">
-                          Informe os dados da pessoa
-                          que utilizará o plano.
+                          Informe primeiro o CPF da
+                          pessoa que utilizará o plano.
                         </p>
                       </div>
 
-                      <input
-                        type="text"
-                        name="tit_nome"
-                        value={formData.tit_nome}
-                        onChange={handleChange}
-                        required={!mesmoTitular}
-                        className="w-full border border-gray-300 rounded-xl px-4 py-3"
-                        placeholder="Nome completo do titular"
-                      />
-
-                      <input
-                        type="text"
-                        name="tit_cpf"
-                        value={formData.tit_cpf}
-                        onChange={handleChange}
-                        required={!mesmoTitular}
-                        inputMode="numeric"
-                        maxLength={14}
-                        className="w-full border border-gray-300 rounded-xl px-4 py-3"
-                        placeholder="CPF do titular"
-                      />
-
                       <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1">
-                          Data de nascimento do titular
+                          CPF do titular
                         </label>
 
                         <input
-                          type="date"
-                          name="tit_nasc"
-                          value={formData.tit_nasc}
+                          type="text"
+                          name="tit_cpf"
+                          value={formData.tit_cpf}
                           onChange={handleChange}
                           required={!mesmoTitular}
-                          className="w-full border border-gray-300 rounded-xl px-4 py-3 bg-white text-gray-900"
+                          disabled={
+                            titularValidado ||
+                            consultandoCpfTitular
+                          }
+                          inputMode="numeric"
+                          autoComplete="off"
+                          maxLength={14}
+                          className={`w-full border rounded-xl px-4 py-3 ${
+                            titularValidado
+                              ? 'border-green-300 bg-green-50 text-gray-700 cursor-not-allowed'
+                              : consultandoCpfTitular
+                                ? 'border-blue-300 bg-blue-50 text-gray-700 cursor-wait'
+                                : 'border-gray-300 bg-white'
+                          }`}
+                          placeholder="Digite o CPF do titular"
                         />
+
+                        {!titularValidado &&
+                          !consultandoCpfTitular &&
+                          somenteNumeros(formData.tit_cpf).length > 0 &&
+                          somenteNumeros(formData.tit_cpf).length < 11 && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              A consulta será iniciada
+                              quando os 11 números forem
+                              preenchidos.
+                            </p>
+                          )}
                       </div>
 
-                      <input
-                        type="email"
-                        name="tit_email"
-                        value={formData.tit_email}
-                        onChange={handleChange}
-                        required={!mesmoTitular}
-                        className="w-full border border-gray-300 rounded-xl px-4 py-3"
-                        placeholder="E-mail do titular"
-                      />
+                      {consultandoCpfTitular && (
+                        <div className="bg-blue-50 border border-blue-200 text-blue-800 text-sm font-semibold px-4 py-3 rounded-xl">
+                          Consultando o CPF do titular...
+                        </div>
+                      )}
 
-                      <input
-                        type="tel"
-                        name="tit_tel"
-                        value={formData.tit_tel}
-                        onChange={handleChange}
-                        required={!mesmoTitular}
-                        className="w-full border border-gray-300 rounded-xl px-4 py-3"
-                        placeholder="Telefone / WhatsApp do titular"
-                      />
+                      {erroTitular && (
+                        <div className="bg-red-50 border border-red-200 text-red-700 text-sm font-semibold px-4 py-3 rounded-xl">
+                          {erroTitular}
+                        </div>
+                      )}
+
+                      {titularValidado && (
+                        <>
+                          <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">
+                              Nome completo do titular
+                            </label>
+
+                            <input
+                              type="text"
+                              value={formData.tit_nome}
+                              disabled
+                              className="w-full border border-green-300 bg-green-50 text-gray-700 cursor-not-allowed rounded-xl px-4 py-3"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">
+                              Data de nascimento do titular
+                            </label>
+
+                            <input
+                              type="date"
+                              value={formData.tit_nasc}
+                              disabled
+                              className="w-full border border-green-300 bg-green-50 text-gray-700 cursor-not-allowed rounded-xl px-4 py-3"
+                            />
+                          </div>
+
+                          <div className="bg-green-50 border border-green-200 text-green-800 rounded-xl px-4 py-3">
+                            <p className="text-sm font-black">
+                              CPF do titular confirmado
+                              com sucesso.
+                            </p>
+                          </div>
+
+                          <input
+                            type="email"
+                            name="tit_email"
+                            value={formData.tit_email}
+                            onChange={handleChange}
+                            required={!mesmoTitular}
+                            className="w-full border border-gray-300 rounded-xl px-4 py-3"
+                            placeholder="E-mail do titular"
+                          />
+
+                          <input
+                            type="tel"
+                            name="tit_tel"
+                            value={formData.tit_tel}
+                            onChange={handleChange}
+                            required={!mesmoTitular}
+                            className="w-full border border-gray-300 rounded-xl px-4 py-3"
+                            placeholder="Telefone / WhatsApp do titular"
+                          />
+                        </>
+                      )}
                     </div>
                   )}
 
@@ -908,7 +1186,13 @@ export function FormFamiliar() {
 
                   <button
                     type="submit"
-                    disabled={loading}
+                    disabled={
+                      loading ||
+                      (
+                        !mesmoTitular &&
+                        !titularValidado
+                      )
+                    }
                     className="w-full bg-[#22C55E] hover:bg-[#16a34a] disabled:opacity-60 text-white font-black py-4 rounded-2xl uppercase tracking-wide transition-all"
                   >
                     {loading
