@@ -3,7 +3,7 @@ import { AlertCircle, Clock, Users, TrendingUp } from 'lucide-react';
 const stats = [
   { icon: Clock, value: '4-6h', label: 'de espera no pronto-socorro' },
   { icon: Users, value: '80%', label: 'de casos resolvidos online' },
-  { icon: AlertCircle, value: '3-6m', label: 'esperando especialistas' },
+  { icon: AlertCircle, value: '3-6meses', label: 'esperando especialistas' },
   { icon: TrendingUp, value: '75%', label: 'de eficácia na telemedicina' },
 ];
 
