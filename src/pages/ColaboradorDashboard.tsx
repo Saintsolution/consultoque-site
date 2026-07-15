@@ -50,9 +50,11 @@ function normalizarPayload(data: any) {
     cod_colab: formatCod(payload?.cod_colab),
     colaborador: payload?.colaborador || {},
     vendas: asArray(payload?.vendas),
+    clientes: asArray(payload?.clientes),
     titulares: asArray(payload?.titulares),
     colaboradores: asArray(payload?.colaboradores),
     comissoes: asArray(payload?.comissoes),
+    dashboard: payload?.dashboard || {},
     resumo: payload?.resumo || {},
   };
 }
@@ -265,6 +267,7 @@ export function ColaboradorDashboard() {
   const codPai = formatCod(colaboradorLogado.cod_pai || '');
 
   const vendas = asArray(dados.vendas);
+  const clientes = asArray(dados.clientes);
   const titulares = asArray(dados.titulares);
   const colaboradores = asArray(dados.colaboradores);
   const comissoes = asArray(dados.comissoes);
@@ -283,10 +286,13 @@ export function ColaboradorDashboard() {
     comissoes
       .filter(
         (c: any) =>
-          String(c.status_comissao || '').toLowerCase() === 'pendente'
+          String(c.status_comissao || '')
+            .trim()
+            .toLowerCase() === 'pendente'
       )
       .reduce(
-        (acc: number, c: any) => acc + Number(c.vl_comissao || 0),
+        (acc: number, c: any) =>
+          acc + Number(c.valor_dashboard ?? c.vl_comissao ?? 0),
         0
       );
 
@@ -294,12 +300,20 @@ export function ColaboradorDashboard() {
     resumo.total_recebido ??
     comissoes
       .filter((c: any) => {
-        const status = String(c.status_comissao || '').toLowerCase();
+        const status = String(c.status_comissao || '')
+          .trim()
+          .toLowerCase();
 
-        return status === 'paga' || status === 'pago';
+        return (
+          status === 'paga' ||
+          status === 'pago' ||
+          status === 'recebida' ||
+          status === 'recebido'
+        );
       })
       .reduce(
-        (acc: number, c: any) => acc + Number(c.vl_comissao || 0),
+        (acc: number, c: any) =>
+          acc + Number(c.valor_dashboard ?? c.vl_comissao ?? 0),
         0
       );
 
@@ -577,6 +591,46 @@ export function ColaboradorDashboard() {
         />
       </Toggle>
 
+      <Toggle id="clientes" titulo="Clientes e cobranças">
+        <Tabela
+          colunas={[
+            'Contrato',
+            'Cliente',
+            'CPF',
+            'E-mail',
+            'Telefone',
+            'Plano',
+            'Valor',
+            'Status',
+            'Vencimento',
+            'Cobrança',
+          ]}
+          linhas={clientes.map((cliente: any) => [
+            cliente.num_contrato,
+            cliente.assoc_nome,
+            cliente.assoc_cpf,
+            cliente.assoc_email,
+            cliente.assoc_tel,
+            cliente.tipo_plano,
+            dinheiro(cliente.vl_total),
+            cliente.status_venda,
+            cliente.dia_vencimento,
+            cliente.url_pagamento ? (
+              <a
+                href={cliente.url_pagamento}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-700 font-bold underline"
+              >
+                Abrir
+              </a>
+            ) : (
+              '-'
+            ),
+          ])}
+        />
+      </Toggle>
+
       <Toggle id="titulares" titulo="Titulares vinculados">
         <Tabela
           colunas={[
@@ -624,15 +678,25 @@ export function ColaboradorDashboard() {
       </Toggle>
 
       <Toggle id="comissoes" titulo="Comissões e valores">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
           <Card
             titulo="Total vendido"
             valor={dinheiro(totalVendas)}
           />
 
           <Card
-            titulo="Comissões"
-            valor={resumo.qtd_comissoes ?? comissoes.length}
+            titulo="Comissão direta"
+            valor={dinheiro(resumo.total_comissao_direta || 0)}
+          />
+
+          <Card
+            titulo="Comissão da equipe"
+            valor={dinheiro(resumo.total_comissao_pai || 0)}
+          />
+
+          <Card
+            titulo="Total de comissões"
+            valor={dinheiro(resumo.total_comissoes || 0)}
           />
 
           <Card
@@ -685,24 +749,37 @@ export function ColaboradorDashboard() {
           colunas={[
             'Data',
             'Contrato',
+            'Origem',
             'Tipo Plano',
             'Tipo Comissão',
             'Base',
             '%',
-            'Comissão',
+            'Valor recebido',
             'Status',
             'Pagamento',
           ]}
           linhas={comissoes.map((c: any) => [
             c.dt_comissao,
             c.num_contrato,
+            c.origem_comissao === 'FILHO'
+              ? 'Comissão da equipe'
+              : 'Comissão direta',
             c.tipo_plano,
             c.tipo_comissao,
             dinheiro(c.vl_total || c.vl_base),
-            `${c.perc_comissao || 0}%`,
-            dinheiro(c.vl_comissao),
+            c.origem_comissao === 'FILHO'
+              ? '10%'
+              : `${c.perc_comissao || 0}%`,
+            dinheiro(
+              c.valor_dashboard ??
+              c.vl_comissao ??
+              0
+            ),
             c.status_comissao,
-            c.dt_prev__pagamento || c.dt_pagamento || '-',
+            c.dt_prev_pagamento ||
+              c.dt_prev__pagamento ||
+              c.dt_pagamento ||
+              '-',
           ])}
         />
       </Toggle>
