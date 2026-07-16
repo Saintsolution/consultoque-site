@@ -11,6 +11,7 @@ import { SejaAfiliado } from './pages/SejaAfiliado';
 import { InscricaoColaborador } from './pages/InscricaoColaborador';
 import { AdminAsaas } from './pages/AdminAsaas';
 import { ColaboradorDashboard } from './pages/ColaboradorDashboard';
+import { MaterialPromocional } from './pages/MaterialPromocional';
 import { EmpresaDashboard } from './pages/EmpresaDashboard';
 import { ClienteDashboard } from './pages/ClienteDashboard';
 import { Play } from './pages/Play';
@@ -33,6 +34,7 @@ export default function App() {
       'termos',
       'privacidade',
       'colaborador',
+      'material-promocional',
       'empresa',
       'cliente',
       'form-individual',
@@ -43,13 +45,19 @@ export default function App() {
     ];
 
     const isRefPath =
-      path && !isNaN(Number(path)) && !rotasExistentes.includes(path);
+      path &&
+      !isNaN(Number(path)) &&
+      !rotasExistentes.includes(path);
 
     const finalRef = refParam || (isRefPath ? path : null);
 
     if (finalRef) {
       const refFormatado = finalRef.padStart(4, '0');
-      localStorage.setItem('referenciador_id', refFormatado);
+
+      localStorage.setItem(
+        'referenciador_id',
+        refFormatado
+      );
 
       if (isRefPath) {
         window.history.replaceState({}, '', '/');
@@ -64,22 +72,70 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home />} />
 
-        <Route path="/form-individual" element={<FormIndividual />} />
-        <Route path="/form-familiar" element={<FormFamiliar />} />
-        <Route path="/form-coletivo" element={<FormColetivo />} />
+        <Route
+          path="/form-individual"
+          element={<FormIndividual />}
+        />
 
-        <Route path="/cliente" element={<ClienteDashboard />} />
-        <Route path="/colaborador" element={<ColaboradorDashboard />} />
-        <Route path="/empresa" element={<EmpresaDashboard />} />
-        <Route path="/admin" element={<AdminAsaas />} />
+        <Route
+          path="/form-familiar"
+          element={<FormFamiliar />}
+        />
 
-        <Route path="/seja-afiliado" element={<SejaAfiliado />} />
-        <Route path="/inscricao-colaborador" element={<InscricaoColaborador />} />
+        <Route
+          path="/form-coletivo"
+          element={<FormColetivo />}
+        />
+
+        <Route
+          path="/cliente"
+          element={<ClienteDashboard />}
+        />
+
+        <Route
+          path="/colaborador"
+          element={<ColaboradorDashboard />}
+        />
+
+        <Route
+          path="/material-promocional"
+          element={<MaterialPromocional />}
+        />
+
+        <Route
+          path="/empresa"
+          element={<EmpresaDashboard />}
+        />
+
+        <Route
+          path="/admin"
+          element={<AdminAsaas />}
+        />
+
+        <Route
+          path="/seja-afiliado"
+          element={<SejaAfiliado />}
+        />
+
+        <Route
+          path="/inscricao-colaborador"
+          element={<InscricaoColaborador />}
+        />
+
         <Route path="/play" element={<Play />} />
-        <Route path="/videoafiliados" element={<VideoAfiliados />} />
+
+        <Route
+          path="/videoafiliados"
+          element={<VideoAfiliados />}
+        />
+
         <Route path="/faq" element={<FAQ />} />
         <Route path="/termos" element={<Termos />} />
-        <Route path="/privacidade" element={<Privacidade />} />
+
+        <Route
+          path="/privacidade"
+          element={<Privacidade />}
+        />
 
         <Route path="*" element={<Home />} />
       </Routes>

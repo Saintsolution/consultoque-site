@@ -10,8 +10,6 @@ const WEBHOOK_DADOS_COLAB =
 const WEBHOOK_LOGIN_COLAB =
   'https://n8n.saintsolution.com.br/webhook/login_dash_colab';
 
-const LINK_MATERIAL_PROMOCIONAL =
-  'https://drive.google.com/drive/folders/1Nb4VhRqS7m1VAAmmP_uWR23qo0PqpoJ_?usp=sharing';
 
 function formatCod(value: any) {
   if (value === null || value === undefined || value === '') return '';
@@ -415,13 +413,11 @@ export function ColaboradorDashboard() {
               onClick={abrirEdicaoDados}
               className="text-sm bg-blue-700 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-800"
             >
-              Editar meus dados
+                         Editar meus dados
             </button>
 
             <a
-              href={LINK_MATERIAL_PROMOCIONAL}
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/material-promocional"
               className="text-sm bg-green-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-green-700"
             >
               Material promocional
