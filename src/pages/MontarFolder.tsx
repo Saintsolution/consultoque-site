@@ -246,6 +246,45 @@ export function MontarFolder() {
     janela.document.close();
   }
 
+  function solicitarImpressos() {
+    const canvas = canvasRef.current;
+
+    if (!canvas || !panfleto || !pronto) {
+      alert(
+        'Aguarde o panfleto ficar pronto antes de solicitar a impressão.'
+      );
+      return;
+    }
+
+    try {
+      const artePersonalizada = canvas.toDataURL(
+        'image/png',
+        1
+      );
+
+      sessionStorage.setItem(
+        'arte_personalizada',
+        artePersonalizada
+      );
+
+      sessionStorage.setItem(
+        'arte_modelo',
+        panfleto.id
+      );
+
+      window.location.href =
+        `/solicitar-impressos?modelo=${encodeURIComponent(
+          panfleto.id
+        )}`;
+    } catch (error) {
+      console.error(error);
+
+      alert(
+        'Não foi possível preparar a arte para o pedido. Gere o panfleto novamente e tente outra vez.'
+      );
+    }
+  }
+
   if (!codColab) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
@@ -441,14 +480,14 @@ export function MontarFolder() {
                 Imprimir agora
               </button>
 
-              <a
-                href={`/solicitar-impressos?modelo=${encodeURIComponent(
-                  panfleto.id
-                )}`}
-                className="block text-center w-full mt-3 bg-green-600 hover:bg-green-700 text-white font-bold px-5 py-3 rounded-xl"
+              <button
+                type="button"
+                onClick={solicitarImpressos}
+                disabled={!pronto}
+                className="w-full mt-3 bg-green-600 hover:bg-green-700 text-white font-bold px-5 py-3 rounded-xl disabled:bg-slate-300 disabled:cursor-not-allowed"
               >
                 Pedir 100 impressos
-              </a>
+              </button>
             </div>
 
             <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6">

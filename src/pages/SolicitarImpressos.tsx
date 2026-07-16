@@ -1,8 +1,19 @@
-import { useState } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import axios from 'axios';
+import { QRCodeCanvas } from 'qrcode.react';
 
 // Colocaremos o endereço do webhook aqui depois.
 const WEBHOOK_PEDIDO_IMPRESSOS = 'https://n8n.saintsolution.com.br/webhook/pedido-impressos';
+
+const LARGURA_FOLDER = 1187;
+const ALTURA_FOLDER = 1671;
+const QR_X = 827;
+const QR_Y = 1317;
+const QR_TAMANHO = 260;
 
 const arquivos = import.meta.glob(
   '../assets/panfletos/folder_*.{png,jpg,jpeg,webp}',
@@ -55,6 +66,8 @@ function somenteNumeros(value: string) {
 }
 
 export function SolicitarImpressos() {
+  const qrCanvasRef = useRef<HTMLCanvasElement | null>(null);
+
   const params = new URLSearchParams(window.location.search);
   const modeloId = params.get('modelo') || '';
 
@@ -66,9 +79,24 @@ export function SolicitarImpressos() {
     localStorage.getItem('cod_colab')
   );
 
+  const linkVenda = codColab
+    ? `https://consultoque.com.br/${codColab}`
+    : '';
+
+  const arteSalva =
+    sessionStorage.getItem('arte_modelo') === modeloId
+      ? sessionStorage.getItem('arte_personalizada') || ''
+      : '';
+
   const [enviando, setEnviando] = useState(false);
   const [pedidoEnviado, setPedidoEnviado] = useState(false);
   const [numeroPedido, setNumeroPedido] = useState('');
+  const [artePersonalizada, setArtePersonalizada] =
+    useState(arteSalva);
+  const [preparandoArte, setPreparandoArte] = useState(
+    !arteSalva
+  );
+  const [erroArte, setErroArte] = useState('');
 
   const [formData, setFormData] = useState({
     nome_colab:
@@ -85,6 +113,87 @@ export function SolicitarImpressos() {
     referencia: '',
     confirmacao_endereco: false,
   });
+
+  function gerarArtePersonalizada() {
+    if (!panfleto || !linkVenda) return;
+
+    const qrCanvas = qrCanvasRef.current;
+
+    if (!qrCanvas) return;
+
+    setPreparandoArte(true);
+    setErroArte('');
+
+    const imagemBase = new Image();
+
+    imagemBase.onload = () => {
+      const canvas = document.createElement('canvas');
+      const contexto = canvas.getContext('2d');
+
+      if (!contexto) {
+        setErroArte('Não foi possível preparar a arte.');
+        setPreparandoArte(false);
+        return;
+      }
+
+      canvas.width = LARGURA_FOLDER;
+      canvas.height = ALTURA_FOLDER;
+
+      contexto.drawImage(
+        imagemBase,
+        0,
+        0,
+        LARGURA_FOLDER,
+        ALTURA_FOLDER
+      );
+
+      contexto.fillStyle = '#ffffff';
+      contexto.fillRect(
+        QR_X,
+        QR_Y,
+        QR_TAMANHO,
+        QR_TAMANHO
+      );
+
+      contexto.drawImage(
+        qrCanvas,
+        QR_X,
+        QR_Y,
+        QR_TAMANHO,
+        QR_TAMANHO
+      );
+
+      const novaArte = canvas.toDataURL('image/png', 1);
+
+      sessionStorage.setItem(
+        'arte_personalizada',
+        novaArte
+      );
+      sessionStorage.setItem('arte_modelo', panfleto.id);
+
+      setArtePersonalizada(novaArte);
+      setPreparandoArte(false);
+    };
+
+    imagemBase.onerror = () => {
+      setErroArte('Não foi possível carregar o panfleto.');
+      setPreparandoArte(false);
+    };
+
+    imagemBase.src = panfleto.imagem;
+  }
+
+  useEffect(() => {
+    if (!panfleto || !linkVenda || artePersonalizada) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      gerarArtePersonalizada();
+    }, 150);
+
+    return () => window.clearTimeout(timer);
+  }, [modeloId, linkVenda]);
 
   function alterarCampo(
     campo: keyof typeof formData,
@@ -161,6 +270,13 @@ export function SolicitarImpressos() {
       return;
     }
 
+    if (!artePersonalizada) {
+      alert(
+        'Aguarde a preparação da arte personalizada antes de enviar.'
+      );
+      return;
+    }
+
     if (!WEBHOOK_PEDIDO_IMPRESSOS) {
       alert(
         'O formulário está pronto, mas o webhook do n8n ainda será configurado.'
@@ -193,9 +309,10 @@ export function SolicitarImpressos() {
             .trim()
             .toUpperCase(),
           referencia: formData.referencia.trim(),
+          arte_base64: artePersonalizada,
         },
         {
-          timeout: 15000,
+          timeout: 60000,
         }
       );
 
@@ -227,6 +344,9 @@ export function SolicitarImpressos() {
 
       setNumeroPedido(retorno?.cod_pedido || '');
       setPedidoEnviado(true);
+
+      sessionStorage.removeItem('arte_personalizada');
+      sessionStorage.removeItem('arte_modelo');
 
       window.scrollTo({
         top: 0,
@@ -318,6 +438,21 @@ export function SolicitarImpressos() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
+      <div
+        aria-hidden="true"
+        className="fixed -left-[9999px] top-0"
+      >
+        <QRCodeCanvas
+          ref={qrCanvasRef}
+          value={linkVenda}
+          size={520}
+          level="H"
+          marginSize={2}
+          bgColor="#ffffff"
+          fgColor="#000000"
+        />
+      </div>
+
       <header className="bg-white border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -372,10 +507,32 @@ export function SolicitarImpressos() {
             <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
               <div className="bg-slate-100 p-4">
                 <img
-                  src={panfleto.imagem}
+                  src={artePersonalizada || panfleto.imagem}
                   alt={panfleto.titulo}
                   className="w-full rounded-xl shadow-sm"
                 />
+
+                {preparandoArte && (
+                  <p className="text-sm font-bold text-blue-700 text-center mt-3">
+                    Aplicando seu QR Code...
+                  </p>
+                )}
+
+                {erroArte && (
+                  <div className="text-center mt-3">
+                    <p className="text-sm font-bold text-red-700">
+                      {erroArte}
+                    </p>
+
+                    <button
+                      type="button"
+                      onClick={gerarArtePersonalizada}
+                      className="text-sm font-bold text-blue-700 underline mt-2"
+                    >
+                      Tentar novamente
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div className="p-5">
@@ -578,11 +735,13 @@ export function SolicitarImpressos() {
 
               <button
                 type="submit"
-                disabled={enviando}
+                disabled={enviando || preparandoArte || !artePersonalizada}
                 className="w-full bg-green-600 hover:bg-green-700 text-white font-black text-lg px-6 py-4 rounded-xl disabled:bg-slate-400 disabled:cursor-not-allowed"
               >
                 {enviando
                   ? 'Enviando pedido...'
+                  : preparandoArte
+                    ? 'Preparando sua arte...'
                   : 'Enviar meu pedido'}
               </button>
 
