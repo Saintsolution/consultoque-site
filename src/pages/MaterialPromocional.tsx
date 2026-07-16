@@ -351,10 +351,13 @@ export function MaterialPromocional() {
               numero="3"
               cor="preto"
               titulo="Material impresso"
-              descricao="Folders e folhetos para imprimir e divulgar em locais onde você tenha autorização."
-              instrucao="Use seu QR Code no espaço reservado e teste o código antes da impressão."
-              textoBotao="Abrir materiais"
-              link={LINK_MATERIAL_IMPRESSO}
+              descricao="Escolha um panfleto, veja seu QR Code aplicado automaticamente e baixe a arte pronta para imprimir."
+              instrucao="O sistema usa seu número de colaborador e prepara o panfleto sem você precisar encaixar o QR Code manualmente."
+              textoBotao="Escolher meu panfleto"
+              link="/panfletos-promocionais"
+              novaAba={false}
+              linkSecundario={LINK_MATERIAL_IMPRESSO}
+              textoLinkSecundario="Ver arquivos originais no Drive"
             />
           </div>
         </section>
@@ -417,22 +420,22 @@ export function MaterialPromocional() {
 
                 <div className="mt-6 bg-white/10 border border-white/20 rounded-xl p-4">
                   <p className="font-bold">
-                    Em breve nesta página
+                    Escolha primeiro o seu panfleto
                   </p>
 
                   <p className="text-sm text-blue-50 mt-1">
-                    Estamos preparando o formulário para você informar
-                    seu endereço e solicitar o envio.
+                    Depois de escolher a arte, você poderá baixar,
+                    imprimir ou preencher seus dados para solicitar
+                    a remessa gratuita.
                   </p>
                 </div>
 
-                <button
-                  type="button"
-                  disabled
-                  className="w-full mt-6 bg-white text-blue-800 font-black px-5 py-3 rounded-xl opacity-70 cursor-not-allowed"
+                <a
+                  href="/panfletos-promocionais"
+                  className="block text-center w-full mt-6 bg-white hover:bg-blue-50 text-blue-800 font-black px-5 py-3 rounded-xl transition-colors"
                 >
-                  Solicitação disponível em breve
-                </button>
+                  Escolher meu panfleto
+                </a>
               </div>
             </div>
           </div>
@@ -480,6 +483,9 @@ type CardMaterialProps = {
   instrucao: string;
   textoBotao: string;
   link: string;
+  novaAba?: boolean;
+  linkSecundario?: string;
+  textoLinkSecundario?: string;
 };
 
 function CardMaterial({
@@ -490,6 +496,9 @@ function CardMaterial({
   instrucao,
   textoBotao,
   link,
+  novaAba = true,
+  linkSecundario,
+  textoLinkSecundario,
 }: CardMaterialProps) {
   const estilos = {
     azul: {
@@ -536,12 +545,23 @@ function CardMaterial({
 
       <a
         href={link}
-        target="_blank"
-        rel="noopener noreferrer"
+        target={novaAba ? '_blank' : undefined}
+        rel={novaAba ? 'noopener noreferrer' : undefined}
         className={`mt-6 text-center text-white font-bold px-5 py-3 rounded-xl transition-colors ${estilo.botao}`}
       >
         {textoBotao}
       </a>
+
+      {linkSecundario && textoLinkSecundario && (
+        <a
+          href={linkSecundario}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-3 text-center text-sm font-bold text-blue-700 hover:text-blue-900 hover:underline"
+        >
+          {textoLinkSecundario}
+        </a>
+      )}
     </article>
   );
 }

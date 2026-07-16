@@ -12,6 +12,9 @@ import { InscricaoColaborador } from './pages/InscricaoColaborador';
 import { AdminAsaas } from './pages/AdminAsaas';
 import { ColaboradorDashboard } from './pages/ColaboradorDashboard';
 import { MaterialPromocional } from './pages/MaterialPromocional';
+import { PanfletosPromocionais } from './pages/PanfletosPromocionais';
+import { MontarFolder } from './pages/MontarFolder';
+import { SolicitarImpressos } from './pages/SolicitarImpressos';
 import { EmpresaDashboard } from './pages/EmpresaDashboard';
 import { ClienteDashboard } from './pages/ClienteDashboard';
 import { Play } from './pages/Play';
@@ -22,7 +25,10 @@ import { Privacidade } from './pages/Privacidade';
 
 export default function App() {
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(
+      window.location.search
+    );
+
     const refParam = params.get('ref');
     const path = window.location.pathname.substring(1);
 
@@ -35,6 +41,9 @@ export default function App() {
       'privacidade',
       'colaborador',
       'material-promocional',
+      'panfletos-promocionais',
+      'montar-folder',
+      'solicitar-impressos',
       'empresa',
       'cliente',
       'form-individual',
@@ -45,14 +54,17 @@ export default function App() {
     ];
 
     const isRefPath =
-      path &&
-      !isNaN(Number(path)) &&
+      path !== '' &&
+      /^\d+$/.test(path) &&
       !rotasExistentes.includes(path);
 
-    const finalRef = refParam || (isRefPath ? path : null);
+    const finalRef =
+      refParam || (isRefPath ? path : null);
 
     if (finalRef) {
-      const refFormatado = finalRef.padStart(4, '0');
+      const refFormatado = String(finalRef)
+        .replace(/\D/g, '')
+        .padStart(4, '0');
 
       localStorage.setItem(
         'referenciador_id',
@@ -70,7 +82,10 @@ export default function App() {
       <ScrollToTop />
 
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route
+          path="/"
+          element={<Home />}
+        />
 
         <Route
           path="/form-individual"
@@ -103,6 +118,21 @@ export default function App() {
         />
 
         <Route
+          path="/panfletos-promocionais"
+          element={<PanfletosPromocionais />}
+        />
+
+        <Route
+          path="/montar-folder"
+          element={<MontarFolder />}
+        />
+
+        <Route
+          path="/solicitar-impressos"
+          element={<SolicitarImpressos />}
+        />
+
+        <Route
           path="/empresa"
           element={<EmpresaDashboard />}
         />
@@ -122,22 +152,35 @@ export default function App() {
           element={<InscricaoColaborador />}
         />
 
-        <Route path="/play" element={<Play />} />
+        <Route
+          path="/play"
+          element={<Play />}
+        />
 
         <Route
           path="/videoafiliados"
           element={<VideoAfiliados />}
         />
 
-        <Route path="/faq" element={<FAQ />} />
-        <Route path="/termos" element={<Termos />} />
+        <Route
+          path="/faq"
+          element={<FAQ />}
+        />
+
+        <Route
+          path="/termos"
+          element={<Termos />}
+        />
 
         <Route
           path="/privacidade"
           element={<Privacidade />}
         />
 
-        <Route path="*" element={<Home />} />
+        <Route
+          path="*"
+          element={<Home />}
+        />
       </Routes>
     </>
   );
