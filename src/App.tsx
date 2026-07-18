@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
+
 import { ScrollToTop } from './components/ScrollToTop';
 
 import { Home } from './pages/Home';
@@ -25,55 +26,91 @@ import { Privacidade } from './pages/Privacidade';
 
 export default function App() {
   useEffect(() => {
+    /*
+     * Aceita indicação nestes formatos:
+     *
+     * consultoque.com.br/0002
+     * consultoque.com.br/?ref=0002
+     */
     const params = new URLSearchParams(
       window.location.search
     );
 
     const refParam = params.get('ref');
-    const path = window.location.pathname.substring(1);
 
-    const rotasExistentes = [
-      'admin',
-      'seja-afiliado',
-      'play',
-      'faq',
-      'termos',
-      'privacidade',
-      'colaborador',
-      'material-promocional',
-      'panfletos-promocionais',
-      'montar-folder',
-      'solicitar-impressos',
-      'empresa',
-      'cliente',
-      'form-individual',
-      'form-familiar',
-      'form-coletivo',
-      'inscricao-colaborador',
-      'videoafiliados',
-    ];
+    const caminhoCompleto =
+      window.location.pathname.substring(1);
 
+    /*
+     * Só considera referência pelo caminho quando existe
+     * apenas um número na raiz.
+     *
+     * Exemplos válidos:
+     * /2
+     * /0002
+     *
+     * Exemplos ignorados:
+     * /play/crianca-noite/0002
+     * /colaborador
+     * /cliente
+     */
     const isRefPath =
-      path !== '' &&
-      /^\d+$/.test(path) &&
-      !rotasExistentes.includes(path);
+      caminhoCompleto !== '' &&
+      /^\d{1,4}$/.test(caminhoCompleto);
 
-    const finalRef =
-      refParam || (isRefPath ? path : null);
+    const referenciaEncontrada =
+      refParam || (isRefPath ? caminhoCompleto : null);
 
-    if (finalRef) {
-      const refFormatado = String(finalRef)
-        .replace(/\D/g, '')
-        .padStart(4, '0');
+    if (!referenciaEncontrada) {
+      return;
+    }
 
-      localStorage.setItem(
-        'referenciador_id',
-        refFormatado
+    const somenteNumeros = String(
+      referenciaEncontrada
+    ).replace(/\D/g, '');
+
+    /*
+     * Impede gravar referências vazias ou maiores
+     * que quatro dígitos.
+     */
+    if (
+      !somenteNumeros ||
+      somenteNumeros.length > 4
+    ) {
+      return;
+    }
+
+    const refFormatado =
+      somenteNumeros.padStart(4, '0');
+
+    /*
+     * Salva no localStorage.
+     */
+    localStorage.setItem(
+      'referenciador_id',
+      refFormatado
+    );
+
+    /*
+     * Salva também como cookie por 30 dias.
+     */
+    document.cookie = [
+      `referenciador_id=${refFormatado}`,
+      'path=/',
+      `max-age=${60 * 60 * 24 * 30}`,
+      'SameSite=Lax',
+    ].join('; ');
+
+    /*
+     * Quando o visitante entra por /0002,
+     * limpa visualmente o endereço sem recarregar.
+     */
+    if (isRefPath) {
+      window.history.replaceState(
+        {},
+        '',
+        '/'
       );
-
-      if (isRefPath) {
-        window.history.replaceState({}, '', '/');
-      }
     }
   }, []);
 
@@ -152,6 +189,34 @@ export default function App() {
           element={<InscricaoColaborador />}
         />
 
+        {/*
+         * Página universal dos vídeos promocionais.
+         *
+         * Exemplo:
+         * /play/crianca-noite/0002
+         */}
+        <Route
+          path="/play/:video/:ref"
+          element={<Play />}
+        />
+
+        {/*
+         * Permite testar sem informar colaborador.
+         * O Play utilizará 0001.
+         *
+         * Exemplo:
+         * /play/crianca-noite
+         */}
+        <Route
+          path="/play/:video"
+          element={<Play />}
+        />
+
+        {/*
+         * Mantida como segurança.
+         * Sem nome de vídeo, o Play mostrará
+         * "Vídeo não encontrado".
+         */}
         <Route
           path="/play"
           element={<Play />}
@@ -177,6 +242,11 @@ export default function App() {
           element={<Privacidade />}
         />
 
+        {/*
+         * Também permite que /0001 seja inicialmente
+         * renderizado como Home. O useEffect acima
+         * salva a referência e limpa o endereço.
+         */}
         <Route
           path="*"
           element={<Home />}

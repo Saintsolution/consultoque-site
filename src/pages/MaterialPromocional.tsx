@@ -10,6 +10,37 @@ const LINK_TEXTOS =
 const LINK_MATERIAL_IMPRESSO =
   'https://drive.google.com/drive/folders/1qkwIorYxgoIhFYFfrMfvq5y2ogrX8rlr?usp=drive_link';
 
+const VIDEOS_PROMOCIONAIS = [
+  {
+    slug: 'crianca-noite',
+    titulo: 'Criança durante a noite',
+    descricao:
+      'Uma família encontra atendimento médico para o filho durante a madrugada.',
+    formato: 'Vertical',
+  },
+  {
+    slug: 'morena-tiktok',
+    titulo: 'Morena TikTok',
+    descricao:
+      'Vídeo curto e direto, preparado para compartilhamento em redes sociais.',
+    formato: 'Vertical',
+  },
+  {
+    slug: 'japones-doente',
+    titulo: 'Japonês doente',
+    descricao:
+      'Campanha promocional mostrando uma situação cotidiana e a solução ConsulToque.',
+    formato: 'Vertical',
+  },
+  {
+    slug: 'medico-explica',
+    titulo: 'Médico explica',
+    descricao:
+      'Um médico explica de maneira simples como funciona o atendimento.',
+    formato: 'Horizontal',
+  },
+] as const;
+
 function formatCod(value: string | null) {
   if (!value) return '';
 
@@ -21,6 +52,7 @@ function formatCod(value: string | null) {
 export function MaterialPromocional() {
   const qrCodeRef = useRef<SVGSVGElement | null>(null);
   const [copiado, setCopiado] = useState(false);
+  const [videoCopiado, setVideoCopiado] = useState<string | null>(null);
 
   const codColab = formatCod(localStorage.getItem('cod_colab'));
   const nomeColab =
@@ -56,6 +88,58 @@ export function MaterialPromocional() {
       'Olá! Quero apresentar a você a ConsulToque.',
       'Conheça nossos planos e veja como funciona:',
       linkVenda,
+    ].join('\n\n');
+
+    const urlWhatsApp =
+      `https://wa.me/?text=${encodeURIComponent(mensagem)}`;
+
+    window.open(
+      urlWhatsApp,
+      '_blank',
+      'noopener,noreferrer'
+    );
+  }
+
+  function criarLinkVideo(slug: string) {
+    if (!codColab) return '';
+
+    return `https://consultoque.com.br/play/${slug}/${codColab}`;
+  }
+
+  async function copiarLinkVideo(slug: string) {
+    const linkVideo = criarLinkVideo(slug);
+
+    if (!linkVideo) return;
+
+    try {
+      await navigator.clipboard.writeText(linkVideo);
+      setVideoCopiado(slug);
+
+      window.setTimeout(() => {
+        setVideoCopiado((atual) =>
+          atual === slug ? null : atual
+        );
+      }, 2500);
+    } catch (error) {
+      console.error(error);
+      window.prompt(
+        'Copie o link deste vídeo:',
+        linkVideo
+      );
+    }
+  }
+
+  function compartilharVideoWhatsApp(
+    slug: string,
+    titulo: string
+  ) {
+    const linkVideo = criarLinkVideo(slug);
+
+    if (!linkVideo) return;
+
+    const mensagem = [
+      `Assista a este vídeo da ConsulToque: ${titulo}`,
+      linkVideo,
     ].join('\n\n');
 
     const urlWhatsApp =
@@ -306,6 +390,104 @@ export function MaterialPromocional() {
                 </p>
               </div>
             </div>
+          </div>
+        </section>
+
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 pt-14">
+          <div className="max-w-3xl mb-8">
+            <p className="text-sm font-black uppercase tracking-wider text-blue-700">
+              Vídeos com sua indicação
+            </p>
+
+            <h2 className="text-3xl font-black mt-2">
+              Escolha um vídeo e envie seu link
+            </h2>
+
+            <p className="text-slate-600 leading-relaxed mt-3">
+              Todos os links abaixo já contêm seu número de
+              colaborador. Quando a pessoa assistir e clicar em
+              Saiba Mais, sua indicação continuará registrada.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+            {VIDEOS_PROMOCIONAIS.map((video) => {
+              const linkVideo = criarLinkVideo(video.slug);
+              const foiCopiado = videoCopiado === video.slug;
+
+              return (
+                <article
+                  key={video.slug}
+                  className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col"
+                >
+                  <div className="bg-gradient-to-br from-blue-800 via-blue-700 to-green-600 text-white p-6">
+                    <div className="w-12 h-12 rounded-full bg-white/15 border border-white/20 flex items-center justify-center text-2xl">
+                      ▶️
+                    </div>
+
+                    <p className="text-xs font-black uppercase tracking-wider text-green-200 mt-5">
+                      {video.formato}
+                    </p>
+
+                    <h3 className="text-xl font-black mt-1">
+                      {video.titulo}
+                    </h3>
+                  </div>
+
+                  <div className="p-5 flex flex-col flex-1">
+                    <p className="text-slate-600 text-sm leading-relaxed">
+                      {video.descricao}
+                    </p>
+
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 mt-5">
+                      <p className="text-xs font-bold uppercase text-slate-500">
+                        Seu link deste vídeo
+                      </p>
+
+                      <p className="text-sm text-blue-800 font-bold break-all mt-1">
+                        {linkVideo}
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-2 mt-5">
+                      <a
+                        href={linkVideo}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-center bg-slate-900 hover:bg-black text-white font-bold px-4 py-3 rounded-xl transition-colors"
+                      >
+                        Assistir ao vídeo
+                      </a>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          compartilharVideoWhatsApp(
+                            video.slug,
+                            video.titulo
+                          )
+                        }
+                        className="bg-green-600 hover:bg-green-700 text-white font-bold px-4 py-3 rounded-xl transition-colors"
+                      >
+                        Enviar pelo WhatsApp
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          copiarLinkVideo(video.slug)
+                        }
+                        className="bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-800 font-bold px-4 py-3 rounded-xl transition-colors"
+                      >
+                        {foiCopiado
+                          ? '✓ Link copiado!'
+                          : 'Copiar link do vídeo'}
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
           </div>
         </section>
 
