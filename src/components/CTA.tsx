@@ -69,7 +69,7 @@ export function CTA() {
               R$ 33,00
             </span>
             <span className="text-[10px] md:text-sm font-bold uppercase opacity-90">
-              mensais
+              REAIS
             </span>
           </a>
 

@@ -868,7 +868,7 @@ export function FormFamiliar() {
 
             <p className="text-center text-gray-500 mt-2 mb-8">
               1 titular + 3 dependentes •
-              Teleconsulta 24h por R$ 66,00 mensais.
+              Teleconsulta 24h por R$ 66,00 REAIS.
             </p>
 
             <form

@@ -39,7 +39,7 @@ export function Hero() {
             </span>
 
             <span className="text-xs font-bold uppercase opacity-90">
-              mensais
+              REAIS
             </span>
           </Link>
 
@@ -60,7 +60,7 @@ export function Hero() {
             </span>
 
             <span className="text-xs font-bold uppercase opacity-90">
-              mensais
+              REAIS
             </span>
           </Link>
 

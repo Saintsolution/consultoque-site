@@ -1,13 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Play as PlayIcon } from "lucide-react";
-
-declare global {
-  interface Window {
-    _wq: any[];
-    Wistia: any;
-  }
-}
 
 interface VideoConfig {
   titulo: string;
@@ -16,10 +9,29 @@ interface VideoConfig {
   aspectRatio: string;
 }
 
+interface WistiaIframeApi {
+  currentTime: number;
+  duration: number;
+  play: () => Promise<void> | void;
+  addEventListener: (
+    evento: string,
+    callback: () => void
+  ) => void;
+  removeEventListener: (
+    evento: string,
+    callback: () => void
+  ) => void;
+}
+
+interface WistiaIframeElement
+  extends HTMLIFrameElement {
+  wistiaApi?: WistiaIframeApi;
+}
+
 const videosPromocionais: Record<string, VideoConfig> = {
   "crianca-noite": {
     titulo: "Criança durante a noite",
-    wistiaId: "p0tnqk8s6k",
+    wistiaId: "bc1abxofrt",
     formato: "vertical",
     aspectRatio: "9/16",
   },
@@ -52,9 +64,14 @@ export function Play() {
     ref: string;
   }>();
 
-  const [showButton, setShowButton] = useState(false);
-  const [videoReady, setVideoReady] = useState(false);
+  const iframeRef =
+    useRef<WistiaIframeElement | null>(null);
 
+  const [showButton, setShowButton] =
+    useState(false);
+
+  const [videoReady, setVideoReady] =
+    useState(false);
 
   const videoSelecionado = nomeVideo
     ? videosPromocionais[nomeVideo]
@@ -72,15 +89,18 @@ export function Play() {
    * /play/crianca-noite
    */
   useEffect(() => {
-    const somenteNumeros = String(ref ?? "")
-      .replace(/\D/g, "");
+    const somenteNumeros = String(ref ?? "").replace(
+      /\D/g,
+      ""
+    );
 
     const referenciaDoLinkValida =
       somenteNumeros.length >= 1 &&
       somenteNumeros.length <= 4;
 
-    const referenciaSalva =
-      localStorage.getItem("referenciador_id");
+    const referenciaSalva = localStorage.getItem(
+      "referenciador_id"
+    );
 
     const referenciaSalvaValida =
       referenciaSalva &&
@@ -91,8 +111,6 @@ export function Play() {
       : referenciaSalvaValida
         ? referenciaSalva
         : "0001";
-
-   
 
     localStorage.setItem(
       "referenciador_id",
@@ -119,7 +137,8 @@ export function Play() {
   }, [ref, nomeVideo]);
 
   /*
-   * Carrega e controla o vídeo da Wistia.
+   * Prepara a página e carrega o script necessário
+   * para acessar a API do iframe da Wistia.
    */
   useEffect(() => {
     if (!wistiaId) return;
@@ -133,101 +152,22 @@ export function Play() {
     document.body.style.backgroundColor = "black";
     document.body.style.overflowY = "auto";
 
-    window._wq = window._wq || [];
-
-    window._wq.push({
-      id: wistiaId,
-
-      options: {
-        autoPlay: true,
-        playerColor: "2566af",
-      },
-
-      onReady: (wistiaVideo: any) => {
-        setVideoReady(true);
-
-        /*
-         * Mostra o botão faltando cinco segundos.
-         */
-        const verificarTempo = () => {
-          const tempoAtual = Number(
-            wistiaVideo.time()
-          );
-
-          const duracao = Number(
-            wistiaVideo.duration()
-          );
-
-          if (
-            !Number.isFinite(tempoAtual) ||
-            !Number.isFinite(duracao) ||
-            duracao <= 0
-          ) {
-            return;
-          }
-
-          const tempoRestante =
-            duracao - tempoAtual;
-
-          if (tempoRestante <= 5) {
-            setShowButton(true);
-          }
-        };
-
-        wistiaVideo.bind(
-          "secondchange",
-          verificarTempo
-        );
-
-        /*
-         * Continua mostrando depois que terminar.
-         */
-        wistiaVideo.bind("end", () => {
-          setShowButton(true);
-        });
-
-        wistiaVideo.play();
-      },
-    });
-
-    /*
-     * Script específico do vídeo.
-     */
-    const scriptVideo =
-      document.createElement("script");
-
-    scriptVideo.src =
-      `https://fast.wistia.com/embed/medias/${wistiaId}.jsonp`;
-
-    scriptVideo.async = true;
-    scriptVideo.dataset.wistiaVideo = wistiaId;
-
-    document.body.appendChild(scriptVideo);
-
-    /*
-     * Script principal da Wistia.
-     * Só adiciona se ainda não estiver carregado.
-     */
-    const scriptPrincipalExistente =
+    const scriptExistente =
       document.querySelector<HTMLScriptElement>(
-        'script[data-wistia-principal="true"]'
+        'script[data-wistia-iframe-api="true"]'
       );
 
-    if (!scriptPrincipalExistente) {
-      const scriptPrincipal =
+    if (!scriptExistente) {
+      const script =
         document.createElement("script");
 
-      scriptPrincipal.src =
-        "https://fast.wistia.com/assets/external/E-v1.js";
+      script.src =
+        "https://fast.wistia.net/player.js";
 
-      scriptPrincipal.async = true;
+      script.async = true;
+      script.dataset.wistiaIframeApi = "true";
 
-      scriptPrincipal.dataset.wistiaPrincipal =
-        "true";
-
-      document.body.appendChild(
-        scriptPrincipal
-      );
+      document.body.appendChild(script);
     }
 
     return () => {
@@ -236,18 +176,123 @@ export function Play() {
 
       document.body.style.backgroundColor = "";
       document.body.style.overflowY = "";
-
-      if (
-        document.body.contains(scriptVideo)
-      ) {
-        document.body.removeChild(scriptVideo);
-      }
     };
   }, [wistiaId]);
 
   /*
+   * Depois que o iframe carregar, procura a API
+   * da Wistia e controla o botão final.
+   */
+  useEffect(() => {
+    if (!videoReady || !wistiaId) return;
+
+    let api: WistiaIframeApi | undefined;
+    let tentativas = 0;
+    let cancelado = false;
+
+    const verificarTempo = () => {
+      if (!api) return;
+
+      const tempoAtual = Number(api.currentTime);
+      const duracao = Number(api.duration);
+
+      if (
+        !Number.isFinite(tempoAtual) ||
+        !Number.isFinite(duracao) ||
+        duracao <= 0
+      ) {
+        return;
+      }
+
+      const tempoRestante =
+        duracao - tempoAtual;
+
+      if (tempoRestante <= 5) {
+        setShowButton(true);
+      }
+    };
+
+    const terminouVideo = () => {
+      setShowButton(true);
+    };
+
+    const conectarApi = () => {
+      if (cancelado) return;
+
+      api = iframeRef.current?.wistiaApi;
+
+      if (!api) {
+        tentativas += 1;
+
+        /*
+         * Aguarda até dez segundos pela API.
+         * O vídeo permanece visível mesmo se a
+         * API demorar ou não ficar disponível.
+         */
+        if (tentativas < 100) {
+          window.setTimeout(
+            conectarApi,
+            100
+          );
+        }
+
+        return;
+      }
+
+      api.addEventListener(
+        "time-update",
+        verificarTempo
+      );
+
+      api.addEventListener(
+        "ended",
+        terminouVideo
+      );
+
+      try {
+        const resultado = api.play();
+
+        if (
+          resultado &&
+          typeof resultado.catch === "function"
+        ) {
+          resultado.catch(() => {
+            /*
+             * Se o navegador bloquear autoplay,
+             * o player exibirá o botão normal.
+             */
+          });
+        }
+      } catch (error) {
+        console.error(
+          "Autoplay bloqueado pelo navegador:",
+          error
+        );
+      }
+    };
+
+    conectarApi();
+
+    return () => {
+      cancelado = true;
+
+      if (api) {
+        api.removeEventListener(
+          "time-update",
+          verificarTempo
+        );
+
+        api.removeEventListener(
+          "ended",
+          terminouVideo
+        );
+      }
+    };
+  }, [videoReady, wistiaId]);
+
+  /*
    * A indicação já está salva.
-   * Por isso, o botão pode ir diretamente para a Home.
+   * Por isso o botão pode ir diretamente para a Home.
    */
   const goToSite = () => {
     window.location.href = "/";
@@ -285,29 +330,36 @@ export function Play() {
     larguraContainer = "max-w-2xl";
   }
 
+  const urlVideo =
+    `https://fast.wistia.net/embed/iframe/${wistiaId}` +
+    `?web_component=true&autoplay=true&playerColor=2566af`;
+
   return (
     <div className="min-h-screen w-full bg-black flex flex-col items-center pt-8 pb-20 relative">
       <div
         className={`w-[95%] ${larguraContainer} relative shadow-2xl`}
       >
         <div
-          className="wistia_responsive_wrapper"
+          className="relative bg-black"
           style={{
             width: "100%",
             aspectRatio:
               videoSelecionado.aspectRatio,
-            position: "relative",
-            backgroundColor: "black",
           }}
         >
-          <div
+          <iframe
             key={wistiaId}
-            className={`wistia_embed wistia_async_${wistiaId} seo=true videoFoam=true`}
-            style={{
-              height: "100%",
-              width: "100%",
-              position: "relative",
+            ref={iframeRef}
+            src={urlVideo}
+            title={videoSelecionado.titulo}
+            allow="autoplay; fullscreen"
+            allowFullScreen
+            frameBorder="0"
+            scrolling="no"
+            onLoad={() => {
+              setVideoReady(true);
             }}
+            className="absolute inset-0 w-full h-full border-0"
           />
         </div>
 

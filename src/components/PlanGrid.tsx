@@ -17,7 +17,7 @@ export function PlanGrid() {
           <span className="text-xs font-bold uppercase tracking-widest opacity-90">Plano Individual</span>
           <span className="text-sm font-black uppercase mt-1">1 Titular</span>
           <span className="text-4xl font-black my-2">R$ 33,00</span>
-          <span className="text-xs font-bold uppercase opacity-90">mensais</span>
+          <span className="text-xs font-bold uppercase opacity-90">REAIS</span>
         </Link>
 
         {/* Plano Familiar - R$ 66,00 */}
@@ -28,7 +28,7 @@ export function PlanGrid() {
           <span className="text-xs font-bold uppercase tracking-widest">Plano Familiar</span>
           <span className="text-sm font-black uppercase mt-1">1 Titular + 3 Dependentes</span>
           <span className="text-4xl font-black my-2">R$ 66,00</span>
-          <span className="text-xs font-bold uppercase opacity-90">mensais</span>
+          <span className="text-xs font-bold uppercase opacity-90">REAIS</span>
         </Link>
       </div>
     </section>

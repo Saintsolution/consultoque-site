@@ -7,6 +7,8 @@ const WEBHOOK_BUSCA_CPF =
 const WEBHOOK_INSERT_COLAB =
   'https://n8n.saintsolution.com.br/webhook/insertcolab';
 
+const VERSAO_TERMO_COLABORADOR = '1.0';
+
 type RetornoCpf = {
   status?: string;
 
@@ -74,6 +76,8 @@ export function InscricaoColaborador() {
     useState('');
 
   const [sucesso, setSucesso] = useState(false);
+  const [aceitouTermo, setAceitouTermo] = useState(false);
+  const [termoAberto, setTermoAberto] = useState(false);
 
   const [dadosRetorno, setDadosRetorno] = useState({
     message: '',
@@ -381,7 +385,16 @@ export function InscricaoColaborador() {
       return;
     }
 
+    if (!aceitouTermo) {
+      setErro(
+        'Leia e aceite o Termo de Adesão e Compromisso para concluir a inscrição.'
+      );
+      return;
+    }
+
     setLoading(true);
+
+    const dataAceiteTermo = new Date();
 
     const payload = {
       cod_pai: refId || '0001',
@@ -402,6 +415,10 @@ export function InscricaoColaborador() {
       senha_login: formData.senha_login,
 
       dt_cad: new Date().toLocaleDateString('pt-BR'),
+
+      aceite_termo: true,
+      versao_termo: VERSAO_TERMO_COLABORADOR,
+      dt_aceite_termo: dataAceiteTermo.toISOString(),
     };
 
     try {
@@ -462,6 +479,7 @@ export function InscricaoColaborador() {
 
       setCpfValidado(false);
       setCpfJaCadastrado(false);
+      setAceitouTermo(false);
 
       setMensagemCpf('');
       setUltimoCpfConsultado('');
@@ -707,6 +725,48 @@ export function InscricaoColaborador() {
             />
           </div>
 
+          <div
+            className={`rounded-xl border p-4 ${
+              formularioLiberado
+                ? 'border-slate-300 bg-slate-50'
+                : 'border-slate-200 bg-slate-100 opacity-50'
+            }`}
+          >
+            <div className="flex items-start gap-3">
+              <input
+                id="aceite_termo_colaborador"
+                type="checkbox"
+                checked={aceitouTermo}
+                onChange={(event) => {
+                  setAceitouTermo(event.target.checked);
+                  setErro('');
+                }}
+                disabled={!formularioLiberado}
+                className="mt-1 h-5 w-5 shrink-0 accent-green-600"
+                required
+              />
+
+              <label
+                htmlFor="aceite_termo_colaborador"
+                className="text-sm text-slate-700 leading-relaxed"
+              >
+                Li e concordo com o{' '}
+                <button
+                  type="button"
+                  onClick={() => setTermoAberto(true)}
+                  disabled={!formularioLiberado}
+                  className="font-black text-blue-700 underline disabled:text-slate-500"
+                >
+                  Termo de Adesão e Compromisso do Colaborador
+                  ConsulToque
+                </button>
+                . Estou ciente de que a participação é autônoma,
+                sem salário fixo, horário, subordinação ou garantia
+                de rendimentos.
+              </label>
+            </div>
+          </div>
+
           {erro && (
             <div className="bg-red-50 border border-red-200 text-red-700 text-sm font-bold p-3 rounded-xl">
               {erro}
@@ -718,12 +778,14 @@ export function InscricaoColaborador() {
             disabled={
               loading ||
               consultandoCpf ||
-              !formularioLiberado
+              !formularioLiberado ||
+              !aceitouTermo
             }
             className={`w-full text-white py-4 rounded-xl font-bold ${
               loading ||
               consultandoCpf ||
-              !formularioLiberado
+              !formularioLiberado ||
+              !aceitouTermo
                 ? 'bg-gray-400 cursor-not-allowed'
                 : 'bg-green-600 hover:bg-green-700'
             }`}
@@ -738,6 +800,230 @@ export function InscricaoColaborador() {
           </button>
         </form>
       </div>
+
+      {termoAberto && (
+        <div
+          className="fixed inset-0 z-50 bg-black/60 p-4 flex items-center justify-center"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="titulo-termo-colaborador"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setTermoAberto(false);
+            }
+          }}
+        >
+          <div className="w-full max-w-3xl max-h-[90vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+            <div className="p-5 border-b border-slate-200 flex items-start justify-between gap-4">
+              <div>
+                <h2
+                  id="titulo-termo-colaborador"
+                  className="text-xl font-black text-slate-900"
+                >
+                  Termo de Adesão e Compromisso do Colaborador
+                  ConsulToque
+                </h2>
+                <p className="text-xs text-slate-500 mt-1">
+                  Versão {VERSAO_TERMO_COLABORADOR} — 20 de julho de 2026
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setTermoAberto(false)}
+                className="shrink-0 w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 font-black text-slate-700"
+                aria-label="Fechar termo"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="overflow-y-auto p-6 space-y-5 text-sm leading-relaxed text-slate-700">
+              <p>
+                Ao realizar seu cadastro e marcar a opção de aceite,
+                o COLABORADOR declara que leu, compreendeu e concorda
+                com as condições abaixo.
+              </p>
+
+              <section>
+                <h3 className="font-black text-slate-900 mb-2">
+                  1. Objeto
+                </h3>
+                <p>
+                  Este Termo regula a participação voluntária do
+                  COLABORADOR no programa de indicações da ConsulToque.
+                  O COLABORADOR poderá divulgar, por meios lícitos e
+                  éticos, os produtos e serviços disponibilizados no
+                  site e utilizar seu link, código ou QR Code individual
+                  de indicação. A aquisição será realizada diretamente
+                  pelo interessado nos canais oficiais indicados pela
+                  ConsulToque.
+                </p>
+              </section>
+
+              <section>
+                <h3 className="font-black text-slate-900 mb-2">
+                  2. Autonomia e inexistência de vínculo empregatício
+                </h3>
+                <p>
+                  A participação possui natureza autônoma, independente
+                  e não exclusiva. O cadastro não constitui contrato de
+                  trabalho, sociedade, franquia, mandato, emprego ou
+                  vínculo empregatício com a ConsulToque. O COLABORADOR
+                  não está sujeito a jornada, controle de horário,
+                  salário fixo, metas obrigatórias, chefe ou supervisor.
+                  Poderá escolher livremente quando, onde e como fará
+                  suas divulgações, exercer outras atividades e
+                  interromper sua participação a qualquer momento. Não
+                  existe garantia de vendas, renda mínima ou recebimento
+                  de comissões.
+                </p>
+              </section>
+
+              <section>
+                <h3 className="font-black text-slate-900 mb-2">
+                  3. Comissões
+                </h3>
+                <p>
+                  O COLABORADOR receberá exclusivamente comissões sobre
+                  vendas válidas, efetivamente pagas e corretamente
+                  identificadas por seu código, link ou QR Code. As
+                  regras atuais são: 50% sobre a primeira mensalidade
+                  recebida; 20% sobre mensalidades recorrentes recebidas;
+                  e 5% sobre valores elegíveis gerados por colaborador
+                  diretamente indicado, conforme as regras da rede.
+                  O fechamento ocorre no dia 20 de cada mês, com
+                  previsão de pagamento no dia 5 subsequente, observadas
+                  as regras operacionais e bancárias.
+                </p>
+                <p className="mt-2">
+                  Não haverá comissão sobre cadastro sem pagamento,
+                  cobrança vencida, cancelada, excluída, devolvida,
+                  estornada, contestada ou fraudulenta, nem sobre venda
+                  sem identificação válida. Comissão já contabilizada
+                  sobre pagamento posteriormente desfeito poderá ser
+                  compensada em pagamentos futuros, com registro no
+                  histórico do colaborador.
+                </p>
+              </section>
+
+              <section>
+                <h3 className="font-black text-slate-900 mb-2">
+                  4. Tributos e descontos legais
+                </h3>
+                <p>
+                  Os valores exibidos no painel poderão corresponder a
+                  valores brutos. Sobre as comissões poderão incidir
+                  tributos, contribuições previdenciárias, retenções e
+                  outros descontos exigidos pela legislação, conforme a
+                  situação cadastral e tributária do COLABORADOR. O
+                  pagamento poderá ser documentado por recibo,
+                  comprovante ou nota fiscal, conforme aplicável. O
+                  COLABORADOR é responsável pela veracidade e atualização
+                  de suas informações cadastrais e fiscais.
+                </p>
+              </section>
+
+              <section>
+                <h3 className="font-black text-slate-900 mb-2">
+                  5. Regras de divulgação
+                </h3>
+                <p>
+                  O COLABORADOR compromete-se a fornecer informações
+                  verdadeiras, utilizar preferencialmente materiais
+                  oficiais, não prometer condições inexistentes, não se
+                  apresentar como funcionário, profissional de saúde,
+                  representante legal ou sócio da ConsulToque e não
+                  receber pagamentos de clientes em nome da empresa. É
+                  proibido praticar spam, publicidade enganosa, fraude,
+                  constrangimento ou qualquer divulgação ilícita.
+                </p>
+              </section>
+
+              <section>
+                <h3 className="font-black text-slate-900 mb-2">
+                  6. Marca e materiais
+                </h3>
+                <p>
+                  A autorização para utilizar os materiais promocionais
+                  oficiais é limitada, pessoal, gratuita, revogável e
+                  não exclusiva. É proibido alterar indevidamente a
+                  marca, criar canais que aparentem ser oficiais,
+                  registrar domínios ou perfis com o nome ConsulToque ou
+                  produzir materiais enganosos. A autorização termina
+                  com o encerramento do cadastro.
+                </p>
+              </section>
+
+              <section>
+                <h3 className="font-black text-slate-900 mb-2">
+                  7. Dados pessoais e confidencialidade
+                </h3>
+                <p>
+                  Os dados do cadastro poderão ser utilizados para
+                  identificação, administração do programa, apuração e
+                  pagamento de comissões, prevenção de fraudes,
+                  cumprimento de obrigações legais e comunicação com o
+                  COLABORADOR. É proibido coletar, armazenar, divulgar ou
+                  compartilhar indevidamente dados pessoais, financeiros
+                  ou de saúde de clientes, associados ou colaboradores.
+                </p>
+              </section>
+
+              <section>
+                <h3 className="font-black text-slate-900 mb-2">
+                  8. Suspensão e encerramento
+                </h3>
+                <p>
+                  A participação poderá ser suspensa ou encerrada por
+                  fraude, informação falsa, uso indevido da marca,
+                  violação de dados, publicidade enganosa, desrespeito a
+                  consumidores ou descumprimento deste Termo. O
+                  encerramento não elimina comissões válidas já apuradas,
+                  ressalvados valores relacionados a fraude, estorno,
+                  contestação, devolução ou infração comprovada.
+                </p>
+              </section>
+
+              <section>
+                <h3 className="font-black text-slate-900 mb-2">
+                  9. Atualizações e aceite eletrônico
+                </h3>
+                <p>
+                  A ConsulToque poderá atualizar este Termo para atender
+                  a mudanças comerciais, operacionais ou legais. Mudança
+                  relevante na remuneração ou nas responsabilidades será
+                  informada e submetida a novo aceite antes de produzir
+                  efeitos futuros. O aceite eletrônico será registrado
+                  com o CPF, a versão do Termo, a data e o horário.
+                </p>
+              </section>
+            </div>
+
+            <div className="p-5 border-t border-slate-200 bg-slate-50 flex flex-col sm:flex-row gap-3 sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setTermoAberto(false)}
+                className="px-5 py-3 rounded-xl bg-slate-200 text-slate-800 font-bold"
+              >
+                Fechar
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setAceitouTermo(true);
+                  setTermoAberto(false);
+                  setErro('');
+                }}
+                className="px-5 py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold"
+              >
+                Li e concordo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

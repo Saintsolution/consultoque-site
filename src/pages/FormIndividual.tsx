@@ -974,7 +974,7 @@ export function FormIndividual() {
 
             <p className="text-center text-gray-500 mt-2 mb-8">
               1 titular • Teleconsulta 24h por
-              R$ 33,00 mensais.
+              R$ 33,00 REAIS.
             </p>
 
             <form
