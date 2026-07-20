@@ -60,6 +60,23 @@ function pegarPrimeiroResultado<T>(valor: T | T[]): T {
   return Array.isArray(valor) ? valor[0] : valor;
 }
 
+function encerrarSessaoColaboradorAnterior() {
+  const chavesDaSessao = [
+    'cod_colab',
+    'nome_colab',
+    'colaborador_id',
+    'colaborador_nome',
+    'colaborador_cpf',
+    'colaborador_logado',
+    'token_colaborador',
+  ];
+
+  chavesDaSessao.forEach((chave) => {
+    localStorage.removeItem(chave);
+    sessionStorage.removeItem(chave);
+  });
+}
+
 export function InscricaoColaborador() {
   const [refId, setRefId] = useState('0001');
 
@@ -451,6 +468,15 @@ export function InscricaoColaborador() {
             'Erro ao enviar cadastro.'
         );
       }
+
+      /*
+       * Remove apenas a sessão do colaborador que estava
+       * anteriormente conectado nesta máquina.
+       *
+       * Não apaga referenciador_id, porque esse código
+       * identifica quem indicou o novo colaborador.
+       */
+      encerrarSessaoColaboradorAnterior();
 
       setDadosRetorno({
         message:
