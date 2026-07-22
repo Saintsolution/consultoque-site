@@ -1,13 +1,13 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 const WEBHOOK_BUSCA_CPF =
-  'https://n8n.saintsolution.com.br/webhook/BuscaCPFcolab';
+  "https://n8n.saintsolution.com.br/webhook/BuscaCPFcolab";
 
 const WEBHOOK_INSERT_COLAB =
-  'https://n8n.saintsolution.com.br/webhook/insertcolab';
+  "https://n8n.saintsolution.com.br/webhook/insertcolab";
 
-const VERSAO_TERMO_COLABORADOR = '1.0';
+const VERSAO_TERMO_COLABORADOR = "2.0";
 
 type RetornoCpf = {
   status?: string;
@@ -17,6 +17,7 @@ type RetornoCpf = {
   pode_cadastrar?: boolean;
 
   maior_idade?: boolean;
+  liberar_cadastro?: boolean;
 
   nome?: string;
   nome_colab?: string;
@@ -32,28 +33,26 @@ type RetornoCpf = {
 };
 
 function somenteNumeros(valor: string) {
-  return String(valor ?? '').replace(/\D/g, '');
+  return String(valor ?? "").replace(/\D/g, "");
 }
 
 function formatarCpf(valor: string) {
   const numeros = somenteNumeros(valor).slice(0, 11);
 
   return numeros
-    .replace(/^(\d{3})(\d)/, '$1.$2')
-    .replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
-    .replace(/\.(\d{3})(\d)/, '.$1-$2');
+    .replace(/^(\d{3})(\d)/, "$1.$2")
+    .replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/\.(\d{3})(\d)/, ".$1-$2");
 }
 
-function formatarCodigoColaborador(
-  valor: string | number | undefined
-) {
-  const numeros = somenteNumeros(String(valor ?? ''));
+function formatarCodigoColaborador(valor: string | number | undefined) {
+  const numeros = somenteNumeros(String(valor ?? ""));
 
   if (!numeros) {
-    return '';
+    return "";
   }
 
-  return numeros.padStart(4, '0');
+  return numeros.padStart(4, "0");
 }
 
 function pegarPrimeiroResultado<T>(valor: T | T[]): T {
@@ -62,13 +61,13 @@ function pegarPrimeiroResultado<T>(valor: T | T[]): T {
 
 function encerrarSessaoColaboradorAnterior() {
   const chavesDaSessao = [
-    'cod_colab',
-    'nome_colab',
-    'colaborador_id',
-    'colaborador_nome',
-    'colaborador_cpf',
-    'colaborador_logado',
-    'token_colaborador',
+    "cod_colab",
+    "nome_colab",
+    "colaborador_id",
+    "colaborador_nome",
+    "colaborador_cpf",
+    "colaborador_logado",
+    "token_colaborador",
   ];
 
   chavesDaSessao.forEach((chave) => {
@@ -78,57 +77,54 @@ function encerrarSessaoColaboradorAnterior() {
 }
 
 export function InscricaoColaborador() {
-  const [refId, setRefId] = useState('0001');
+  const [refId, setRefId] = useState("0001");
 
   const [loading, setLoading] = useState(false);
   const [consultandoCpf, setConsultandoCpf] = useState(false);
 
-  const [erro, setErro] = useState('');
-  const [mensagemCpf, setMensagemCpf] = useState('');
+  const [erro, setErro] = useState("");
+  const [mensagemCpf, setMensagemCpf] = useState("");
 
   const [cpfValidado, setCpfValidado] = useState(false);
   const [cpfJaCadastrado, setCpfJaCadastrado] = useState(false);
 
-  const [ultimoCpfConsultado, setUltimoCpfConsultado] =
-    useState('');
+  const [ultimoCpfConsultado, setUltimoCpfConsultado] = useState("");
 
   const [sucesso, setSucesso] = useState(false);
   const [aceitouTermo, setAceitouTermo] = useState(false);
   const [termoAberto, setTermoAberto] = useState(false);
 
   const [dadosRetorno, setDadosRetorno] = useState({
-    message: '',
-    cod_colab: '',
-    link_indicacao: '',
+    message: "",
+    cod_colab: "",
+    link_indicacao: "",
   });
 
   const [formData, setFormData] = useState({
-    nome_colab: '',
-    email_colab: '',
-    tel_colab: '',
-    cpf_colab: '',
-    pix_colab: '',
-    senha_login: '',
+    nome_colab: "",
+    email_colab: "",
+    tel_colab: "",
+    cpf_colab: "",
+    pix_colab: "",
+    senha_login: "",
   });
 
   useEffect(() => {
-    const savedRef = localStorage.getItem('referenciador_id');
+    const savedRef = localStorage.getItem("referenciador_id");
 
     if (savedRef) {
-      setRefId(
-        somenteNumeros(savedRef).padStart(4, '0')
-      );
+      setRefId(somenteNumeros(savedRef).padStart(4, "0"));
     }
   }, []);
 
   function limparDadosDepoisCpf() {
     setFormData((prev) => ({
       ...prev,
-      nome_colab: '',
-      email_colab: '',
-      tel_colab: '',
-      pix_colab: '',
-      senha_login: '',
+      nome_colab: "",
+      email_colab: "",
+      tel_colab: "",
+      pix_colab: "",
+      senha_login: "",
     }));
   }
 
@@ -139,26 +135,23 @@ export function InscricaoColaborador() {
       return;
     }
 
-    if (
-      cpf === ultimoCpfConsultado &&
-      (cpfValidado || cpfJaCadastrado)
-    ) {
+    if (cpf === ultimoCpfConsultado && (cpfValidado || cpfJaCadastrado)) {
       return;
     }
 
     setConsultandoCpf(true);
 
-    setErro('');
-    setMensagemCpf('Consultando CPF...');
+    setErro("");
+    setMensagemCpf("Consultando CPF...");
 
     setCpfValidado(false);
     setCpfJaCadastrado(false);
 
     try {
       const response = await fetch(WEBHOOK_BUSCA_CPF, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           cpf,
@@ -166,16 +159,12 @@ export function InscricaoColaborador() {
       });
 
       if (!response.ok) {
-        throw new Error(
-          'Não foi possível consultar o CPF.'
-        );
+        throw new Error("Não foi possível consultar o CPF.");
       }
 
       const respostaJson = await response.json();
 
-      const resultado = pegarPrimeiroResultado<RetornoCpf>(
-        respostaJson
-      );
+      const resultado = pegarPrimeiroResultado<RetornoCpf>(respostaJson);
 
       setUltimoCpfConsultado(cpf);
 
@@ -190,36 +179,32 @@ export function InscricaoColaborador() {
        * O formulário deve permanecer bloqueado.
        */
       if (
-        resultado?.status === 'ja_cadastrado' ||
-        resultado?.cpf_existe === true ||
-        resultado?.pode_cadastrar === false
+        resultado?.status === "ja_cadastrado" ||
+        resultado?.cpf_existe === true
       ) {
-        const codColab = formatarCodigoColaborador(
-          resultado?.cod_colab
-        );
+        const codColab = formatarCodigoColaborador(resultado?.cod_colab);
 
         setCpfValidado(false);
         setCpfJaCadastrado(true);
 
         setFormData({
-          nome_colab: '',
-          email_colab: '',
-          tel_colab: '',
+          nome_colab: "",
+          email_colab: "",
+          tel_colab: "",
           cpf_colab: resultado?.cpf || cpf,
-          pix_colab: '',
-          senha_login: '',
+          pix_colab: "",
+          senha_login: "",
         });
 
         setMensagemCpf(
           resultado?.mensagem ||
             `Este CPF já possui cadastro. ` +
               `Seu número de colaborador é ${
-                codColab || 'o número informado por e-mail'
+                codColab || "o número informado por e-mail"
               }. ` +
               `Enviamos seus dados de acesso para ${
-                resultado?.email_mascarado ||
-                'o e-mail cadastrado'
-              }. Após entrar, altere sua senha.`
+                resultado?.email_mascarado || "o e-mail cadastrado"
+              }. Após entrar, altere sua senha.`,
         );
 
         return;
@@ -228,9 +213,30 @@ export function InscricaoColaborador() {
       /*
        * CPF INVÁLIDO OU ERRO DA API
        */
+      if (resultado?.status !== "sucesso" || resultado?.cpf_validado !== true) {
+        setCpfValidado(false);
+        setCpfJaCadastrado(false);
+
+        limparDadosDepoisCpf();
+
+        setMensagemCpf(
+          resultado?.mensagem ||
+            "O CPF informado não foi validado. Confira os números.",
+        );
+
+        return;
+      }
+
+      /*
+       * O programa de Associados Colaboradores
+       * é exclusivo para maiores de 18 anos.
+       * Se a API não confirmar expressamente a
+       * maioridade, o cadastro permanece bloqueado.
+       */
       if (
-        resultado?.status !== 'sucesso' ||
-        resultado?.cpf_validado !== true
+        resultado?.maior_idade !== true ||
+        resultado?.liberar_cadastro === false ||
+        resultado?.pode_cadastrar === false
       ) {
         setCpfValidado(false);
         setCpfJaCadastrado(false);
@@ -239,7 +245,7 @@ export function InscricaoColaborador() {
 
         setMensagemCpf(
           resultado?.mensagem ||
-            'O CPF informado não foi validado. Confira os números.'
+            "O programa de Associados Colaboradores é exclusivo para pessoas maiores de 18 anos.",
         );
 
         return;
@@ -248,10 +254,7 @@ export function InscricaoColaborador() {
       /*
        * CPF NOVO, MAS SEM NOME
        */
-      const nomeEncontrado =
-        resultado?.nome ||
-        resultado?.nome_colab ||
-        '';
+      const nomeEncontrado = resultado?.nome || resultado?.nome_colab || "";
 
       if (!nomeEncontrado.trim()) {
         setCpfValidado(false);
@@ -259,18 +262,13 @@ export function InscricaoColaborador() {
 
         limparDadosDepoisCpf();
 
-        setMensagemCpf(
-          'O CPF foi validado, mas o nome não foi encontrado.'
-        );
+        setMensagemCpf("O CPF foi validado, mas o nome não foi encontrado.");
 
         return;
       }
 
       /*
-       * CPF NOVO E VALIDADO
-       *
-       * Menores de idade também podem se cadastrar.
-       * Por isso maior_idade não bloqueia mais o formulário.
+       * CPF NOVO, VALIDADO E MAIOR DE IDADE.
        */
       setCpfValidado(true);
       setCpfJaCadastrado(false);
@@ -281,64 +279,51 @@ export function InscricaoColaborador() {
         nome_colab: nomeEncontrado,
       }));
 
-      if (resultado?.maior_idade === false) {
-        setMensagemCpf(
-          'CPF validado com sucesso. Cadastro liberado.'
-        );
-      } else {
-        setMensagemCpf(
-          resultado?.mensagem ||
-            'CPF validado com sucesso.'
-        );
-      }
+      setMensagemCpf(
+        resultado?.mensagem || "CPF validado com sucesso. Cadastro liberado.",
+      );
     } catch (error) {
-      console.error('Erro ao consultar CPF:', error);
+      console.error("Erro ao consultar CPF:", error);
 
       setCpfValidado(false);
       setCpfJaCadastrado(false);
-      setUltimoCpfConsultado('');
+      setUltimoCpfConsultado("");
 
       limparDadosDepoisCpf();
 
       setMensagemCpf(
-        'Não foi possível consultar o CPF agora. Tente novamente.'
+        "Não foi possível consultar o CPF agora. Tente novamente.",
       );
     } finally {
       setConsultandoCpf(false);
     }
   }
 
-  const handleCpfChange = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const cpfDigitado = somenteNumeros(
-      event.target.value
-    ).slice(0, 11);
+  const handleCpfChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const cpfDigitado = somenteNumeros(event.target.value).slice(0, 11);
 
     setFormData({
-      nome_colab: '',
-      email_colab: '',
-      tel_colab: '',
+      nome_colab: "",
+      email_colab: "",
+      tel_colab: "",
       cpf_colab: cpfDigitado,
-      pix_colab: '',
-      senha_login: '',
+      pix_colab: "",
+      senha_login: "",
     });
 
     setCpfValidado(false);
     setCpfJaCadastrado(false);
 
-    setErro('');
-    setMensagemCpf('');
-    setUltimoCpfConsultado('');
+    setErro("");
+    setMensagemCpf("");
+    setUltimoCpfConsultado("");
 
     if (cpfDigitado.length === 11) {
       consultarCpf(cpfDigitado);
     }
   };
 
-  const handleInputChange = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
 
     setFormData((prev) => ({
@@ -347,64 +332,58 @@ export function InscricaoColaborador() {
     }));
   };
 
-  const handleSubmit = async (
-    event: React.FormEvent<HTMLFormElement>
-  ) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    setErro('');
+    setErro("");
 
     const cpf = somenteNumeros(formData.cpf_colab);
 
     if (cpf.length !== 11) {
-      setErro('Informe um CPF com 11 números.');
+      setErro("Informe um CPF com 11 números.");
       return;
     }
 
     if (cpfJaCadastrado) {
       setErro(
-        'Este CPF já possui cadastro. Use os dados enviados para o e-mail cadastrado.'
+        "Este CPF já possui cadastro. Use os dados enviados para o e-mail cadastrado.",
       );
       return;
     }
 
     if (!cpfValidado) {
-      setErro(
-        'O CPF precisa ser validado antes da inscrição.'
-      );
+      setErro("O CPF precisa ser validado antes da inscrição.");
       return;
     }
 
     if (!formData.nome_colab.trim()) {
-      setErro(
-        'Não foi possível identificar o nome do CPF.'
-      );
+      setErro("Não foi possível identificar o nome do CPF.");
       return;
     }
 
     if (!formData.email_colab.trim()) {
-      setErro('Informe o e-mail.');
+      setErro("Informe o e-mail.");
       return;
     }
 
     if (!formData.tel_colab.trim()) {
-      setErro('Informe o telefone.');
+      setErro("Informe o telefone.");
       return;
     }
 
     if (!formData.pix_colab.trim()) {
-      setErro('Informe a chave PIX.');
+      setErro("Informe a chave PIX.");
       return;
     }
 
     if (!formData.senha_login.trim()) {
-      setErro('Crie uma senha de acesso.');
+      setErro("Crie uma senha de acesso.");
       return;
     }
 
     if (!aceitouTermo) {
       setErro(
-        'Leia e aceite o Termo de Adesão e Compromisso para concluir a inscrição.'
+        "Leia e aceite o Termo de Adesão e Compromisso para concluir a inscrição.",
       );
       return;
     }
@@ -414,16 +393,13 @@ export function InscricaoColaborador() {
     const dataAceiteTermo = new Date();
 
     const payload = {
-      cod_pai: refId || '0001',
+      cod_pai: refId || "0001",
 
       nome_colab: formData.nome_colab.trim(),
 
-      email_colab:
-        formData.email_colab.trim().toLowerCase(),
+      email_colab: formData.email_colab.trim().toLowerCase(),
 
-      tel_colab: somenteNumeros(
-        formData.tel_colab
-      ),
+      tel_colab: somenteNumeros(formData.tel_colab),
 
       cpf_colab: cpf,
 
@@ -431,7 +407,7 @@ export function InscricaoColaborador() {
 
       senha_login: formData.senha_login,
 
-      dt_cad: new Date().toLocaleDateString('pt-BR'),
+      dt_cad: new Date().toLocaleDateString("pt-BR"),
 
       aceite_termo: true,
       versao_termo: VERSAO_TERMO_COLABORADOR,
@@ -439,33 +415,23 @@ export function InscricaoColaborador() {
     };
 
     try {
-      const response = await fetch(
-        WEBHOOK_INSERT_COLAB,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
-        }
-      );
+      const response = await fetch(WEBHOOK_INSERT_COLAB, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
 
-      const respostaJson = await response
-        .json()
-        .catch(() => null);
+      const respostaJson = await response.json().catch(() => null);
 
       const data = respostaJson
         ? pegarPrimeiroResultado<any>(respostaJson)
         : null;
 
-      if (
-        !response.ok ||
-        data?.status === 'erro'
-      ) {
+      if (!response.ok || data?.status === "erro") {
         throw new Error(
-          data?.mensagem ||
-            data?.message ||
-            'Erro ao enviar cadastro.'
+          data?.mensagem || data?.message || "Erro ao enviar cadastro.",
         );
       }
 
@@ -482,43 +448,37 @@ export function InscricaoColaborador() {
         message:
           data?.message ||
           data?.mensagem ||
-          'Parabéns! Você agora tem seu link de indicação ConsulToque.',
+          "Parabéns! Você agora tem seu link de indicação ConsulToque.",
 
-        cod_colab: formatarCodigoColaborador(
-          data?.cod_colab
-        ),
+        cod_colab: formatarCodigoColaborador(data?.cod_colab),
 
-        link_indicacao:
-          data?.link_indicacao || '',
+        link_indicacao: data?.link_indicacao || "",
       });
 
       setSucesso(true);
 
       setFormData({
-        nome_colab: '',
-        email_colab: '',
-        tel_colab: '',
-        cpf_colab: '',
-        pix_colab: '',
-        senha_login: '',
+        nome_colab: "",
+        email_colab: "",
+        tel_colab: "",
+        cpf_colab: "",
+        pix_colab: "",
+        senha_login: "",
       });
 
       setCpfValidado(false);
       setCpfJaCadastrado(false);
       setAceitouTermo(false);
 
-      setMensagemCpf('');
-      setUltimoCpfConsultado('');
+      setMensagemCpf("");
+      setUltimoCpfConsultado("");
     } catch (error) {
-      console.error(
-        'Erro ao cadastrar colaborador:',
-        error
-      );
+      console.error("Erro ao cadastrar colaborador:", error);
 
       setErro(
         error instanceof Error
           ? error.message
-          : 'Falha ao cadastrar. Tente novamente.'
+          : "Falha ao cadastrar. Tente novamente.",
       );
     } finally {
       setLoading(false);
@@ -526,9 +486,7 @@ export function InscricaoColaborador() {
   };
 
   const formularioLiberado =
-    cpfValidado &&
-    !cpfJaCadastrado &&
-    Boolean(formData.nome_colab.trim());
+    cpfValidado && !cpfJaCadastrado && Boolean(formData.nome_colab.trim());
 
   if (sucesso) {
     return (
@@ -538,9 +496,7 @@ export function InscricaoColaborador() {
             Cadastro realizado!
           </h1>
 
-          <p className="text-gray-700 text-lg mb-6">
-            {dadosRetorno.message}
-          </p>
+          <p className="text-gray-700 text-lg mb-6">{dadosRetorno.message}</p>
 
           <div className="bg-green-50 border border-green-200 rounded-2xl p-5 mb-6 text-left">
             <p className="font-bold text-green-900">
@@ -551,9 +507,7 @@ export function InscricaoColaborador() {
               {dadosRetorno.cod_colab}
             </p>
 
-            <p className="font-bold text-green-900">
-              Seu link de indicação:
-            </p>
+            <p className="font-bold text-green-900">Seu link de indicação:</p>
 
             <a
               href={dadosRetorno.link_indicacao}
@@ -566,8 +520,8 @@ export function InscricaoColaborador() {
           </div>
 
           <p className="text-sm text-gray-600 mb-6">
-            Use esse link para indicar o site e receber seu
-            prêmio pelas compras feitas através dele.
+            Use esse link para indicar o site e receber seu prêmio pelas compras
+            feitas através dele.
           </p>
 
           <div className="flex flex-col md:flex-row gap-3">
@@ -593,10 +547,7 @@ export function InscricaoColaborador() {
   return (
     <div className="min-h-screen bg-slate-50 p-6">
       <div className="max-w-2xl mx-auto bg-white p-8 rounded-2xl shadow-lg">
-        <Link
-          to="/seja-afiliado"
-          className="text-blue-600 font-bold"
-        >
+        <Link to="/seja-afiliado" className="text-blue-600 font-bold">
           ← Voltar
         </Link>
 
@@ -605,14 +556,11 @@ export function InscricaoColaborador() {
         </h1>
 
         <p className="text-sm text-slate-600 mb-6">
-          Informe primeiro o CPF. Os demais dados serão
-          liberados após a validação.
+          Informe primeiro o CPF. Os demais dados serão liberados após a
+          validação.
         </p>
 
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-4"
-        >
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-1">
               CPF
@@ -623,14 +571,10 @@ export function InscricaoColaborador() {
               type="text"
               inputMode="numeric"
               autoComplete="off"
-              value={formatarCpf(
-                formData.cpf_colab
-              )}
+              value={formatarCpf(formData.cpf_colab)}
               onChange={handleCpfChange}
               onBlur={() => {
-                const cpf = somenteNumeros(
-                  formData.cpf_colab
-                );
+                const cpf = somenteNumeros(formData.cpf_colab);
 
                 if (
                   cpf.length === 11 &&
@@ -644,12 +588,12 @@ export function InscricaoColaborador() {
               placeholder="000.000.000-00"
               className={`w-full p-3 border rounded-xl outline-none ${
                 cpfValidado
-                  ? 'border-green-500 bg-green-50'
+                  ? "border-green-500 bg-green-50"
                   : cpfJaCadastrado
-                    ? 'border-amber-500 bg-amber-50'
+                    ? "border-amber-500 bg-amber-50"
                     : mensagemCpf && !consultandoCpf
-                      ? 'border-red-400 bg-red-50'
-                      : 'border-slate-300'
+                      ? "border-red-400 bg-red-50"
+                      : "border-slate-300"
               }`}
               required
             />
@@ -664,10 +608,10 @@ export function InscricaoColaborador() {
               <div
                 className={`mt-2 text-sm font-bold p-4 rounded-xl ${
                   cpfValidado
-                    ? 'bg-green-50 text-green-700 border border-green-200'
+                    ? "bg-green-50 text-green-700 border border-green-200"
                     : cpfJaCadastrado
-                      ? 'bg-amber-50 text-amber-900 border border-amber-300'
-                      : 'bg-red-50 text-red-700 border border-red-200'
+                      ? "bg-amber-50 text-amber-900 border border-amber-300"
+                      : "bg-red-50 text-red-700 border border-red-200"
                 }`}
               >
                 <p>{mensagemCpf}</p>
@@ -701,9 +645,7 @@ export function InscricaoColaborador() {
 
           <div
             className={`space-y-4 ${
-              formularioLiberado
-                ? ''
-                : 'opacity-50 pointer-events-none'
+              formularioLiberado ? "" : "opacity-50 pointer-events-none"
             }`}
           >
             <input
@@ -754,8 +696,8 @@ export function InscricaoColaborador() {
           <div
             className={`rounded-xl border p-4 ${
               formularioLiberado
-                ? 'border-slate-300 bg-slate-50'
-                : 'border-slate-200 bg-slate-100 opacity-50'
+                ? "border-slate-300 bg-slate-50"
+                : "border-slate-200 bg-slate-100 opacity-50"
             }`}
           >
             <div className="flex items-start gap-3">
@@ -765,7 +707,7 @@ export function InscricaoColaborador() {
                 checked={aceitouTermo}
                 onChange={(event) => {
                   setAceitouTermo(event.target.checked);
-                  setErro('');
+                  setErro("");
                 }}
                 disabled={!formularioLiberado}
                 className="mt-1 h-5 w-5 shrink-0 accent-green-600"
@@ -776,19 +718,18 @@ export function InscricaoColaborador() {
                 htmlFor="aceite_termo_colaborador"
                 className="text-sm text-slate-700 leading-relaxed"
               >
-                Li e concordo com o{' '}
+                Li e concordo com o{" "}
                 <button
                   type="button"
                   onClick={() => setTermoAberto(true)}
                   disabled={!formularioLiberado}
                   className="font-black text-blue-700 underline disabled:text-slate-500"
                 >
-                  Termo de Adesão e Compromisso do Colaborador
-                  ConsulToque
+                  Termo de Adesão e Compromisso do Associado Colaborador — SIA
                 </button>
-                . Estou ciente de que a participação é autônoma,
-                sem salário fixo, horário, subordinação ou garantia
-                de rendimentos.
+                . Declaro possuir 18 anos completos ou mais e estar ciente de
+                que a participação é associativa, autônoma, sem salário fixo,
+                horário, subordinação ou garantia de rendimentos.
               </label>
             </div>
           </div>
@@ -802,27 +743,21 @@ export function InscricaoColaborador() {
           <button
             type="submit"
             disabled={
-              loading ||
-              consultandoCpf ||
-              !formularioLiberado ||
-              !aceitouTermo
+              loading || consultandoCpf || !formularioLiberado || !aceitouTermo
             }
             className={`w-full text-white py-4 rounded-xl font-bold ${
-              loading ||
-              consultandoCpf ||
-              !formularioLiberado ||
-              !aceitouTermo
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-green-600 hover:bg-green-700'
+              loading || consultandoCpf || !formularioLiberado || !aceitouTermo
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-green-600 hover:bg-green-700"
             }`}
           >
             {loading
-              ? 'Enviando...'
+              ? "Enviando..."
               : consultandoCpf
-                ? 'Validando CPF...'
+                ? "Validando CPF..."
                 : cpfJaCadastrado
-                  ? 'CPF já cadastrado'
-                  : 'Confirmar Inscrição'}
+                  ? "CPF já cadastrado"
+                  : "Confirmar Inscrição"}
           </button>
         </form>
       </div>
@@ -846,11 +781,10 @@ export function InscricaoColaborador() {
                   id="titulo-termo-colaborador"
                   className="text-xl font-black text-slate-900"
                 >
-                  Termo de Adesão e Compromisso do Colaborador
-                  ConsulToque
+                  Termo de Adesão e Compromisso do Associado Colaborador — SIA
                 </h2>
                 <p className="text-xs text-slate-500 mt-1">
-                  Versão {VERSAO_TERMO_COLABORADOR} — 20 de julho de 2026
+                  Versão {VERSAO_TERMO_COLABORADOR} — 22 de julho de 2026
                 </p>
               </div>
 
@@ -866,163 +800,331 @@ export function InscricaoColaborador() {
 
             <div className="overflow-y-auto p-6 space-y-5 text-sm leading-relaxed text-slate-700">
               <p>
-                Ao realizar seu cadastro e marcar a opção de aceite,
-                o COLABORADOR declara que leu, compreendeu e concorda
-                com as condições abaixo.
+                Ao realizar seu cadastro na plataforma e marcar a opção de
+                aceite eletrônico, você, na condição de Associado Colaborador,
+                declara que é maior de 18 (dezoito) anos, que leu, compreendeu e
+                concorda integralmente com os termos e condições abaixo
+                estabelecidos pela SIA – Sistema Inteligente de Apoio
+                Associativo.
               </p>
 
               <section>
-                <h3 className="font-black text-slate-900 mb-2">
-                  1. Objeto
-                </h3>
-                <p>
-                  Este Termo regula a participação voluntária do
-                  COLABORADOR no programa de indicações da ConsulToque.
-                  O COLABORADOR poderá divulgar, por meios lícitos e
-                  éticos, os produtos e serviços disponibilizados no
-                  site e utilizar seu link, código ou QR Code individual
-                  de indicação. A aquisição será realizada diretamente
-                  pelo interessado nos canais oficiais indicados pela
-                  ConsulToque.
-                </p>
+                <h3 className="font-black text-slate-900 mb-2">1. Objeto</h3>
+                <div className="space-y-2">
+                  <p>
+                    Este Termo regula a participação voluntária do Associado
+                    Colaborador no programa de divulgação e indicação da SIA.
+                  </p>
+                  <p>
+                    O Associado Colaborador poderá divulgar, por meios lícitos e
+                    éticos, os benefícios, programas e serviços associativos
+                    disponibilizados na plataforma, utilizando exclusivamente
+                    seu link, código ou QR Code individual de indicação.
+                  </p>
+                  <p>
+                    A adesão ou contratação de planos ou benefícios será
+                    realizada diretamente pelo interessado nos canais oficiais
+                    disponibilizados pela SIA.
+                  </p>
+                </div>
               </section>
 
               <section>
                 <h3 className="font-black text-slate-900 mb-2">
-                  2. Autonomia e inexistência de vínculo empregatício
+                  2. Capacidade Civil e Requisitos de Cadastro
                 </h3>
-                <p>
-                  A participação possui natureza autônoma, independente
-                  e não exclusiva. O cadastro não constitui contrato de
-                  trabalho, sociedade, franquia, mandato, emprego ou
-                  vínculo empregatício com a ConsulToque. O COLABORADOR
-                  não está sujeito a jornada, controle de horário,
-                  salário fixo, metas obrigatórias, chefe ou supervisor.
-                  Poderá escolher livremente quando, onde e como fará
-                  suas divulgações, exercer outras atividades e
-                  interromper sua participação a qualquer momento. Não
-                  existe garantia de vendas, renda mínima ou recebimento
-                  de comissões.
+                <p className="mb-2">
+                  Para atuar como Associado Colaborador, o usuário declara
+                  expressamente que:
                 </p>
+                <ul className="list-disc pl-5 space-y-2">
+                  <li>
+                    É pessoa física maior de 18 (dezoito) anos e plenamente
+                    capaz para os atos da vida civil.
+                  </li>
+                  <li>
+                    Os dados cadastrais, bancários e fiscais fornecidos são de
+                    sua titularidade, exatos e atualizados.
+                  </li>
+                  <li>
+                    É proibida a realização de cadastro e o recebimento de
+                    repasses em nome de menores de idade ou por intermédio de
+                    dados de terceiros.
+                  </li>
+                </ul>
               </section>
 
               <section>
                 <h3 className="font-black text-slate-900 mb-2">
-                  3. Comissões
+                  3. Autonomia e Inexistência de Vínculo Empregatício
                 </h3>
-                <p>
-                  O COLABORADOR receberá exclusivamente comissões sobre
-                  vendas válidas, efetivamente pagas e corretamente
-                  identificadas por seu código, link ou QR Code. As
-                  regras atuais são: 50% sobre a primeira mensalidade
-                  recebida; 20% sobre mensalidades recorrentes recebidas;
-                  e 5% sobre valores elegíveis gerados por colaborador
-                  diretamente indicado, conforme as regras da rede.
-                  O fechamento ocorre no dia 20 de cada mês, com
-                  previsão de pagamento no dia 5 subsequente, observadas
-                  as regras operacionais e bancárias.
-                </p>
-                <p className="mt-2">
-                  Não haverá comissão sobre cadastro sem pagamento,
-                  cobrança vencida, cancelada, excluída, devolvida,
-                  estornada, contestada ou fraudulenta, nem sobre venda
-                  sem identificação válida. Comissão já contabilizada
-                  sobre pagamento posteriormente desfeito poderá ser
-                  compensada em pagamentos futuros, com registro no
-                  histórico do colaborador.
-                </p>
+                <div className="space-y-2">
+                  <p>
+                    A participação do Associado Colaborador possui natureza
+                    estritamente associativa, autônoma, voluntária, independente
+                    e não exclusiva.
+                  </p>
+                  <p>
+                    O presente aceite não constitui contrato de trabalho,
+                    relação de emprego, sociedade, franquia, representação
+                    comercial, mandato ou vínculo subordinado com a SIA.
+                  </p>
+                  <p>O Associado Colaborador:</p>
+                  <ul className="list-disc pl-5 space-y-2">
+                    <li>
+                      Não está sujeito a controle de jornada, cumprimento de
+                      horários, metas obrigatórias, subordinação ou chefia.
+                    </li>
+                    <li>
+                      Possui total liberdade para escolher quando, onde e como
+                      fará suas divulgações.
+                    </li>
+                    <li>
+                      Pode exercer livremente outras atividades profissionais ou
+                      comerciais e interromper sua participação no programa a
+                      qualquer momento, sem penalidades.
+                    </li>
+                    <li>
+                      Reconhece que não há garantia de vendas, renda mínima ou
+                      compensação financeira fixa.
+                    </li>
+                  </ul>
+                </div>
               </section>
 
               <section>
                 <h3 className="font-black text-slate-900 mb-2">
-                  4. Tributos e descontos legais
+                  4. Regras de Incentivos e Repasses
                 </h3>
-                <p>
-                  Os valores exibidos no painel poderão corresponder a
-                  valores brutos. Sobre as comissões poderão incidir
-                  tributos, contribuições previdenciárias, retenções e
-                  outros descontos exigidos pela legislação, conforme a
-                  situação cadastral e tributária do COLABORADOR. O
-                  pagamento poderá ser documentado por recibo,
-                  comprovante ou nota fiscal, conforme aplicável. O
-                  COLABORADOR é responsável pela veracidade e atualização
-                  de suas informações cadastrais e fiscais.
-                </p>
+                <div className="space-y-3">
+                  <p>
+                    O Associado Colaborador receberá incentivos financeiros
+                    exclusivamente sobre as indicações ativadas, com
+                    mensalidades efetivamente pagas e identificadas de forma
+                    válida através do seu link, código ou QR Code.
+                  </p>
+                  <p className="font-bold text-slate-900">
+                    Estrutura do Plano de Incentivos:
+                  </p>
+                  <ul className="list-disc pl-5 space-y-2">
+                    <li>
+                      <strong>Adesão Direta (1ª Mensalidade):</strong> 50%
+                      (cinquenta por cento) do valor da primeira mensalidade
+                      paga pelos novos Associados Titulares cadastrados
+                      diretamente pelo seu link de divulgação.
+                    </li>
+                    <li>
+                      <strong>Recorrência Direta (Demais Mensalidades):</strong>{" "}
+                      20% (vinte por cento) sobre as mensalidades recorrentes
+                      recebidas dos Associados Titulares cadastrados diretamente
+                      pelo seu link de divulgação, enquanto se mantiverem
+                      adimplentes.
+                    </li>
+                    <li>
+                      <strong>Recorrência Indireta (2º Nível):</strong> 10% (dez
+                      por cento) sobre as mensalidades recorrentes recebidas dos
+                      Associados Titulares ativados através do link de outros
+                      Associados Colaboradores indicados por você através do seu
+                      link.
+                    </li>
+                  </ul>
+                  <p className="font-bold text-slate-900">
+                    Regras Operacionais de Pagamento:
+                  </p>
+                  <ul className="list-disc pl-5 space-y-2">
+                    <li>
+                      <strong>Fechamento e Repasse:</strong> o ciclo de apuração
+                      encerra-se no dia 20 (vinte) de cada mês, com previsão de
+                      repasse dos incentivos até o dia 5 (cinco) do mês
+                      subsequente, observados os prazos de liquidação bancária e
+                      validação operacional.
+                    </li>
+                    <li>
+                      <strong>Exclusões:</strong> não haverá geração de
+                      incentivo sobre cadastros sem pagamento, cobranças
+                      pendentes, vencidas, canceladas, estornadas, devolvidas,
+                      contestações de cartão (chargeback), fraudes ou vendas sem
+                      a devida identificação do link ou código.
+                    </li>
+                    <li>
+                      <strong>Compensação por Estornos:</strong> caso um
+                      incentivo contabilizado seja posteriormente estornado ou
+                      cancelado por contestação ou fraude, o valor
+                      correspondente será deduzido dos repasses futuros, com o
+                      devido registro no histórico do colaborador.
+                    </li>
+                  </ul>
+                </div>
               </section>
 
               <section>
                 <h3 className="font-black text-slate-900 mb-2">
-                  5. Regras de divulgação
+                  5. Tributos, Retenções e Encargos
                 </h3>
-                <p>
-                  O COLABORADOR compromete-se a fornecer informações
-                  verdadeiras, utilizar preferencialmente materiais
-                  oficiais, não prometer condições inexistentes, não se
-                  apresentar como funcionário, profissional de saúde,
-                  representante legal ou sócio da ConsulToque e não
-                  receber pagamentos de clientes em nome da empresa. É
-                  proibido praticar spam, publicidade enganosa, fraude,
-                  constrangimento ou qualquer divulgação ilícita.
-                </p>
+                <div className="space-y-2">
+                  <p>
+                    Os valores de incentivos exibidos no painel do colaborador
+                    correspondem a valores brutos.
+                  </p>
+                  <p>
+                    Sobre os repasses mensais poderão incidir impostos,
+                    contribuições previdenciárias (INSS), retenções na fonte ou
+                    taxas operacionais de gateway exigíveis pela legislação
+                    tributária e financeira vigente.
+                  </p>
+                  <p>
+                    O Associado Colaborador é o único responsável pela
+                    declaração e pelo recolhimento dos tributos incidentes sobre
+                    sua renda pessoal junto aos órgãos competentes.
+                  </p>
+                </div>
               </section>
 
               <section>
                 <h3 className="font-black text-slate-900 mb-2">
-                  6. Marca e materiais
+                  6. Normas de Conduta e Divulgação
                 </h3>
-                <p>
-                  A autorização para utilizar os materiais promocionais
-                  oficiais é limitada, pessoal, gratuita, revogável e
-                  não exclusiva. É proibido alterar indevidamente a
-                  marca, criar canais que aparentem ser oficiais,
-                  registrar domínios ou perfis com o nome ConsulToque ou
-                  produzir materiais enganosos. A autorização termina
-                  com o encerramento do cadastro.
+                <p className="mb-2">
+                  O Associado Colaborador compromete-se a pautar suas
+                  divulgações pela boa-fé, ética e transparência, devendo:
                 </p>
+                <ul className="list-disc pl-5 space-y-2">
+                  <li>
+                    Fornecer informações verdadeiras sobre os benefícios
+                    oferecidos.
+                  </li>
+                  <li>
+                    Utilizar exclusivamente os materiais promocionais oficiais
+                    disponibilizados no site ou na pasta oficial de materiais.
+                  </li>
+                  <li>
+                    Não se apresentar como funcionário, preposto, corretor
+                    exclusivo, profissional de saúde, representante legal ou
+                    sócio da SIA.
+                  </li>
+                  <li>
+                    Não receber pagamentos, Pix ou valores de clientes em sua
+                    conta pessoal em nome da associação.
+                  </li>
+                  <li>
+                    Não praticar spam, publicidade enganosa, disparo de
+                    mensagens não solicitadas, invasão de privacidade, promessas
+                    de ganhos fáceis ou qualquer conduta ilícita.
+                  </li>
+                </ul>
               </section>
 
               <section>
                 <h3 className="font-black text-slate-900 mb-2">
-                  7. Dados pessoais e confidencialidade
+                  7. Uso da Marca e Propriedade Intelectual
                 </h3>
-                <p>
-                  Os dados do cadastro poderão ser utilizados para
-                  identificação, administração do programa, apuração e
-                  pagamento de comissões, prevenção de fraudes,
-                  cumprimento de obrigações legais e comunicação com o
-                  COLABORADOR. É proibido coletar, armazenar, divulgar ou
-                  compartilhar indevidamente dados pessoais, financeiros
-                  ou de saúde de clientes, associados ou colaboradores.
-                </p>
+                <div className="space-y-2">
+                  <p>
+                    A autorização para utilização dos materiais promocionais
+                    oficiais e da marca SIA é concedida de forma limitada,
+                    pessoal, gratuita, revogável a qualquer tempo e não
+                    exclusiva.
+                  </p>
+                  <p>É expressamente proibido:</p>
+                  <ul className="list-disc pl-5 space-y-2">
+                    <li>
+                      Alterar, deformar ou modificar logotipos, marcas e artes
+                      oficiais da SIA.
+                    </li>
+                    <li>
+                      Criar sites, canais, páginas ou perfis em redes sociais
+                      que simulem ser canais oficiais da associação.
+                    </li>
+                    <li>
+                      Registrar domínios de internet, marcas ou nomes de usuário
+                      que contenham a palavra “SIA” ou variações confundíveis.
+                    </li>
+                  </ul>
+                  <p>
+                    A autorização de uso da marca encerra-se imediatamente em
+                    caso de desligamento do programa.
+                  </p>
+                </div>
               </section>
 
               <section>
                 <h3 className="font-black text-slate-900 mb-2">
-                  8. Suspensão e encerramento
+                  8. Proteção de Dados Pessoais (LGPD) e Confidencialidade
                 </h3>
-                <p>
-                  A participação poderá ser suspensa ou encerrada por
-                  fraude, informação falsa, uso indevido da marca,
-                  violação de dados, publicidade enganosa, desrespeito a
-                  consumidores ou descumprimento deste Termo. O
-                  encerramento não elimina comissões válidas já apuradas,
-                  ressalvados valores relacionados a fraude, estorno,
-                  contestação, devolução ou infração comprovada.
-                </p>
+                <div className="space-y-2">
+                  <p>
+                    Os dados pessoais do Associado Colaborador serão tratados
+                    pela SIA para fins de identificação, gestão do programa,
+                    apuração e pagamento de incentivos, prevenção a fraudes e
+                    cumprimento de obrigações legais, nos termos da Lei Geral de
+                    Proteção de Dados (Lei nº 13.709/2018).
+                  </p>
+                  <p>
+                    O Associado Colaborador compromete-se a respeitar a
+                    privacidade dos indicados, sendo-lhe vedado coletar,
+                    armazenar, manipular, divulgar ou compartilhar indevidamente
+                    dados pessoais, financeiros ou dados sensíveis de saúde de
+                    associados ou terceiros.
+                  </p>
+                </div>
               </section>
 
               <section>
                 <h3 className="font-black text-slate-900 mb-2">
-                  9. Atualizações e aceite eletrônico
+                  9. Suspensão e Cancelamento do Cadastro
                 </h3>
-                <p>
-                  A ConsulToque poderá atualizar este Termo para atender
-                  a mudanças comerciais, operacionais ou legais. Mudança
-                  relevante na remuneração ou nas responsabilidades será
-                  informada e submetida a novo aceite antes de produzir
-                  efeitos futuros. O aceite eletrônico será registrado
-                  com o CPF, a versão do Termo, a data e o horário.
-                </p>
+                <div className="space-y-2">
+                  <p>
+                    A SIA reserva-se o direito de suspender ou encerrar
+                    imediatamente o cadastro do Associado Colaborador, sem
+                    prejuízo das medidas judiciais cabíveis, nos seguintes
+                    casos:
+                  </p>
+                  <ul className="list-disc pl-5 space-y-2">
+                    <li>Violação de qualquer cláusula deste Termo.</li>
+                    <li>
+                      Prática de fraude, envio de informações falsas ou uso de
+                      meios automatizados irregulares.
+                    </li>
+                    <li>
+                      Utilização indevida da marca ou conduta que cause danos à
+                      imagem da associação ou de terceiros.
+                    </li>
+                  </ul>
+                  <p>
+                    <strong>Efeitos do Encerramento:</strong> o cancelamento do
+                    cadastro não extingue o direito ao recebimento de incentivos
+                    válidos e já apurados até a data do desligamento,
+                    ressalvados os valores decorrentes de fraudes, estornos,
+                    devoluções, valores contestados ou ressarcimentos de
+                    prejuízos causados à entidade.
+                  </p>
+                </div>
+              </section>
+
+              <section>
+                <h3 className="font-black text-slate-900 mb-2">
+                  10. Atualizações do Termo e Aceite Eletrônico
+                </h3>
+                <div className="space-y-2">
+                  <p>
+                    A SIA poderá alterar ou atualizar este Termo periodicamente
+                    para adequação a mudanças comerciais, legais ou
+                    operacionais.
+                  </p>
+                  <p>
+                    Eventuais alterações relevantes nas regras de
+                    comissionamento ou responsabilidades serão comunicadas
+                    previamente na plataforma e submetidas a um novo aceite
+                    eletrônico.
+                  </p>
+                  <p>
+                    <strong>Validade do Aceite:</strong> o aceite eletrônico
+                    deste Termo será registrado no sistema com a identificação
+                    do CPF do usuário, endereço IP, versão do documento, data e
+                    horário, constituindo meio de prova para os fins aplicáveis.
+                  </p>
+                </div>
               </section>
             </div>
 
@@ -1040,7 +1142,7 @@ export function InscricaoColaborador() {
                 onClick={() => {
                   setAceitouTermo(true);
                   setTermoAberto(false);
-                  setErro('');
+                  setErro("");
                 }}
                 className="px-5 py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold"
               >
