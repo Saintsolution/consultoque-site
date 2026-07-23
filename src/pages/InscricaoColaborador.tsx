@@ -7,7 +7,7 @@ const WEBHOOK_BUSCA_CPF =
 const WEBHOOK_INSERT_COLAB =
   "https://n8n.saintsolution.com.br/webhook/insertcolab";
 
-const VERSAO_TERMO_COLABORADOR = "2.0";
+const VERSAO_TERMO_COLABORADOR = "2.1";
 
 type RetornoCpf = {
   status?: string;
@@ -332,7 +332,7 @@ export function InscricaoColaborador() {
     }));
   };
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     setErro("");
@@ -381,16 +381,27 @@ export function InscricaoColaborador() {
       return;
     }
 
+    /*
+     * O primeiro envio apenas abre o Termo.
+     * Nenhum dado é enviado ao webhook neste momento.
+     */
+    setAceitouTermo(false);
+    setTermoAberto(true);
+  };
+
+  const enviarCadastro = async () => {
     if (!aceitouTermo) {
       setErro(
-        "Leia e aceite o Termo de Adesão e Compromisso para concluir a inscrição.",
+        "Marque o aceite no final do Termo para concluir a inscrição.",
       );
       return;
     }
 
     setLoading(true);
+    setErro("");
 
     const dataAceiteTermo = new Date();
+    const cpf = somenteNumeros(formData.cpf_colab);
 
     const payload = {
       cod_pai: refId || "0001",
@@ -469,6 +480,7 @@ export function InscricaoColaborador() {
       setCpfValidado(false);
       setCpfJaCadastrado(false);
       setAceitouTermo(false);
+      setTermoAberto(false);
 
       setMensagemCpf("");
       setUltimoCpfConsultado("");
@@ -693,45 +705,12 @@ export function InscricaoColaborador() {
             />
           </div>
 
-          <div
-            className={`rounded-xl border p-4 ${
-              formularioLiberado
-                ? "border-slate-300 bg-slate-50"
-                : "border-slate-200 bg-slate-100 opacity-50"
-            }`}
-          >
-            <div className="flex items-start gap-3">
-              <input
-                id="aceite_termo_colaborador"
-                type="checkbox"
-                checked={aceitouTermo}
-                onChange={(event) => {
-                  setAceitouTermo(event.target.checked);
-                  setErro("");
-                }}
-                disabled={!formularioLiberado}
-                className="mt-1 h-5 w-5 shrink-0 accent-green-600"
-                required
-              />
-
-              <label
-                htmlFor="aceite_termo_colaborador"
-                className="text-sm text-slate-700 leading-relaxed"
-              >
-                Li e concordo com o{" "}
-                <button
-                  type="button"
-                  onClick={() => setTermoAberto(true)}
-                  disabled={!formularioLiberado}
-                  className="font-black text-blue-700 underline disabled:text-slate-500"
-                >
-                  Termo de Adesão e Compromisso do Associado Colaborador — SIA
-                </button>
-                . Declaro possuir 18 anos completos ou mais e estar ciente de
-                que a participação é associativa, autônoma, sem salário fixo,
-                horário, subordinação ou garantia de rendimentos.
-              </label>
-            </div>
+          <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
+            <p className="text-sm leading-relaxed text-blue-900">
+              Ao continuar, será exibido o Termo de Adesão e Compromisso
+              completo. A inscrição somente será enviada depois da leitura e
+              do aceite no final do documento.
+            </p>
           </div>
 
           {erro && (
@@ -743,10 +722,10 @@ export function InscricaoColaborador() {
           <button
             type="submit"
             disabled={
-              loading || consultandoCpf || !formularioLiberado || !aceitouTermo
+              loading || consultandoCpf || !formularioLiberado
             }
             className={`w-full text-white py-4 rounded-xl font-bold ${
-              loading || consultandoCpf || !formularioLiberado || !aceitouTermo
+              loading || consultandoCpf || !formularioLiberado
                 ? "bg-gray-400 cursor-not-allowed"
                 : "bg-green-600 hover:bg-green-700"
             }`}
@@ -757,7 +736,7 @@ export function InscricaoColaborador() {
                 ? "Validando CPF..."
                 : cpfJaCadastrado
                   ? "CPF já cadastrado"
-                  : "Confirmar Inscrição"}
+                  : "Fazer inscrição"}
           </button>
         </form>
       </div>
@@ -769,7 +748,10 @@ export function InscricaoColaborador() {
           aria-modal="true"
           aria-labelledby="titulo-termo-colaborador"
           onMouseDown={(event) => {
-            if (event.target === event.currentTarget) {
+            if (
+              event.target === event.currentTarget &&
+              !loading
+            ) {
               setTermoAberto(false);
             }
           }}
@@ -784,13 +766,14 @@ export function InscricaoColaborador() {
                   Termo de Adesão e Compromisso do Associado Colaborador — SIA
                 </h2>
                 <p className="text-xs text-slate-500 mt-1">
-                  Versão {VERSAO_TERMO_COLABORADOR} — 22 de julho de 2026
+                  Versão {VERSAO_TERMO_COLABORADOR} — 23 de julho de 2026
                 </p>
               </div>
 
               <button
                 type="button"
                 onClick={() => setTermoAberto(false)}
+                disabled={loading}
                 className="shrink-0 w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 font-black text-slate-700"
                 aria-label="Fechar termo"
               >
@@ -805,7 +788,7 @@ export function InscricaoColaborador() {
                 declara que é maior de 18 (dezoito) anos, que leu, compreendeu e
                 concorda integralmente com os termos e condições abaixo
                 estabelecidos pela SIA – Sistema Inteligente de Apoio
-                Associativo.
+                Associativo e Amparo Comunitário.
               </p>
 
               <section>
@@ -910,22 +893,20 @@ export function InscricaoColaborador() {
                     <li>
                       <strong>Adesão Direta (1ª Mensalidade):</strong> 50%
                       (cinquenta por cento) do valor da primeira mensalidade
-                      paga pelos novos Associados Titulares cadastrados
-                      diretamente pelo seu link de divulgação.
+                      paga pelos novos Associados cadastrados diretamente pelo
+                      seu link de divulgação.
                     </li>
                     <li>
                       <strong>Recorrência Direta (Demais Mensalidades):</strong>{" "}
                       20% (vinte por cento) sobre as mensalidades recorrentes
-                      recebidas dos Associados Titulares cadastrados diretamente
-                      pelo seu link de divulgação, enquanto se mantiverem
-                      adimplentes.
+                      recebidas dos Associados cadastrados diretamente pelo seu
+                      link de divulgação, enquanto se mantiverem adimplentes.
                     </li>
                     <li>
                       <strong>Recorrência Indireta (2º Nível):</strong> 10% (dez
                       por cento) sobre as mensalidades recorrentes recebidas dos
-                      Associados Titulares ativados através do link de outros
-                      Associados Colaboradores indicados por você através do seu
-                      link.
+                      Associados que forem ativados através do link de outros
+                      Associados Colaboradores indicados pelo seu link.
                     </li>
                   </ul>
                   <p className="font-bold text-slate-900">
@@ -1128,26 +1109,54 @@ export function InscricaoColaborador() {
               </section>
             </div>
 
-            <div className="p-5 border-t border-slate-200 bg-slate-50 flex flex-col sm:flex-row gap-3 sm:justify-end">
-              <button
-                type="button"
-                onClick={() => setTermoAberto(false)}
-                className="px-5 py-3 rounded-xl bg-slate-200 text-slate-800 font-bold"
-              >
-                Fechar
-              </button>
+            <div className="border-t border-slate-200 bg-slate-50 p-5">
+              <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4">
+                <input
+                  id="aceite_termo_colaborador"
+                  type="checkbox"
+                  checked={aceitouTermo}
+                  onChange={(event) => {
+                    setAceitouTermo(event.target.checked);
+                    setErro("");
+                  }}
+                  disabled={loading}
+                  className="mt-1 h-5 w-5 shrink-0 accent-green-600"
+                />
 
-              <button
-                type="button"
-                onClick={() => {
-                  setAceitouTermo(true);
-                  setTermoAberto(false);
-                  setErro("");
-                }}
-                className="px-5 py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold"
-              >
-                Li e concordo
-              </button>
+                <span className="text-sm font-semibold leading-relaxed text-blue-950">
+                  Declaro que sou maior de 18 anos, li, compreendi e concordo
+                  integralmente com o Termo de Adesão e Compromisso do
+                  Associado Colaborador — SIA.
+                </span>
+              </label>
+
+              {erro && (
+                <div className="mt-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-bold text-red-700">
+                  {erro}
+                </div>
+              )}
+
+              <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={() => setTermoAberto(false)}
+                  disabled={loading}
+                  className="rounded-xl bg-slate-200 px-5 py-3 font-bold text-slate-800 disabled:opacity-50"
+                >
+                  Voltar
+                </button>
+
+                <button
+                  type="button"
+                  onClick={enviarCadastro}
+                  disabled={!aceitouTermo || loading}
+                  className="rounded-xl bg-green-600 px-5 py-3 font-bold text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {loading
+                    ? "Enviando inscrição..."
+                    : "Confirmar inscrição"}
+                </button>
+              </div>
             </div>
           </div>
         </div>

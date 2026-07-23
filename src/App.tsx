@@ -59,7 +59,8 @@ export default function App() {
       /^\d{1,4}$/.test(caminhoCompleto);
 
     const referenciaEncontrada =
-      refParam || (isRefPath ? caminhoCompleto : null);
+      refParam ||
+      (isRefPath ? caminhoCompleto : null);
 
     if (!referenciaEncontrada) {
       return;
@@ -169,13 +170,21 @@ export default function App() {
           element={<SolicitarImpressos />}
         />
 
+        {/*
+         * Novo dashboard administrativo.
+         * Possui login protegido por token.
+         */}
         <Route
-          path="/empresa"
+          path="/admin"
           element={<EmpresaDashboard />}
         />
 
+        {/*
+         * Painel administrativo antigo.
+         * Mantido temporariamente para conferência.
+         */}
         <Route
-          path="/admin"
+          path="/admin-asaas"
           element={<AdminAsaas />}
         />
 
