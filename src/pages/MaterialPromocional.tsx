@@ -15,7 +15,7 @@ const VIDEOS_PROMOCIONAIS = [
       'Uma família encontra atendimento médico para o filho durante a madrugada.',
     formato: 'Vertical',
     downloadUrl:
-  'https://drive.google.com/uc?export=download&id=1Trdz0F3AqKKn9ZOebiG_BMGQ8H7SU5Dj',
+  'https://drive.google.com/uc?export=download&id=1EID5HcVRURnGoR5BNVDABOkP6R1JUBoo',
   },
   {
     slug: 'morena-tiktok',
