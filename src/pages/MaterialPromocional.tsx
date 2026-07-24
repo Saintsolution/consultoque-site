@@ -15,7 +15,7 @@ const VIDEOS_PROMOCIONAIS = [
       'Uma família encontra atendimento médico para o filho durante a madrugada.',
     formato: 'Vertical',
     downloadUrl:
-  'https://drive.google.com/uc?export=download&id=1EID5HcVRURnGoR5BNVDABOkP6R1JUBoo',
+  'https://drive.google.com/uc?export=download&id=1u3CSFoxl6w0KcsmcNvIJYAasTVln7rlA',
   },
   {
     slug: 'morena-tiktok',
@@ -33,7 +33,7 @@ const VIDEOS_PROMOCIONAIS = [
       'Campanha promocional mostrando uma situação cotidiana e a solução ConsulToque.',
     formato: 'Vertical',
     downloadUrl:
-      'https://drive.google.com/uc?export=download&id=1aQx_D1daZcmYDlknCOIRC0eACK2sCtH_',
+      'https://drive.google.com/uc?export=download&id=1w6OJJxxe94DRBnVo5APOYX4oiQV2fpY2',
   },
   {
     slug: 'medico-explica',
