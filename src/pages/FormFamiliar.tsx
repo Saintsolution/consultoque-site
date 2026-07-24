@@ -3,6 +3,7 @@ import {
   TermoAdesaoAssociado,
   VERSAO_TERMO_ASSOCIADO,
 } from '../components/TermoAdesaoAssociado';
+import { SolicitacaoValidacaoCpf } from '../components/SolicitacaoValidacaoCpf';
 
 const WEBHOOK_URL =
   'https://n8n.saintsolution.com.br/webhook/familiar-pessoal';
@@ -27,6 +28,20 @@ export function FormFamiliar() {
   const [erro, setErro] = useState('');
   const [erroValidacao, setErroValidacao] = useState('');
   const [erroTitular, setErroTitular] = useState('');
+  const [
+    solicitarAtendimentoAssociado,
+    setSolicitarAtendimentoAssociado,
+  ] = useState(false);
+  const [
+    solicitarAtendimentoTitular,
+    setSolicitarAtendimentoTitular,
+  ] = useState(false);
+  const [
+    solicitacaoCpfAberta,
+    setSolicitacaoCpfAberta,
+  ] = useState<'responsavel' | 'titular' | null>(
+    null
+  );
 
   const [sucesso, setSucesso] = useState(false);
   const [mostrarTermos, setMostrarTermos] = useState(false);
@@ -262,6 +277,7 @@ export function FormFamiliar() {
     setDadosValidados(false);
     setCpfBloqueado(false);
     setErroValidacao('');
+    setSolicitarAtendimentoAssociado(false);
   }
 
   function limparDadosTitular() {
@@ -275,6 +291,7 @@ export function FormFamiliar() {
 
     setTitularValidado(false);
     setErroTitular('');
+    setSolicitarAtendimentoTitular(false);
   }
 
   function handleChange(
@@ -374,6 +391,7 @@ export function FormFamiliar() {
     setConsultandoCpf(true);
     setErro('');
     setErroValidacao('');
+    setSolicitarAtendimentoAssociado(false);
 
     try {
       const response = await fetch(
@@ -409,6 +427,35 @@ export function FormFamiliar() {
           data?.mensagem ||
             'Não foi possível consultar o CPF informado.'
         );
+      }
+
+      /*
+       * O n8n pode devolver HTTP 200 com o erro
+       * de negócio normalizado no corpo da resposta.
+       */
+      if (
+        data?.status === 'erro' ||
+        data?.cpf_validado === false ||
+        data?.liberar_cadastro === false
+      ) {
+        setFormData((prev) => ({
+          ...prev,
+          assoc_nome: '',
+          assoc_nasc: '',
+        }));
+
+        setDadosValidados(false);
+        setCpfBloqueado(false);
+        setSolicitarAtendimentoAssociado(
+          data?.solicitar_atendimento === true
+        );
+
+        setErroValidacao(
+          data?.mensagem ||
+            'Não foi possível confirmar este CPF. Entre em contato com nossa equipe.'
+        );
+
+        return;
       }
 
       const nome = somenteTexto(
@@ -477,10 +524,15 @@ export function FormFamiliar() {
       setCpfBloqueado(false);
       setDadosValidados(true);
       setErroValidacao('');
+      setSolicitarAtendimentoAssociado(false);
     } catch (error) {
       console.error(error);
 
-      ultimoCpfConsultadoRef.current = '';
+      /*
+       * Mantém o CPF como consultado para o
+       * useEffect não repetir a mesma requisição.
+       */
+      ultimoCpfConsultadoRef.current = cpf;
 
       setFormData((prev) => ({
         ...prev,
@@ -490,6 +542,7 @@ export function FormFamiliar() {
 
       setDadosValidados(false);
       setCpfBloqueado(false);
+      setSolicitarAtendimentoAssociado(true);
 
       setErroValidacao(
         error instanceof Error
@@ -530,6 +583,7 @@ export function FormFamiliar() {
     setConsultandoCpfTitular(true);
     setErro('');
     setErroTitular('');
+    setSolicitarAtendimentoTitular(false);
 
     try {
       const response = await fetch(
@@ -570,6 +624,30 @@ export function FormFamiliar() {
         );
       }
 
+      if (
+        data?.status === 'erro' ||
+        data?.cpf_validado === false ||
+        data?.liberar_cadastro === false
+      ) {
+        setFormData((prev) => ({
+          ...prev,
+          tit_nome: '',
+          tit_nasc: '',
+        }));
+
+        setTitularValidado(false);
+        setSolicitarAtendimentoTitular(
+          data?.solicitar_atendimento === true
+        );
+
+        setErroTitular(
+          data?.mensagem ||
+            'Não foi possível confirmar o CPF do titular. Entre em contato com nossa equipe.'
+        );
+
+        return;
+      }
+
       const nome = somenteTexto(
         data?.nome ||
           data?.nome_completo ||
@@ -604,10 +682,11 @@ export function FormFamiliar() {
 
       setTitularValidado(true);
       setErroTitular('');
+      setSolicitarAtendimentoTitular(false);
     } catch (error) {
       console.error(error);
 
-      ultimoCpfTitularConsultadoRef.current = '';
+      ultimoCpfTitularConsultadoRef.current = cpf;
 
       setFormData((prev) => ({
         ...prev,
@@ -616,6 +695,7 @@ export function FormFamiliar() {
       }));
 
       setTitularValidado(false);
+      setSolicitarAtendimentoTitular(true);
 
       setErroTitular(
         error instanceof Error
@@ -952,7 +1032,30 @@ export function FormFamiliar() {
 
               {erroValidacao && (
                 <div className="bg-red-50 border border-red-200 text-red-700 text-sm font-semibold px-4 py-3 rounded-xl">
-                  {erroValidacao}
+                  <p>{erroValidacao}</p>
+
+                  {solicitarAtendimentoAssociado && (
+                    <div className="mt-3 border-t border-red-200 pt-3">
+                      <button
+                        type="button"
+                        onMouseDown={(event) =>
+                          event.preventDefault()
+                        }
+                        onClick={() =>
+                          setSolicitacaoCpfAberta(
+                            'responsavel'
+                          )
+                        }
+                        className="inline-flex rounded-xl bg-blue-700 px-4 py-2.5 font-black text-white hover:bg-blue-800"
+                      >
+                        Solicitar ajuda à equipe
+                      </button>
+
+                      <p className="mt-2 text-xs text-slate-600">
+                        consultoque@gmail.com
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1112,7 +1215,30 @@ export function FormFamiliar() {
 
                       {erroTitular && (
                         <div className="bg-red-50 border border-red-200 text-red-700 text-sm font-semibold px-4 py-3 rounded-xl">
-                          {erroTitular}
+                          <p>{erroTitular}</p>
+
+                          {solicitarAtendimentoTitular && (
+                            <div className="mt-3 border-t border-red-200 pt-3">
+                              <button
+                                type="button"
+                                onMouseDown={(event) =>
+                                  event.preventDefault()
+                                }
+                                onClick={() =>
+                                  setSolicitacaoCpfAberta(
+                                    'titular'
+                                  )
+                                }
+                                className="inline-flex rounded-xl bg-blue-700 px-4 py-2.5 font-black text-white hover:bg-blue-800"
+                              >
+                                Solicitar ajuda à equipe
+                              </button>
+
+                              <p className="mt-2 text-xs text-slate-600">
+                                consultoque@gmail.com
+                              </p>
+                            </div>
+                          )}
                         </div>
                       )}
 
@@ -1221,6 +1347,25 @@ export function FormFamiliar() {
         onAceite={setTermosAceitos}
         onFechar={() => setMostrarTermos(false)}
         onConfirmar={enviarCadastro}
+      />
+
+      <SolicitacaoValidacaoCpf
+        aberto={solicitacaoCpfAberta !== null}
+        cpf={
+          solicitacaoCpfAberta === 'titular'
+            ? formData.tit_cpf
+            : formData.assoc_cpf
+        }
+        origemFormulario="familiar"
+        motivo="cpf_nao_localizado"
+        mensagemApi={
+          solicitacaoCpfAberta === 'titular'
+            ? erroTitular
+            : erroValidacao
+        }
+        onFechar={() =>
+          setSolicitacaoCpfAberta(null)
+        }
       />
     </main>
   );

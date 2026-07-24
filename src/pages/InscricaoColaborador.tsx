@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { SolicitacaoValidacaoCpf } from "../components/SolicitacaoValidacaoCpf";
 
 const WEBHOOK_BUSCA_CPF =
   "https://n8n.saintsolution.com.br/webhook/BuscaCPFcolab";
@@ -29,6 +30,8 @@ type RetornoCpf = {
   cod_colab?: string | number;
   email_mascarado?: string;
 
+  motivo?: string;
+  solicitar_atendimento?: boolean;
   mensagem?: string;
 };
 
@@ -84,6 +87,11 @@ export function InscricaoColaborador() {
 
   const [erro, setErro] = useState("");
   const [mensagemCpf, setMensagemCpf] = useState("");
+  const [motivoErroCpf, setMotivoErroCpf] = useState("");
+  const [solicitarAtendimentoCpf, setSolicitarAtendimentoCpf] =
+    useState(false);
+  const [solicitacaoCpfAberta, setSolicitacaoCpfAberta] =
+    useState(false);
 
   const [cpfValidado, setCpfValidado] = useState(false);
   const [cpfJaCadastrado, setCpfJaCadastrado] = useState(false);
@@ -135,14 +143,17 @@ export function InscricaoColaborador() {
       return;
     }
 
-    if (cpf === ultimoCpfConsultado && (cpfValidado || cpfJaCadastrado)) {
+    if (cpf === ultimoCpfConsultado) {
       return;
     }
 
+    setUltimoCpfConsultado(cpf);
     setConsultandoCpf(true);
 
     setErro("");
     setMensagemCpf("Consultando CPF...");
+    setMotivoErroCpf("");
+    setSolicitarAtendimentoCpf(false);
 
     setCpfValidado(false);
     setCpfJaCadastrado(false);
@@ -166,8 +177,6 @@ export function InscricaoColaborador() {
 
       const resultado = pegarPrimeiroResultado<RetornoCpf>(respostaJson);
 
-      setUltimoCpfConsultado(cpf);
-
       /*
        * CPF JÁ EXISTE NA PLANILHA
        *
@@ -186,6 +195,8 @@ export function InscricaoColaborador() {
 
         setCpfValidado(false);
         setCpfJaCadastrado(true);
+        setMotivoErroCpf("");
+        setSolicitarAtendimentoCpf(false);
 
         setFormData({
           nome_colab: "",
@@ -216,6 +227,10 @@ export function InscricaoColaborador() {
       if (resultado?.status !== "sucesso" || resultado?.cpf_validado !== true) {
         setCpfValidado(false);
         setCpfJaCadastrado(false);
+        setMotivoErroCpf(resultado?.motivo || "");
+        setSolicitarAtendimentoCpf(
+          resultado?.solicitar_atendimento === true,
+        );
 
         limparDadosDepoisCpf();
 
@@ -240,6 +255,8 @@ export function InscricaoColaborador() {
       ) {
         setCpfValidado(false);
         setCpfJaCadastrado(false);
+        setMotivoErroCpf("menor_idade");
+        setSolicitarAtendimentoCpf(false);
 
         limparDadosDepoisCpf();
 
@@ -259,6 +276,8 @@ export function InscricaoColaborador() {
       if (!nomeEncontrado.trim()) {
         setCpfValidado(false);
         setCpfJaCadastrado(false);
+        setMotivoErroCpf("dados_incompletos");
+        setSolicitarAtendimentoCpf(true);
 
         limparDadosDepoisCpf();
 
@@ -272,6 +291,8 @@ export function InscricaoColaborador() {
        */
       setCpfValidado(true);
       setCpfJaCadastrado(false);
+      setMotivoErroCpf("");
+      setSolicitarAtendimentoCpf(false);
 
       setFormData((prev) => ({
         ...prev,
@@ -287,7 +308,8 @@ export function InscricaoColaborador() {
 
       setCpfValidado(false);
       setCpfJaCadastrado(false);
-      setUltimoCpfConsultado("");
+      setMotivoErroCpf("falha_consulta");
+      setSolicitarAtendimentoCpf(true);
 
       limparDadosDepoisCpf();
 
@@ -316,6 +338,8 @@ export function InscricaoColaborador() {
 
     setErro("");
     setMensagemCpf("");
+    setMotivoErroCpf("");
+    setSolicitarAtendimentoCpf(false);
     setUltimoCpfConsultado("");
 
     if (cpfDigitado.length === 11) {
@@ -572,6 +596,18 @@ export function InscricaoColaborador() {
           validação.
         </p>
 
+        <div className="mb-6 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-amber-950">
+          <p className="font-black">
+            Cadastro exclusivo para pessoas maiores de 18 anos
+          </p>
+
+          <p className="mt-1 text-sm leading-relaxed">
+            Menores de idade não podem se cadastrar como Associados
+            Colaboradores nem receber incentivos ou repasses pelo programa. A
+            idade será confirmada durante a validação do CPF.
+          </p>
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-1">
@@ -592,7 +628,8 @@ export function InscricaoColaborador() {
                   cpf.length === 11 &&
                   !cpfValidado &&
                   !cpfJaCadastrado &&
-                  !consultandoCpf
+                  !consultandoCpf &&
+                  cpf !== ultimoCpfConsultado
                 ) {
                   consultarCpf(cpf);
                 }
@@ -635,6 +672,35 @@ export function InscricaoColaborador() {
                   >
                     Ir para Área do Colaborador
                   </Link>
+                )}
+
+                {!cpfJaCadastrado && solicitarAtendimentoCpf && (
+                  <div className="mt-4 border-t border-red-200 pt-4">
+                    <p className="font-semibold">
+                      Se o CPF está correto, entre em contato para que nossa
+                      equipe verifique o cadastro.
+                    </p>
+
+                    <button
+                      type="button"
+                      onMouseDown={(event) =>
+                        event.preventDefault()
+                      }
+                      onClick={() =>
+                        setSolicitacaoCpfAberta(true)
+                      }
+                      className="mt-3 inline-flex rounded-xl bg-blue-700 px-4 py-2.5 font-black text-white hover:bg-blue-800"
+                    >
+                      Solicitar ajuda à equipe
+                    </button>
+
+                    <p className="mt-2 text-xs font-semibold text-slate-600">
+                      E-mail: consultoque@gmail.com
+                      {motivoErroCpf
+                        ? ` · Referência: ${motivoErroCpf}`
+                        : ""}
+                    </p>
+                  </div>
                 )}
               </div>
             )}
@@ -1161,6 +1227,20 @@ export function InscricaoColaborador() {
           </div>
         </div>
       )}
+
+      <SolicitacaoValidacaoCpf
+        aberto={solicitacaoCpfAberta}
+        cpf={formData.cpf_colab}
+        origemFormulario="colaborador"
+        motivo={
+          motivoErroCpf ||
+          "cpf_nao_localizado"
+        }
+        mensagemApi={mensagemCpf}
+        onFechar={() =>
+          setSolicitacaoCpfAberta(false)
+        }
+      />
     </div>
   );
 }
