@@ -1,9 +1,6 @@
 import { useRef, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 
-const LINK_VIDEOS =
-  'https://drive.google.com/drive/folders/11umxlHmomrmMQIi3mEBuGD_R5k2Kgg-6?usp=drive_link';
-
 const LINK_TEXTOS =
   'https://drive.google.com/drive/folders/1pjk7eKKBeAavOw_7-0i8BW-ad0ymoKTj?usp=drive_link';
 
@@ -17,13 +14,17 @@ const VIDEOS_PROMOCIONAIS = [
     descricao:
       'Uma família encontra atendimento médico para o filho durante a madrugada.',
     formato: 'Vertical',
+    downloadUrl:
+  'https://drive.google.com/uc?export=download&id=1Trdz0F3AqKKn9ZOebiG_BMGQ8H7SU5Dj',
   },
   {
     slug: 'morena-tiktok',
     titulo: 'Morena TikTok',
     descricao:
-      'Vídeo curto e direto, preparado para compartilhamento em redes sociais.',
+      'Vídeo curto e direto, preparado para compartilhamento em redes sociais, morena que não é atendida.',
     formato: 'Vertical',
+    downloadUrl:
+      'https://drive.google.com/uc?export=download&id=1EID5HcVRURnGoR5BNVDABOkP6R1JUBoo',
   },
   {
     slug: 'japones-doente',
@@ -31,6 +32,8 @@ const VIDEOS_PROMOCIONAIS = [
     descricao:
       'Campanha promocional mostrando uma situação cotidiana e a solução ConsulToque.',
     formato: 'Vertical',
+    downloadUrl:
+      'https://drive.google.com/uc?export=download&id=1aQx_D1daZcmYDlknCOIRC0eACK2sCtH_',
   },
   {
     slug: 'medico-explica',
@@ -38,6 +41,8 @@ const VIDEOS_PROMOCIONAIS = [
     descricao:
       'Um médico explica de maneira simples como funciona o atendimento.',
     formato: 'Horizontal',
+    downloadUrl:
+      'https://drive.google.com/uc?export=download&id=1Ntfir61CIPVm-3PO9KD1T14WH5hwIyTG',
   },
 ] as const;
 
@@ -147,6 +152,31 @@ export function MaterialPromocional() {
 
     window.open(
       urlWhatsApp,
+      '_blank',
+      'noopener,noreferrer'
+    );
+  }
+
+  function baixarVideo(
+    downloadUrl: string,
+    titulo: string
+  ) {
+    const confirmou = window.confirm(
+      [
+        `Você vai baixar o vídeo "${titulo}".`,
+        '',
+        'IMPORTANTE: o arquivo MP4 não contém seu número de colaborador.',
+        'Ao publicar ou enviar este vídeo nas redes sociais, coloque junto o seu link de vendas:',
+        linkVenda,
+        '',
+        'Deseja continuar o download?',
+      ].join('\n')
+    );
+
+    if (!confirmou) return;
+
+    window.open(
+      downloadUrl,
       '_blank',
       'noopener,noreferrer'
     );
@@ -408,6 +438,22 @@ export function MaterialPromocional() {
               colaborador. Quando a pessoa assistir e clicar em
               Saiba Mais, sua indicação continuará registrada.
             </p>
+
+            <div className="mt-5 bg-amber-50 border border-amber-200 rounded-xl p-4">
+              <p className="font-black text-amber-900">
+                Atenção ao baixar o arquivo MP4
+              </p>
+
+              <p className="text-sm text-amber-900 leading-relaxed mt-1">
+                O vídeo baixado não leva sua identificação sozinho.
+                Ao enviá-lo pelo WhatsApp ou publicá-lo nas redes
+                sociais, escreva junto o seu link de vendas:
+                {' '}
+                <strong className="break-all">
+                  {linkVenda}
+                </strong>
+              </p>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
@@ -483,6 +529,19 @@ export function MaterialPromocional() {
                           ? '✓ Link copiado!'
                           : 'Copiar link do vídeo'}
                       </button>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          baixarVideo(
+                            video.downloadUrl,
+                            video.titulo
+                          )
+                        }
+                        className="bg-blue-700 hover:bg-blue-800 text-white font-bold px-4 py-3 rounded-xl transition-colors"
+                      >
+                        Baixar vídeo
+                      </button>
                     </div>
                   </div>
                 </article>
@@ -508,19 +567,9 @@ export function MaterialPromocional() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <CardMaterial
               numero="1"
-              cor="azul"
-              titulo="Vídeos para vendas"
-              descricao="Vídeos prontos para baixar e publicar no WhatsApp, Instagram, TikTok, Facebook e outras redes sociais."
-              instrucao="Baixe um vídeo e envie junto com o seu link de vendas."
-              textoBotao="Abrir vídeos"
-              link={LINK_VIDEOS}
-            />
-
-            <CardMaterial
-              numero="2"
               cor="verde"
               titulo="Textos para WhatsApp e e-mail"
               descricao="Mensagens prontas que você pode copiar, personalizar e enviar para seus contatos."
@@ -530,7 +579,7 @@ export function MaterialPromocional() {
             />
 
             <CardMaterial
-              numero="3"
+              numero="2"
               cor="preto"
               titulo="Material impresso"
               descricao="Escolha um panfleto, veja seu QR Code aplicado automaticamente e baixe a arte pronta para imprimir."

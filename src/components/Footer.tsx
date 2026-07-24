@@ -65,7 +65,7 @@ export function Footer() {
         </div>
 
         <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-xs text-gray-500 text-center md:text-left">© 2026 CONSULTOQUE / SESSP. Todos os direitos reservados.</p>
+          <p className="text-xs text-gray-500 text-center md:text-left">© 2026 ConsulToque — Programa de benefícios da SIA. Todos os direitos reservados.</p>
           <div className="flex gap-4">
             <a href="https://instagram.com/consultoque" target="_blank" rel="noreferrer" className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-pink-600 transition-colors text-white">
               <Instagram className="w-5 h-5" />
