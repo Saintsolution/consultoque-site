@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { CortesiasAdmin } from "../components/CortesiasAdmin";
 import {
   BarChart3,
   CircleDollarSign,
@@ -1321,6 +1322,17 @@ export function EmpresaDashboard() {
                 </article>
               </section>
             </div>
+          ) : aba === "cortesias" ? (
+            <CortesiasAdmin
+              registros={listas.cortesias}
+              token={sessionStorage.getItem(CHAVE_TOKEN_ADMIN) || ""}
+              onAtualizar={atualizarDashboard}
+              onSessaoExpirada={() =>
+                encerrarSessao(
+                  "Sua sessão expirou. Entre novamente para continuar.",
+                )
+              }
+            />
           ) : (
             (() => {
               const tabela = conteudoTabela[aba];
