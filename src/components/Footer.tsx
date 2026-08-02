@@ -211,8 +211,8 @@ export function Footer() {
                 </p>
 
                 <p className="text-xs text-gray-400 mt-1">
-                  EMPRESA ASSOCIADA CLICK LIFE SAÚDE LTDA 
-                  CNPJ/MF nº 39.549.271/0001-36
+                  SERVIÇOS DE TELEMEDICINA PRESTADOS POR
+                  CLICK LIFE SAÚDE LTDA CNPJ/MF nº 39.549.271/0001-36
                 </p>
               </div>
             </div>
