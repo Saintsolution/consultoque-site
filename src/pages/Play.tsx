@@ -472,8 +472,8 @@ export function Play() {
           />
         </div>
 
-        {showButton && (
-          <div className="absolute inset-x-0 bottom-10 z-50 flex justify-center px-4 pointer-events-none">
+               {showButton && (
+          <div className="absolute inset-x-0 bottom-16 z-50 flex justify-center px-4 pointer-events-none">
             <button
               type="button"
               onClick={goToSite}
