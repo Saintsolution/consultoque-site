@@ -41,7 +41,7 @@ interface WistiaQueueItem {
 
 /*
  * Não alteramos a interface global Window.
- * Isso evita o conflito que aparecia na linha 22.
+ * Isso evita conflitos de tipagem.
  */
 interface WistiaWindow {
   _wq?: WistiaQueueItem[];
@@ -64,6 +64,7 @@ const videosPromocionais: Record<
     formato: "vertical",
     aspectRatio: "9/16",
   },
+
   "crianca-noite-sem-preco": {
     titulo: "Criança Noite sem Preço",
     wistiaId: "rxuqw4g4k8",
@@ -472,14 +473,14 @@ export function Play() {
         </div>
 
         {showButton && (
-          <div className="absolute inset-x-0 bottom-4 z-50 flex justify-center px-4 pointer-events-none">
+          <div className="absolute inset-x-0 bottom-10 z-50 flex justify-center px-4 pointer-events-none">
             <button
               type="button"
               onClick={goToSite}
-              className="pointer-events-auto bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-full text-sm md:text-base font-bold flex items-center gap-2 shadow-xl animate-pulse"
+              className="pointer-events-auto bg-blue-600 hover:bg-blue-700 hover:scale-105 text-white px-7 py-3.5 rounded-full text-lg font-bold flex items-center gap-3 shadow-2xl animate-pulse transition"
             >
               <PlayIcon
-                size={18}
+                size={24}
                 fill="white"
               />
 
