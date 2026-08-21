@@ -1,18 +1,58 @@
-import { Link } from 'react-router-dom';
+
+
+
+const FORMULARIO_PESSOAL =
+  'https://coletivo.consultoque.com.br/formpessoal';
+
+function obterCodigoIndicador() {
+  const armazenado =
+    localStorage.getItem(
+      'referenciador_id'
+    );
+
+  const numeros =
+    String(armazenado ?? '')
+      .replace(/\D/g, '');
+
+  if (
+    numeros.length < 1 ||
+    numeros.length > 4
+  ) {
+    return '0001';
+  }
+
+  return numeros.padStart(
+    4,
+    '0'
+  );
+}
+
+function criarLinkFormulario() {
+  const indicador =
+    obterCodigoIndicador();
+
+  return (
+    `${FORMULARIO_PESSOAL}` +
+    `?ref=${encodeURIComponent(indicador)}`
+  );
+}
 
 export function Hero() {
+  const linkFormulario =
+    criarLinkFormulario();
+
   return (
     <section
       id="hero"
-      className="relative w-full bg-gradient-to-br from-blue-500 via-blue-400 to-cyan-400 text-white overflow-hidden"
+      className="relative w-full overflow-hidden bg-gradient-to-br from-blue-500 via-blue-400 to-cyan-400 text-white"
     >
-      <div className="w-full px-6 pt-20 pb-32 text-center">
-        <p className="text-3xl md:text-5xl lg:text-7xl font-extrabold leading-tight max-w-5xl mx-auto mb-6 text-blue-50">
+      <div className="w-full px-6 pb-32 pt-20 text-center">
+        <p className="mx-auto mb-6 max-w-5xl text-3xl font-extrabold leading-tight text-blue-50 md:text-5xl lg:text-7xl">
           CONSULTA <br className="hidden md:block" />
           por R$ 33,00
         </p>
 
-        <p className="text-lg md:text-2xl lg:text-3xl font-medium max-w-4xl mx-auto text-blue-100/95 leading-relaxed mb-14">
+        <p className="mx-auto mb-14 max-w-4xl text-lg font-medium leading-relaxed text-blue-100/95 md:text-2xl lg:text-3xl">
           Teleconsulta: Saúde na palma da sua mão, sem esperas.
           <br />
           Consultas 24 horas, 7 dias por semana, inclusive feriados.
@@ -20,53 +60,51 @@ export function Hero() {
           Sem carência e sem limite de idade.
         </p>
 
-        <div className="flex flex-col md:flex-row justify-center gap-6 max-w-2xl mx-auto">
-
-          <Link
-            to="/form-individual"
-            className="flex flex-col items-center justify-center bg-[#22C55E] hover:bg-[#16a34a] text-white px-8 py-4 rounded-3xl shadow-[0_10px_20px_rgba(0,0,0,0.2)] transition-all hover:scale-105 border-b-4 border-green-700"
+        <div className="mx-auto flex max-w-2xl flex-col justify-center gap-6 md:flex-row">
+          <a
+            href={linkFormulario}
+            className="flex flex-col items-center justify-center rounded-3xl border-b-4 border-green-700 bg-[#22C55E] px-8 py-4 text-white shadow-[0_10px_20px_rgba(0,0,0,0.2)] transition-all hover:scale-105 hover:bg-[#16a34a]"
           >
             <span className="text-xs font-bold uppercase tracking-widest">
               Plano Individual
             </span>
 
-            <span className="text-sm font-black uppercase mt-1">
-              1 Titular
+            <span className="mt-1 text-sm font-black uppercase">
+              1 titular
             </span>
 
-            <span className="text-3xl font-black my-1">
+            <span className="my-1 text-3xl font-black">
               R$ 33,00
             </span>
 
             <span className="text-xs font-bold uppercase opacity-90">
-              REAIS
+              por mês
             </span>
-          </Link>
+          </a>
 
-          <Link
-            to="/form-familiar"
-            className="flex flex-col items-center justify-center bg-white hover:bg-gray-100 text-[#22C55E] px-8 py-4 rounded-3xl shadow-[0_10px_20px_rgba(0,0,0,0.2)] transition-all hover:scale-105 border-b-4 border-gray-200"
+          <a
+            href={linkFormulario}
+            className="flex flex-col items-center justify-center rounded-3xl border-b-4 border-gray-200 bg-white px-8 py-4 text-[#22C55E] shadow-[0_10px_20px_rgba(0,0,0,0.2)] transition-all hover:scale-105 hover:bg-gray-100"
           >
             <span className="text-xs font-bold uppercase tracking-widest">
               Plano Familiar
             </span>
 
-            <span className="text-sm font-black uppercase mt-1">
-              1 Titular + 3 Dependentes
+            <span className="mt-1 text-sm font-black uppercase">
+              1 titular + 3 dependentes
             </span>
 
-            <span className="text-3xl font-black my-1">
+            <span className="my-1 text-3xl font-black">
               R$ 66,00
             </span>
 
             <span className="text-xs font-bold uppercase opacity-90">
-              REAIS
+              por mês
             </span>
-          </Link>
-
+          </a>
         </div>
 
-        <p className="mt-10 text-sm md:text-base text-blue-50/80 font-semibold tracking-wide">
+        <p className="mt-10 text-sm font-semibold tracking-wide text-blue-50/80 md:text-base">
           Sem carência • Sem taxa de adesão • Cancele quando quiser
         </p>
       </div>
@@ -75,7 +113,7 @@ export function Hero() {
         <svg
           viewBox="0 0 1440 120"
           xmlns="http://www.w3.org/2000/svg"
-          className="w-full h-24 lg:h-44"
+          className="h-24 w-full lg:h-44"
           preserveAspectRatio="none"
         >
           <path
