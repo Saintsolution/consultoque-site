@@ -1,5 +1,6 @@
 import { HeaderVisual } from '../components/HeaderVisual';
 import { Hero } from '../components/Hero';
+import { CollectivePlansCall } from '../components/CollectivePlansCall';
 import { Problem } from '../components/Problem';
 import { Telemedicine } from '../components/Telemedicine';
 import { PlanGrid } from '../components/PlanGrid';
@@ -13,9 +14,14 @@ export function Home() {
   return (
     <div className="min-h-screen bg-white text-gray-900 font-sans antialiased">
       <HeaderVisual />
+
       <Hero />
 
+      {/* Chamada para o site de planos coletivos */}
+      <CollectivePlansCall />
+
       <Problem />
+
       <Telemedicine />
 
       <main className="max-w-5xl mx-auto px-4 py-12 space-y-12">
@@ -24,9 +30,13 @@ export function Home() {
         </section>
 
         <Benefits />
+
         <ClubBenefits />
+
         <PlanGrid />
+
         <LegalCompliance />
+
         <AffiliateCall />
       </main>
 
