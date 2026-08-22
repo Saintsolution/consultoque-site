@@ -85,6 +85,24 @@ const URL_ASSOCIADO =
 const URL_COLABORADOR =
   'https://coletivo.consultoque.com.br/colaborador';
 
+/*
+ * Nome antigo mantido para não quebrar
+ * as funcionalidades do site Vendas.
+ */
+const CHAVE_REFERENCIADOR_LOCAL =
+  'referenciador_id';
+
+const COOKIE_REFERENCIADOR_ANTIGO =
+  'referenciador_id';
+
+/*
+ * Cookie compartilhado entre:
+ * consultoque.com.br
+ * coletivo.consultoque.com.br
+ */
+const COOKIE_INDICADOR_COMPARTILHADO =
+  'indicador_consultoque';
+
 type RedirecionamentoProps = {
   destino: string;
   mensagem: string;
@@ -201,23 +219,64 @@ export default function App() {
         '0'
       );
 
+    const validadeEmSegundos =
+      60 * 60 * 24 * 30;
+
     /*
-     * Salva no localStorage.
+     * Mantém a chave antiga no localStorage,
+     * porque outras páginas do site Vendas
+     * ainda podem utilizá-la.
      */
     localStorage.setItem(
-      'referenciador_id',
+      CHAVE_REFERENCIADOR_LOCAL,
       refFormatado
     );
 
     /*
-     * Salva também como cookie por 30 dias.
+     * Mantém também o cookie antigo,
+     * evitando quebrar funcionalidades existentes
+     * dentro do site Vendas.
      */
     document.cookie = [
-      `referenciador_id=${refFormatado}`,
-      'path=/',
-      `max-age=${60 * 60 * 24 * 30}`,
+      `${COOKIE_REFERENCIADOR_ANTIGO}=${refFormatado}`,
+      'Path=/',
+      `Max-Age=${validadeEmSegundos}`,
       'SameSite=Lax',
     ].join('; ');
+
+    /*
+     * Cria o novo cookie compartilhado.
+     * Em produção, o domínio .consultoque.com.br
+     * permite que o site Empresas também o leia.
+     */
+    const partesCookieCompartilhado = [
+      `${COOKIE_INDICADOR_COMPARTILHADO}=${refFormatado}`,
+      'Path=/',
+      `Max-Age=${validadeEmSegundos}`,
+      'SameSite=Lax',
+    ];
+
+    const dominioConsulToque =
+      window.location.hostname ===
+        'consultoque.com.br' ||
+      window.location.hostname.endsWith(
+        '.consultoque.com.br'
+      );
+
+    if (dominioConsulToque) {
+      partesCookieCompartilhado.push(
+        'Domain=.consultoque.com.br'
+      );
+
+      partesCookieCompartilhado.push(
+        'Secure'
+      );
+    }
+
+    document.cookie =
+      partesCookieCompartilhado.join(
+        '; '
+      );
 
     /*
      * Quando o visitante entra por /0002,
