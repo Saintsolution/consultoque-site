@@ -15,10 +15,9 @@ export function Home() {
     <div className="min-h-screen bg-white text-gray-900 font-sans antialiased">
       <HeaderVisual />
 
-      {/* Chamada para o site de planos coletivos */}
-      <CollectivePlansCall />
-
       <Hero />
+
+      <Benefits />
 
       <Problem />
 
@@ -29,11 +28,12 @@ export function Home() {
           <PlanGrid />
         </section>
 
-        <Benefits />
-
         <ClubBenefits />
 
         <PlanGrid />
+
+        {/* Chamada para o site de planos coletivos posicionada acima do LegalCompliance */}
+        <CollectivePlansCall />
 
         <LegalCompliance />
 

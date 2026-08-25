@@ -11,8 +11,7 @@ export function LegalCompliance() {
 
        <p className="max-w-3xl mx-auto text-xs text-blue-900/70 font-medium leading-relaxed">
   O ConsulToque é um programa de benefícios em saúde e
-  bem-estar oferecido pela SIA – Sistema Inteligente de
-  Apoio Associativo e Amparo Comunitário. Os serviços de
+  bem-estar. Os serviços de
   telessaúde são prestados por empresa parceira especializada,
   observando a Lei nº 14.510/2022 e, nos atendimentos médicos,
   a Resolução CFM nº 2.314/2022.
@@ -20,8 +19,7 @@ export function LegalCompliance() {
 
         <p className="max-w-3xl mx-auto text-xs text-blue-900/70 font-medium leading-relaxed">
           Os atendimentos são realizados exclusivamente de forma
-          remota, por meio das plataformas oficiais indicadas pela
-          associação. A disponibilidade das especialidades e dos
+          remota, por meio das plataformas oficiais. A disponibilidade das especialidades e dos
           demais serviços segue as regras de encaminhamento e
           agendamento informadas no Termo de Adesão.
         </p>

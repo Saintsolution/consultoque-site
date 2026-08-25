@@ -131,11 +131,11 @@ export function Footer() {
             <ul className="space-y-2 text-sm">
               <li>
                 <a
-  href="https://coletivo.consultoque.com.br/admin"
-  className="hover:text-amber-400 text-amber-500 font-bold"
->
-  Área Administrativa
-</a>
+                  href="https://coletivo.consultoque.com.br/admin"
+                  className="hover:text-amber-400 text-amber-500 font-bold"
+                >
+                  Área Administrativa
+                </a>
               </li>
 
               <li>
@@ -169,12 +169,12 @@ export function Footer() {
                 <MessageCircle className="w-4 h-4 text-green-400 shrink-0" />
 
                 <a
-                  href="https://wa.me/5521964791774"
+                  href="https://wa.me/5521996777555"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-white transition-colors"
                 >
-                  (21) 96479-1774
+                  (21) 99677-7555
                 </a>
               </li>
 
@@ -195,7 +195,7 @@ export function Footer() {
         {/* Informações de confiança */}
         <div className="border-t border-gray-800 pt-8 mb-8">
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* CNPJ */}
+            {/* CNPJ / Empresa */}
             <div className="flex items-center gap-3 bg-gray-800/60 border border-gray-700 rounded-xl px-4 py-4">
               <div className="w-10 h-10 bg-blue-500/10 rounded-full flex items-center justify-center shrink-0">
                 <Building2 className="w-5 h-5 text-blue-400" />
@@ -203,16 +203,15 @@ export function Footer() {
 
               <div>
                 <p className="text-xs text-gray-400 mb-1">
-                  Programa de benefícios
+                  Empresa responsável
                 </p>
 
-                <p className="text-sm font-semibold text-white">
-                  SIA
+                <p className="text-xs font-semibold text-white leading-tight">
+                  CONSULTOQUE SISTEMA FACILITADOR DE SAÚDE LTDA
                 </p>
 
                 <p className="text-xs text-gray-400 mt-1">
-                  SERVIÇOS DE TELEMEDICINA PRESTADOS POR
-                  CLICK LIFE SAÚDE LTDA CNPJ/MF nº 39.549.271/0001-36
+                  CNPJ: 68.681.466/0001-33
                 </p>
               </div>
             </div>
@@ -264,8 +263,7 @@ export function Footer() {
         {/* Direitos e redes sociais */}
         <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-xs text-gray-500 text-center md:text-left">
-            © 2026 ConsulToque — Programa de benefícios da SIA. Todos os
-            direitos reservados.
+            © 2026 ConsulToque Sistema Facilitador de Saúde Ltda. Todos os direitos reservados.
           </p>
 
           <div className="flex gap-4">
