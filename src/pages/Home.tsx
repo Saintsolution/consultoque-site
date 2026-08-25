@@ -19,6 +19,8 @@ export function Home() {
 
       <Benefits />
 
+      <ClubBenefits />
+
       <Problem />
 
       <Telemedicine />
@@ -27,8 +29,6 @@ export function Home() {
         <section id="precos">
           <PlanGrid />
         </section>
-
-        <ClubBenefits />
 
         <PlanGrid />
 
