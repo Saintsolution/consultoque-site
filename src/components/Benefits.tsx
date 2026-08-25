@@ -1,4 +1,4 @@
-import { CheckCircle2, HeartPulse, UserCircle, Target, Clock, Calendar } from 'lucide-react';
+import { CheckCircle2, HeartPulse, UserCircle, Target, Calendar } from 'lucide-react';
 
 export function Benefits() {
   const especialidadesMedicas = [
@@ -21,20 +21,12 @@ export function Benefits() {
           ></iframe>
         </div>
 
-        {/* TEXTO EXPLICATIVO GERAL */}
+        {/* TEXTO EXPLICATIVO GERAL (Redundância removida abaixo) */}
         <div className="text-center max-w-2xl mx-auto space-y-3">
           <h2 className="text-2xl font-black text-gray-900 uppercase">Atendimento Sob Medida</h2>
           <p className="text-base text-gray-600 leading-relaxed">
             Consultas 24 horas com clínico geral, além de especialistas e programas de bem-estar com agendamento.
           </p>
-          <div className="flex flex-wrap justify-center gap-6 pt-2 text-xs font-bold uppercase tracking-wider text-slate-500">
-            <span className="flex items-center gap-1.5 text-emerald-600">
-              <Clock className="w-4 h-4" /> Clínico Geral 24h
-            </span>
-            <span className="flex items-center gap-1.5 text-blue-600">
-              <Calendar className="w-4 h-4" /> Especialistas com Agendamento
-            </span>
-          </div>
         </div>
 
         {/* ESPECIALIDADES MÉDICAS */}

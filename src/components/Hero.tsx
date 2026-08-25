@@ -1,6 +1,3 @@
-
-
-
 const FORMULARIO_PESSOAL =
   'https://coletivo.consultoque.com.br/formpessoal';
 
@@ -104,8 +101,8 @@ export function Hero() {
           </a>
         </div>
 
-        <p className="mt-10 text-sm font-semibold tracking-wide text-blue-50/80 md:text-base">
-          Sem carência • Sem taxa de adesão • Cancele quando quiser
+        <p className="mt-10 text-lg font-bold tracking-wide text-white md:text-xl drop-shadow-sm">
+          Cancele quando quiser
         </p>
       </div>
 
