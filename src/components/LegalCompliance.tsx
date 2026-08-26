@@ -3,29 +3,29 @@ import { Link } from 'react-router-dom';
 export function LegalCompliance() {
   return (
     <section className="px-6 py-8 bg-blue-50/50 border border-blue-100 rounded-2xl text-center space-y-6">
-      {/* Conformidade legal */}
       <div className="space-y-3">
         <h2 className="text-sm font-black text-blue-950 uppercase tracking-wide">
           Telemedicina e conformidade
         </h2>
 
-       <p className="max-w-3xl mx-auto text-xs text-blue-900/70 font-medium leading-relaxed">
-  O ConsulToque é um programa de benefícios em saúde e
-  bem-estar. Os serviços de
-  telessaúde são prestados por empresa parceira especializada,
-  observando a Lei nº 14.510/2022 e, nos atendimentos médicos,
-  a Resolução CFM nº 2.314/2022.
-</p>
+        <p className="max-w-3xl mx-auto text-xs text-blue-900/70 font-medium leading-relaxed">
+          O CONSULTOQUE é um programa de benefícios em saúde e
+          bem-estar. Os serviços de telemedicina são prestados pela
+          Click Life, empresa especializada em telessaúde, sob a
+          responsabilidade técnica do médico Maicon Gonçalves Primo
+          (CRM-SP: 163.013). As atividades cumprem rigorosamente a Lei
+          nº 14.510/2022 e, nos atendimentos médicos, a Resolução CFM
+          nº 2.314/2022.
+        </p>
 
         <p className="max-w-3xl mx-auto text-xs text-blue-900/70 font-medium leading-relaxed">
-          Os atendimentos são realizados exclusivamente de forma
-          remota, por meio das plataformas oficiais. A disponibilidade das especialidades e dos
-          demais serviços segue as regras de encaminhamento e
-          agendamento informadas no Termo de Adesão.
+          Os atendimentos ocorrem exclusivamente de forma remota, por
+          meio das plataformas oficiais. A disponibilidade de
+          especialidades e demais serviços obedece às regras de
+          encaminhamento e agendamento detalhadas no Termo de Adesão.
         </p>
       </div>
 
-      {/* Aviso de urgência e emergência */}
       <div
         role="alert"
         className="max-w-3xl mx-auto rounded-2xl border-2 border-red-200 bg-red-50 px-5 py-4 text-left shadow-sm"
@@ -37,13 +37,12 @@ export function LegalCompliance() {
         <p className="mt-2 text-xs font-semibold leading-relaxed text-red-800">
           A telemedicina não substitui o atendimento presencial em
           situações de urgência ou emergência. Em caso de sintomas
-          graves, acidentes ou risco à vida, procure imediatamente
-          uma unidade de pronto atendimento ou pronto-socorro.
-          Quando necessário, acione o SAMU pelo telefone 192.
+          graves, acidentes ou risco à vida, procure imediatamente uma
+          unidade de pronto atendimento ou pronto-socorro. Quando
+          necessário, acione o SAMU pelo telefone 192.
         </p>
       </div>
 
-      {/* Parceiros e portais oficiais */}
       <div className="flex flex-col items-center gap-2 pt-4 border-t border-blue-100/70">
         <span className="mb-1 text-[10px] font-bold text-blue-900/50 uppercase tracking-widest">
           Parceiros e portais oficiais
