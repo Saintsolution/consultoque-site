@@ -30,8 +30,6 @@ export function Home() {
           <PlanGrid />
         </section>
 
-        <PlanGrid />
-
         {/* Chamada para o site de planos coletivos posicionada acima do LegalCompliance */}
         <CollectivePlansCall />
 
