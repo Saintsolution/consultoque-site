@@ -37,8 +37,8 @@ function criarLinkCadastro() {
     obterCodigoIndicador();
 
   return (
-    `${URL_CADASTRO_COLABORADOR}` +
-    `?ref=${encodeURIComponent(indicador)}`
+    `${URL_CADASTRO_COLABORADOR}/` +
+    `${encodeURIComponent(indicador)}`
   );
 }
 
