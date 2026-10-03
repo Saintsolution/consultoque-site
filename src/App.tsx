@@ -103,10 +103,172 @@ const COOKIE_REFERENCIADOR_ANTIGO =
 const COOKIE_INDICADOR_COMPARTILHADO =
   'indicador_consultoque';
 
+const URL_RESOLVER_REFERENCIA =
+  'https://n8n.saintsolution.com.br/webhook/resolver-referencia-publica';
+
+const ROTAS_RESERVADAS = new Set([
+  'form-individual',
+  'form-familiar',
+  'form-coletivo',
+  'cliente',
+  'colaborador',
+  'material-promocional',
+  'panfletos-promocionais',
+  'montar-folder',
+  'solicitar-impressos',
+  'admin',
+  'admin-asaas',
+  'seja-afiliado',
+  'inscricao-colaborador',
+  'play',
+  'videoafiliados',
+  'faq',
+  'termos',
+  'privacidade',
+]);
+
 type RedirecionamentoProps = {
   destino: string;
   mensagem: string;
 };
+
+function getCookie(
+  nome: string
+) {
+  const prefixo = `${nome}=`;
+
+  const cookie =
+    document.cookie
+      .split(';')
+      .map((item) =>
+        item.trim()
+      )
+      .find((item) =>
+        item.startsWith(prefixo)
+      );
+
+  return cookie
+    ? decodeURIComponent(
+        cookie.slice(prefixo.length)
+      )
+    : '';
+}
+
+function normalizarCodigo(
+  valor: unknown
+) {
+  const numeros =
+    String(valor ?? '')
+      .replace(/\D/g, '');
+
+  if (
+    numeros.length < 1 ||
+    numeros.length > 4
+  ) {
+    return '';
+  }
+
+  return numeros.padStart(4, '0');
+}
+
+function normalizarReferencia(
+  valor: unknown
+) {
+  return String(valor ?? '')
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .replace(/-+/g, '-');
+}
+
+function salvarReferencia(
+  codigo: string
+) {
+  const refFormatado =
+    normalizarCodigo(codigo);
+
+  if (!refFormatado) {
+    return;
+  }
+
+  const validadeEmSegundos =
+    60 * 60 * 24 * 30;
+
+  localStorage.setItem(
+    CHAVE_REFERENCIADOR_LOCAL,
+    refFormatado
+  );
+
+  document.cookie = [
+    `${COOKIE_REFERENCIADOR_ANTIGO}=${refFormatado}`,
+    'Path=/',
+    `Max-Age=${validadeEmSegundos}`,
+    'SameSite=Lax',
+  ].join('; ');
+
+  const partesCookieCompartilhado = [
+    `${COOKIE_INDICADOR_COMPARTILHADO}=${refFormatado}`,
+    'Path=/',
+    `Max-Age=${validadeEmSegundos}`,
+    'SameSite=Lax',
+  ];
+
+  const dominioConsulToque =
+    window.location.hostname ===
+      'consultoque.com.br' ||
+    window.location.hostname.endsWith(
+      '.consultoque.com.br'
+    );
+
+  if (dominioConsulToque) {
+    partesCookieCompartilhado.push(
+      'Domain=.consultoque.com.br'
+    );
+
+    partesCookieCompartilhado.push(
+      'Secure'
+    );
+  }
+
+  document.cookie =
+    partesCookieCompartilhado.join('; ');
+}
+
+async function resolverReferencia(
+  referencia: string
+) {
+  const resposta =
+    await fetch(
+      URL_RESOLVER_REFERENCIA,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type':
+            'application/json',
+        },
+        body: JSON.stringify({
+          referencia,
+        }),
+      }
+    );
+
+  if (!resposta.ok) {
+    return '';
+  }
+
+  const dados =
+    await resposta.json() as {
+      encontrado?: boolean;
+      cod_colab?: unknown;
+    };
+
+  return dados.encontrado
+    ? normalizarCodigo(dados.cod_colab)
+    : '';
+}
 
 function RedirecionamentoExterno({
   destino,
@@ -144,12 +306,26 @@ function RedirecionamentoExterno({
 
 export default function App() {
   useEffect(() => {
+    let cancelado = false;
+
     /*
-     * Aceita indicação nestes formatos:
-     *
-     * consultoque.com.br/0002
-     * consultoque.com.br/?ref=0002
+     * Sincroniza neste domínio uma referência
+     * numérica já gravada no cookie compartilhado
+     * pelo site Coletivo.
      */
+    const codigoCompartilhado =
+      normalizarCodigo(
+        getCookie(
+          COOKIE_INDICADOR_COMPARTILHADO
+        )
+      );
+
+    if (codigoCompartilhado) {
+      salvarReferencia(
+        codigoCompartilhado
+      );
+    }
+
     const params =
       new URLSearchParams(
         window.location.search
@@ -163,22 +339,13 @@ export default function App() {
         1
       );
 
-    /*
-     * Só considera referência pelo caminho quando existe
-     * apenas um número na raiz.
-     *
-     * Exemplos válidos:
-     * /2
-     * /0002
-     *
-     * Exemplos ignorados:
-     * /play/crianca-noite/0002
-     * /colaborador
-     * /cliente
-     */
-    const isRefPath =
+    const isCaminhoRaiz =
       caminhoCompleto !== '' &&
-      /^\d{1,4}$/.test(
+      !caminhoCompleto.includes('/');
+
+    const isRefPath =
+      isCaminhoRaiz &&
+      !ROTAS_RESERVADAS.has(
         caminhoCompleto
       );
 
@@ -194,101 +361,70 @@ export default function App() {
       return;
     }
 
-    const somenteNumeros =
-      String(
-        referenciaEncontrada
-      ).replace(
-        /\D/g,
-        ''
-      );
+    async function processarReferencia() {
+      const referenciaTexto =
+        String(referenciaEncontrada)
+          .trim();
 
-    /*
-     * Impede gravar referências vazias ou maiores
-     * que quatro dígitos.
-     */
-    if (
-      !somenteNumeros ||
-      somenteNumeros.length > 4
-    ) {
-      return;
+      /*
+       * Números seguem pelo fluxo antigo,
+       * sem consulta ao n8n.
+       */
+      const codigoDireto =
+        /^\d{1,4}$/.test(
+          referenciaTexto
+        )
+          ? normalizarCodigo(
+              referenciaTexto
+            )
+          : '';
+
+      if (codigoDireto) {
+        salvarReferencia(codigoDireto);
+      } else {
+        const apelido =
+          normalizarReferencia(
+            referenciaTexto
+          );
+
+        if (apelido) {
+          try {
+            const codigoResolvido =
+              await resolverReferencia(
+                apelido
+              );
+
+            if (
+              !cancelado &&
+              codigoResolvido
+            ) {
+              salvarReferencia(
+                codigoResolvido
+              );
+            }
+          } catch {
+            /* Mantém a referência já existente. */
+          }
+        }
+      }
+
+      if (
+        !cancelado &&
+        isRefPath
+      ) {
+        window.history.replaceState(
+          {},
+          '',
+          '/'
+        );
+      }
     }
 
-    const refFormatado =
-      somenteNumeros.padStart(
-        4,
-        '0'
-      );
+    void processarReferencia();
 
-    const validadeEmSegundos =
-      60 * 60 * 24 * 30;
-
-    /*
-     * Mantém a chave antiga no localStorage,
-     * porque outras páginas do site Vendas
-     * ainda podem utilizá-la.
-     */
-    localStorage.setItem(
-      CHAVE_REFERENCIADOR_LOCAL,
-      refFormatado
-    );
-
-    /*
-     * Mantém também o cookie antigo,
-     * evitando quebrar funcionalidades existentes
-     * dentro do site Vendas.
-     */
-    document.cookie = [
-      `${COOKIE_REFERENCIADOR_ANTIGO}=${refFormatado}`,
-      'Path=/',
-      `Max-Age=${validadeEmSegundos}`,
-      'SameSite=Lax',
-    ].join('; ');
-
-    /*
-     * Cria o novo cookie compartilhado.
-     * Em produção, o domínio .consultoque.com.br
-     * permite que o site Empresas também o leia.
-     */
-    const partesCookieCompartilhado = [
-      `${COOKIE_INDICADOR_COMPARTILHADO}=${refFormatado}`,
-      'Path=/',
-      `Max-Age=${validadeEmSegundos}`,
-      'SameSite=Lax',
-    ];
-
-    const dominioConsulToque =
-      window.location.hostname ===
-        'consultoque.com.br' ||
-      window.location.hostname.endsWith(
-        '.consultoque.com.br'
-      );
-
-    if (dominioConsulToque) {
-      partesCookieCompartilhado.push(
-        'Domain=.consultoque.com.br'
-      );
-
-      partesCookieCompartilhado.push(
-        'Secure'
-      );
-    }
-
-    document.cookie =
-      partesCookieCompartilhado.join(
-        '; '
-      );
-
-    /*
-     * Quando o visitante entra por /0002,
-     * limpa visualmente o endereço sem recarregar.
-     */
-    if (isRefPath) {
-      window.history.replaceState(
-        {},
-        '',
-        '/'
-      );
-    }
+    return () => {
+      cancelado = true;
+    };
   }, []);
 
   return (
