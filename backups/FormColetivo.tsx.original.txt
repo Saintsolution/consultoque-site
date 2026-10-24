@@ -1,0 +1,3498 @@
+import { useEffect, useMemo, useState } from "react";
+
+import type { FormEvent } from "react";
+
+import {
+
+&#x20; ArrowLeft,
+
+&#x20; Plus,
+
+&#x20; Trash2,
+
+&#x20; User,
+
+&#x20; Heart,
+
+&#x20; Calculator,
+
+&#x20; CheckCircle2,
+
+&#x20; Loader2,
+
+&#x20; ShieldCheck,
+
+&#x20; Info,
+
+&#x20; AlertCircle,
+
+&#x20; Pencil,
+
+&#x20; FileText,
+
+&#x20; X,
+
+} from "lucide-react";
+
+import {
+
+&#x20; TermoAdesaoAssociado,
+
+&#x20; VERSAO_TERMO_ASSOCIADO,
+
+} from "@/components/TermoAdesaoAssociado";
+
+import {
+
+&#x20; type HolderEntry,
+
+&#x20; type PlanType,
+
+&#x20; calculatePrice,
+
+&#x20; formatCPF,
+
+&#x20; formatCNPJ,
+
+&#x20; formatPhone,
+
+&#x20; onlyDigits,
+
+&#x20; isValidCNPJ,
+
+&#x20; isValidEmail,
+
+&#x20; BULK_THRESHOLD,
+
+} from "@/lib/pricing";
+
+import { calcularIdade, somenteNumerosCpf, validarCpf } from "@/lib/cpf";
+
+
+
+/\*
+
+&#x20;\* Endpoint publicado do fluxo coletivo empresarial no n8n.
+
+&#x20;\*/
+
+const WEBHOOK_URL =
+
+&#x20; "https\://n8n.saintsolution.com.br/webhook/coletivo-empresarial";
+
+
+
+const WEBHOOK_VALIDAR_CPF =
+
+&#x20; "https\://n8n.saintsolution.com.br/webhook/validar-cpf-cadastro";
+
+
+
+const WEBHOOK_VALIDAR_CNPJ =
+
+&#x20; "https\://n8n.saintsolution.com.br/webhook/validar-cnpj-cadastro";
+
+
+
+const CHAVE_INDICADOR = "indicador_colab";
+
+const COOKIE_INDICADOR = "indicador_consultoque";
+
+const CHAVE_TRANSFERENCIA_COLETIVO = "consultoque_transferencia_coletivo";
+
+
+
+type TransferenciaPessoal = {
+
+&#x20; criado_em: string;
+
+&#x20; cod_colab: string;
+
+&#x20; nome_assoc: string;
+
+&#x20; cpf_assoc: string;
+
+&#x20; nasc_assoc: string;
+
+&#x20; email_assoc: string;
+
+&#x20; tel_assoc: string;
+
+&#x20; cpf_validado: boolean;
+
+&#x20; maior_idade: boolean;
+
+&#x20; consulta_id: string;
+
+};
+
+
+
+function normalizarNome(valor: string): string {
+
+&#x20; return valor
+
+&#x20;   .normalize("NFD")
+
+&#x20;   .replace(/[\u0300-\u036f]/g, "")
+
+&#x20;   .toUpperCase();
+
+}
+
+
+
+function getCookie(name: string): string | null {
+
+&#x20; const prefix = \`${name}=\`;
+
+&#x20; const cookie = document.cookie
+
+&#x20;   .split(";")
+
+&#x20;   .map((item) => item.trim())
+
+&#x20;   .find((item) => item.startsWith(prefix));
+
+
+
+&#x20; return cookie ? decodeURIComponent(cookie.slice(prefix.length)) : null;
+
+}
+
+
+
+function getCodColab(): string {
+
+&#x20; const cookie = getCookie(COOKIE_INDICADOR);
+
+&#x20; const local = localStorage.getItem(CHAVE_INDICADOR);
+
+&#x20; const codigo = String(cookie || local || "").trim();
+
+
+
+&#x20; if (/^\d{4}$/.test(codigo)) {
+
+&#x20;   localStorage.setItem(CHAVE_INDICADOR, codigo);
+
+
+
+&#x20;   return codigo;
+
+&#x20; }
+
+
+
+&#x20; return "0001";
+
+}
+
+
+
+function formatBirthDateBR(date: string): string {
+
+&#x20; if (!date) return "";
+
+
+
+&#x20; if (/^\d{2}**\\/**\d{2}**\\/**\d{4}$/.test(date)) {
+
+&#x20;   return date;
+
+&#x20; }
+
+
+
+&#x20; const match = date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+
+
+&#x20; return match ? \`${match[3]}/${match[2]}/${match[1]}\` : date;
+
+}
+
+
+
+interface HolderField {
+
+&#x20; id: string;
+
+&#x20; plan: PlanType;
+
+&#x20; name: string;
+
+&#x20; cpf: string;
+
+&#x20; email: string;
+
+&#x20; phone: string;
+
+&#x20; birthDate: string;
+
+&#x20; cpfValidated: boolean;
+
+&#x20; cpfConsultaId: string;
+
+}
+
+
+
+interface PaymentResponse {
+
+&#x20; status: string;
+
+&#x20; message: string;
+
+&#x20; url_pagamento: string;
+
+&#x20; dt_vencimento: string;
+
+&#x20; dia_vencimento: string;
+
+&#x20; email: string;
+
+}
+
+
+
+interface CpfValidationResponse {
+
+&#x20; status: string;
+
+&#x20; sucesso: boolean;
+
+&#x20; cpf_validado: boolean;
+
+&#x20; cpf: string;
+
+&#x20; origem: string;
+
+&#x20; nome: string;
+
+&#x20; nascimento: string;
+
+&#x20; idade: number | null;
+
+&#x20; maior_idade: boolean;
+
+&#x20; consulta_id: string;
+
+&#x20; mensagem: string;
+
+}
+
+
+
+interface CnpjValidationResponse {
+
+&#x20; status: string;
+
+&#x20; sucesso: boolean;
+
+&#x20; cnpj_validado: boolean;
+
+&#x20; cnpj: string;
+
+&#x20; origem: string;
+
+&#x20; razao_social: string;
+
+&#x20; nome_fantasia: string;
+
+&#x20; tipo_empresa: string;
+
+&#x20; endereco: string;
+
+&#x20; consulta_id: string;
+
+&#x20; mensagem: string;
+
+}
+
+
+
+function birthDateToInput(value: string): string {
+
+&#x20; const match = String(value ?? "").match(/^(\d{2})**\\/**(\d{2})**\\/**(\d{4})$/);
+
+
+
+&#x20; return match ? \`${match[3]}-${match[2]}-${match[1]}\` : value;
+
+}
+
+
+
+function newHolder(): HolderField {
+
+&#x20; return {
+
+&#x20;   id: crypto.randomUUID(),
+
+&#x20;   plan: "individual",
+
+&#x20;   name: "",
+
+&#x20;   cpf: "",
+
+&#x20;   email: "",
+
+&#x20;   phone: "",
+
+&#x20;   birthDate: "",
+
+&#x20;   cpfValidated: false,
+
+&#x20;   cpfConsultaId: "",
+
+&#x20; };
+
+}
+
+
+
+function toHolderEntry(h: HolderField): HolderEntry {
+
+&#x20; return { id: h.id, plan: h.plan, name: h.name, cpf: onlyDigits(h.cpf) };
+
+}
+
+
+
+function planLabel(plan: PlanType): string {
+
+&#x20; return plan === "individual" ? "Individual" : "Familiar";
+
+}
+
+
+
+function maskCPF(cpf: string): string {
+
+&#x20; const digits = onlyDigits(cpf);
+
+
+
+&#x20; return digits.length === 11
+
+&#x20;   ? \`\*\*\*.${digits.slice(3, 6)}.${digits.slice(6, 9)}-\*\*\`
+
+&#x20;   : cpf;
+
+}
+
+
+
+function escapeHtml(value: string): string {
+
+&#x20; return value
+
+&#x20;   .replace(/&/g, "&amp;")
+
+&#x20;   .replace(/\</g, "&lt;")
+
+&#x20;   .replace(/>/g, "&gt;")
+
+&#x20;   .replace(/"/g, "&quot;")
+
+&#x20;   .replace(/'/g, "&#039;");
+
+}
+
+
+
+export default function FormColetivo() {
+
+&#x20; const [companyName, setCompanyName] = useState("");
+
+&#x20; const [cnpj, setCnpj] = useState("");
+
+&#x20; const [responsibleName, setResponsibleName] = useState("");
+
+&#x20; const [responsibleCpf, setResponsibleCpf] = useState("");
+
+&#x20; const [responsibleBirthDate, setResponsibleBirthDate] = useState("");
+
+&#x20; const [responsibleEmail, setResponsibleEmail] = useState("");
+
+&#x20; const [responsiblePhone, setResponsiblePhone] = useState("");
+
+&#x20; const [responsibleSaved, setResponsibleSaved] = useState(false);
+
+&#x20; const [validatingResponsibleCpf, setValidatingResponsibleCpf] =
+
+&#x20;   useState(false);
+
+&#x20; const [responsibleCpfValidation, setResponsibleCpfValidation] =
+
+&#x20;   useState\<CpfValidationResponse | null>(null);
+
+&#x20; const [responsibleCpfError, setResponsibleCpfError] = useState\<string | null>(
+
+&#x20;   null,
+
+&#x20; );
+
+&#x20; const [validatingCnpj, setValidatingCnpj] = useState(false);
+
+&#x20; const [cnpjValidation, setCnpjValidation] =
+
+&#x20;   useState\<CnpjValidationResponse | null>(null);
+
+&#x20; const [cnpjError, setCnpjError] = useState\<string | null>(null);
+
+&#x20; const [responsibleFormError, setResponsibleFormError] = useState<
+
+&#x20;   string | null
+
+&#x20; \>(null);
+
+&#x20; const [holders, setHolders] = useState\<HolderField[]>([]);
+
+&#x20; const [holderDraft, setHolderDraft] = useState\<HolderField | null>(null);
+
+&#x20; const [holderFormError, setHolderFormError] = useState\<string | null>(null);
+
+&#x20; const [validatingHolderCpf, setValidatingHolderCpf] = useState(false);
+
+&#x20; const [holderCpfError, setHolderCpfError] = useState\<string | null>(null);
+
+&#x20; const [acceptedTerms, setAcceptedTerms] = useState(false);
+
+&#x20; const [showTerms, setShowTerms] = useState(false);
+
+&#x20; const [submitting, setSubmitting] = useState(false);
+
+&#x20; const [submitted, setSubmitted] = useState(false);
+
+&#x20; const [submitError, setSubmitError] = useState\<string | null>(null);
+
+&#x20; const [paymentResponse, setPaymentResponse] =
+
+&#x20;   useState\<PaymentResponse | null>(null);
+
+
+
+&#x20; useEffect(() => {
+
+&#x20;   const salvo = sessionStorage.getItem(CHAVE_TRANSFERENCIA_COLETIVO);
+
+&#x20;   if (!salvo) return;
+
+
+
+&#x20;   try {
+
+&#x20;     const dados = JSON.parse(salvo) as TransferenciaPessoal;
+
+&#x20;     const criadoEm = new Date(dados.criado_em).getTime();
+
+&#x20;     if (!Number.isFinite(criadoEm) || Date.now() - criadoEm > 30 \* 60 \* 1000)
+
+&#x20;       return;
+
+
+
+&#x20;     setResponsibleName(normalizarNome(dados.nome_assoc));
+
+&#x20;     setResponsibleCpf(formatCPF(dados.cpf_assoc));
+
+&#x20;     setResponsibleBirthDate(dados.nasc_assoc);
+
+&#x20;     setResponsibleEmail(dados.email_assoc.toLowerCase());
+
+&#x20;     setResponsiblePhone(formatPhone(dados.tel_assoc));
+
+&#x20;     setResponsibleCpfValidation({
+
+&#x20;       status: "sucesso",
+
+&#x20;       sucesso: true,
+
+&#x20;       cpf_validado: dados.cpf_validado,
+
+&#x20;       cpf: dados.cpf_assoc,
+
+&#x20;       origem: "ASSOCIADO",
+
+&#x20;       nome: normalizarNome(dados.nome_assoc),
+
+&#x20;       nascimento: dados.nasc_assoc,
+
+&#x20;       idade: null,
+
+&#x20;       maior_idade: dados.maior_idade,
+
+&#x20;       consulta_id: dados.consulta_id,
+
+&#x20;       mensagem: "",
+
+&#x20;     });
+
+&#x20;     setResponsibleSaved(dados.cpf_validado && dados.maior_idade);
+
+&#x20;   } catch {
+
+&#x20;     // Transferência inválida é descartada sem bloquear a contratação coletiva.
+
+&#x20;   } finally {
+
+&#x20;     sessionStorage.removeItem(CHAVE_TRANSFERENCIA_COLETIVO);
+
+&#x20;   }
+
+&#x20; }, []);
+
+
+
+&#x20; const breakdown = useMemo(
+
+&#x20;   () => calculatePrice(holders.map(toHolderEntry)),
+
+&#x20;   [holders],
+
+&#x20; );
+
+
+
+&#x20; const validation = useMemo(() => {
+
+&#x20;   const errors: string[] = [];
+
+&#x20;   if (!responsibleSaved) errors.push("Salve os dados do responsável.");
+
+&#x20;   if (holderDraft) errors.push("Salve ou cancele o titular que está aberto.");
+
+&#x20;   if (holders.length === 0) errors.push("Adicione pelo menos 1 titular.");
+
+
+
+&#x20;   const holderCpfs = holders.map((holder) => onlyDigits(holder.cpf));
+
+&#x20;   const repeatedCpfs = holderCpfs.filter(
+
+&#x20;     (cpf, index) => cpf && holderCpfs.indexOf(cpf) !== index,
+
+&#x20;   );
+
+
+
+&#x20;   if (repeatedCpfs.length > 0) {
+
+&#x20;     errors.push("Existem titulares com CPF repetido.");
+
+&#x20;   }
+
+
+
+&#x20;   return errors;
+
+&#x20; }, [responsibleSaved, holderDraft, holders]);
+
+
+
+&#x20; const isValid = validation.length === 0;
+
+
+
+&#x20; function changeResponsibleCpf(value: string) {
+
+&#x20;   const formatted = formatCPF(value);
+
+
+
+&#x20;   setResponsibleCpf(formatted);
+
+&#x20;   setResponsibleCpfValidation(null);
+
+&#x20;   setResponsibleCpfError(null);
+
+&#x20;   setResponsibleName("");
+
+&#x20;   setResponsibleBirthDate("");
+
+&#x20; }
+
+
+
+&#x20; function changeCnpj(value: string) {
+
+&#x20;   setCnpj(formatCNPJ(value));
+
+&#x20;   setCnpjValidation(null);
+
+&#x20;   setCnpjError(null);
+
+&#x20; }
+
+
+
+&#x20; async function validateCnpj() {
+
+&#x20;   const documento = onlyDigits(cnpj);
+
+
+
+&#x20;   if (!isValidCNPJ(documento)) {
+
+&#x20;     setCnpjError("Informe um CNPJ válido.");
+
+&#x20;     setCnpjValidation(null);
+
+&#x20;     return;
+
+&#x20;   }
+
+
+
+&#x20;   setValidatingCnpj(true);
+
+&#x20;   setCnpjError(null);
+
+&#x20;   setResponsibleFormError(null);
+
+
+
+&#x20;   try {
+
+&#x20;     const response = await fetch(WEBHOOK_VALIDAR_CNPJ, {
+
+&#x20;       method: "POST",
+
+&#x20;       headers: {
+
+&#x20;         "Content-Type": "application/json",
+
+&#x20;       },
+
+&#x20;       body: JSON.stringify({
+
+&#x20;         cnpj: documento,
+
+&#x20;         origem: "COBRANCA_CNPJ",
+
+&#x20;       }),
+
+&#x20;     });
+
+
+
+&#x20;     const rawResult = (await response.json().catch(() => null)) as
+
+&#x20;       CnpjValidationResponse | CnpjValidationResponse[] | null;
+
+
+
+&#x20;     const result = Array.isArray(rawResult) ? rawResult[0] : rawResult;
+
+
+
+&#x20;     if (!response.ok || !result?.sucesso || !result.cnpj_validado) {
+
+&#x20;       throw new Error(result?.mensagem || "Não foi possível validar o CNPJ.");
+
+&#x20;     }
+
+
+
+&#x20;     if (onlyDigits(String(result.cnpj ?? "")) !== documento) {
+
+&#x20;       throw new Error("O CNPJ retornado não corresponde ao CNPJ informado.");
+
+&#x20;     }
+
+
+
+&#x20;     const razaoSocial = String(result.razao_social ?? "").trim();
+
+
+
+&#x20;     if (!razaoSocial) {
+
+&#x20;       throw new Error("A consulta não retornou a razão social da empresa.");
+
+&#x20;     }
+
+
+
+&#x20;     setCnpjValidation(result);
+
+&#x20;     setCompanyName(normalizarNome(razaoSocial));
+
+&#x20;   } catch (error) {
+
+&#x20;     setCnpjValidation(null);
+
+&#x20;     setCnpjError(
+
+&#x20;       error instanceof Error
+
+&#x20;         ? error.message
+
+&#x20;         : "Não foi possível validar o CNPJ.",
+
+&#x20;     );
+
+&#x20;   } finally {
+
+&#x20;     setValidatingCnpj(false);
+
+&#x20;   }
+
+&#x20; }
+
+
+
+&#x20; async function validateResponsibleCpf() {
+
+&#x20;   const cpf = somenteNumerosCpf(responsibleCpf);
+
+
+
+&#x20;   if (!validarCpf(cpf)) {
+
+&#x20;     setResponsibleCpfError("Informe um CPF válido.");
+
+&#x20;     setResponsibleCpfValidation(null);
+
+&#x20;     return;
+
+&#x20;   }
+
+
+
+&#x20;   setValidatingResponsibleCpf(true);
+
+&#x20;   setResponsibleCpfError(null);
+
+&#x20;   setResponsibleFormError(null);
+
+
+
+&#x20;   try {
+
+&#x20;     const response = await fetch(WEBHOOK_VALIDAR_CPF, {
+
+&#x20;       method: "POST",
+
+&#x20;       headers: {
+
+&#x20;         "Content-Type": "application/json",
+
+&#x20;       },
+
+&#x20;       body: JSON.stringify({
+
+&#x20;         cpf,
+
+&#x20;         origem: "ASSOCIADO",
+
+&#x20;       }),
+
+&#x20;     });
+
+
+
+&#x20;     const rawResult = (await response.json().catch(() => null)) as
+
+&#x20;       CpfValidationResponse | CpfValidationResponse[] | null;
+
+
+
+&#x20;     const result = Array.isArray(rawResult) ? rawResult[0] : rawResult;
+
+
+
+&#x20;     if (
+
+&#x20;       !response.ok ||
+
+&#x20;       !result?.sucesso ||
+
+&#x20;       !result.cpf_validado ||
+
+&#x20;       !result.maior_idade
+
+&#x20;     ) {
+
+&#x20;       throw new Error(result?.mensagem || "Não foi possível validar o CPF.");
+
+&#x20;     }
+
+
+
+&#x20;     if (somenteNumerosCpf(result.cpf) !== cpf) {
+
+&#x20;       throw new Error("O CPF retornado não corresponde ao CPF informado.");
+
+&#x20;     }
+
+
+
+&#x20;     setResponsibleCpfValidation(result);
+
+&#x20;     setResponsibleName(normalizarNome(result.nome));
+
+&#x20;     setResponsibleBirthDate(birthDateToInput(result.nascimento));
+
+&#x20;   } catch (error) {
+
+&#x20;     setResponsibleCpfValidation(null);
+
+&#x20;     setResponsibleName("");
+
+&#x20;     setResponsibleBirthDate("");
+
+&#x20;     setResponsibleCpfError(
+
+&#x20;       error instanceof Error
+
+&#x20;         ? error.message
+
+&#x20;         : "Não foi possível validar o CPF.",
+
+&#x20;     );
+
+&#x20;   } finally {
+
+&#x20;     setValidatingResponsibleCpf(false);
+
+&#x20;   }
+
+&#x20; }
+
+
+
+&#x20; function saveResponsible() {
+
+&#x20;   const errors: string[] = [];
+
+
+
+&#x20;   if (cnpj && !isValidCNPJ(cnpj)) errors.push("CNPJ inválido.");
+
+&#x20;   if (cnpj && !cnpjValidation?.cnpj_validado) {
+
+&#x20;     errors.push("Valide o CNPJ da empresa para utilizá-lo na cobrança.");
+
+&#x20;   }
+
+&#x20;   if (cnpj && !companyName.trim()) {
+
+&#x20;     errors.push("Informe o nome da empresa para utilizar CNPJ na cobrança.");
+
+&#x20;   }
+
+&#x20;   if (!responsibleCpfValidation?.cpf_validado)
+
+&#x20;     errors.push("Valide o CPF do responsável.");
+
+&#x20;   if (!responsibleCpfValidation?.maior_idade)
+
+&#x20;     errors.push("O responsável precisa ter pelo menos 18 anos.");
+
+&#x20;   if (!responsibleName.trim()) errors.push("Informe o nome.");
+
+&#x20;   if (onlyDigits(responsibleCpf).length !== 11)
+
+&#x20;     errors.push("Informe os 11 dígitos do CPF.");
+
+&#x20;   if (!responsibleBirthDate) errors.push("Informe o nascimento.");
+
+&#x20;   if (!isValidEmail(responsibleEmail))
+
+&#x20;     errors.push("Informe um e-mail válido.");
+
+&#x20;   if (onlyDigits(responsiblePhone).length < 10)
+
+&#x20;     errors.push("Informe um telefone válido.");
+
+
+
+&#x20;   if (errors.length > 0) {
+
+&#x20;     setResponsibleFormError(errors.join(" "));
+
+&#x20;     return;
+
+&#x20;   }
+
+
+
+&#x20;   setResponsibleFormError(null);
+
+&#x20;   setResponsibleSaved(true);
+
+&#x20; }
+
+
+
+&#x20; function editResponsible() {
+
+&#x20;   setResponsibleSaved(false);
+
+&#x20;   setResponsibleFormError(null);
+
+&#x20; }
+
+
+
+&#x20; function clearResponsible() {
+
+&#x20;   setCompanyName("");
+
+&#x20;   setCnpj("");
+
+&#x20;   setResponsibleName("");
+
+&#x20;   setResponsibleCpf("");
+
+&#x20;   setResponsibleBirthDate("");
+
+&#x20;   setResponsibleEmail("");
+
+&#x20;   setResponsiblePhone("");
+
+&#x20;   setResponsibleCpfValidation(null);
+
+&#x20;   setResponsibleCpfError(null);
+
+&#x20;   setValidatingResponsibleCpf(false);
+
+&#x20;   setResponsibleSaved(false);
+
+&#x20;   setResponsibleFormError(null);
+
+&#x20; }
+
+
+
+&#x20; function addHolder() {
+
+&#x20;   if (!responsibleSaved || holderDraft) return;
+
+&#x20;   setHolderDraft(newHolder());
+
+&#x20;   setHolderFormError(null);
+
+&#x20; }
+
+
+
+&#x20; function removeHolder(id: string) {
+
+&#x20;   setHolders((prev) => prev.filter((holder) => holder.id !== id));
+
+&#x20; }
+
+
+
+&#x20; function editHolder(holder: HolderField) {
+
+&#x20;   if (holderDraft) return;
+
+&#x20;   setHolderDraft({ ...holder });
+
+&#x20;   setHolderFormError(null);
+
+&#x20; }
+
+
+
+&#x20; function updateHolderDraft(patch: Partial\<HolderField>) {
+
+&#x20;   setHolderDraft((current) => (current ? { ...current, ...patch } : current));
+
+&#x20; }
+
+
+
+&#x20; function updateHolderCpf(value: string) {
+
+&#x20;   const formatted = formatCPF(value);
+
+
+
+&#x20;   setHolderDraft((current) => {
+
+&#x20;     if (!current) return current;
+
+
+
+&#x20;     const cpfChanged =
+
+&#x20;       somenteNumerosCpf(current.cpf) !== somenteNumerosCpf(formatted);
+
+
+
+&#x20;     return {
+
+&#x20;       ...current,
+
+&#x20;       cpf: formatted,
+
+&#x20;       ...(cpfChanged
+
+&#x20;         ? {
+
+&#x20;             name: "",
+
+&#x20;             email: "",
+
+&#x20;             phone: "",
+
+&#x20;             birthDate: "",
+
+&#x20;             cpfValidated: false,
+
+&#x20;             cpfConsultaId: "",
+
+&#x20;           }
+
+&#x20;         : {}),
+
+&#x20;     };
+
+&#x20;   });
+
+
+
+&#x20;   setHolderFormError(null);
+
+&#x20;   setHolderCpfError(null);
+
+&#x20; }
+
+
+
+&#x20; async function validateHolderCpf() {
+
+&#x20;   if (!holderDraft) return;
+
+
+
+&#x20;   const cpf = somenteNumerosCpf(holderDraft.cpf);
+
+
+
+&#x20;   if (!validarCpf(cpf)) {
+
+&#x20;     setHolderCpfError("Informe um CPF válido.");
+
+&#x20;     return;
+
+&#x20;   }
+
+
+
+&#x20;   setValidatingHolderCpf(true);
+
+&#x20;   setHolderCpfError(null);
+
+&#x20;   setHolderFormError(null);
+
+
+
+&#x20;   try {
+
+&#x20;     const response = await fetch(WEBHOOK_VALIDAR_CPF, {
+
+&#x20;       method: "POST",
+
+&#x20;       headers: {
+
+&#x20;         "Content-Type": "application/json",
+
+&#x20;       },
+
+&#x20;       body: JSON.stringify({
+
+&#x20;         cpf,
+
+&#x20;         origem: "TITULAR",
+
+&#x20;       }),
+
+&#x20;     });
+
+
+
+&#x20;     const rawResult = (await response.json().catch(() => null)) as
+
+&#x20;       CpfValidationResponse | CpfValidationResponse[] | null;
+
+
+
+&#x20;     const result = Array.isArray(rawResult) ? rawResult[0] : rawResult;
+
+
+
+&#x20;     if (!response.ok || !result?.sucesso || !result.cpf_validado) {
+
+&#x20;       throw new Error(result?.mensagem || "Não foi possível validar o CPF.");
+
+&#x20;     }
+
+
+
+&#x20;     if (somenteNumerosCpf(result.cpf) !== cpf) {
+
+&#x20;       throw new Error("O CPF retornado não corresponde ao CPF informado.");
+
+&#x20;     }
+
+
+
+&#x20;     setHolderDraft((current) =>
+
+&#x20;       current
+
+&#x20;         ? {
+
+&#x20;             ...current,
+
+&#x20;             cpfValidated: true,
+
+&#x20;             cpfConsultaId: result.consulta_id || "",
+
+&#x20;             name: normalizarNome(result.nome),
+
+&#x20;             birthDate: birthDateToInput(result.nascimento),
+
+&#x20;           }
+
+&#x20;         : current,
+
+&#x20;     );
+
+&#x20;   } catch (error) {
+
+&#x20;     setHolderDraft((current) =>
+
+&#x20;       current
+
+&#x20;         ? {
+
+&#x20;             ...current,
+
+&#x20;             cpfValidated: false,
+
+&#x20;             cpfConsultaId: "",
+
+&#x20;             name: "",
+
+&#x20;             birthDate: "",
+
+&#x20;           }
+
+&#x20;         : current,
+
+&#x20;     );
+
+&#x20;     setHolderCpfError(
+
+&#x20;       error instanceof Error
+
+&#x20;         ? error.message
+
+&#x20;         : "Não foi possível validar o CPF.",
+
+&#x20;     );
+
+&#x20;   } finally {
+
+&#x20;     setValidatingHolderCpf(false);
+
+&#x20;   }
+
+&#x20; }
+
+
+
+&#x20; function cancelHolder() {
+
+&#x20;   setHolderDraft(null);
+
+&#x20;   setHolderFormError(null);
+
+&#x20;   setHolderCpfError(null);
+
+&#x20; }
+
+
+
+&#x20; function saveHolder() {
+
+&#x20;   if (!holderDraft) return;
+
+
+
+&#x20;   const errors: string[] = [];
+
+&#x20;   if (!holderDraft.cpfValidated) errors.push("Valide o CPF do titular.");
+
+&#x20;   if (!holderDraft.name.trim()) errors.push("Informe o nome.");
+
+&#x20;   if (!validarCpf(holderDraft.cpf)) errors.push("Informe um CPF válido.");
+
+&#x20;   if (!holderDraft.birthDate) errors.push("Informe o nascimento.");
+
+&#x20;   if (holderDraft.email.trim() && !isValidEmail(holderDraft.email))
+
+&#x20;     errors.push("Informe um e-mail válido.");
+
+&#x20;   if (holderDraft.phone.trim() && onlyDigits(holderDraft.phone).length < 10)
+
+&#x20;     errors.push("Informe um telefone válido.");
+
+
+
+&#x20;   const repeatedCpf = holders.some(
+
+&#x20;     (holder) =>
+
+&#x20;       holder.id !== holderDraft.id &&
+
+&#x20;       onlyDigits(holder.cpf) === onlyDigits(holderDraft.cpf),
+
+&#x20;   );
+
+&#x20;   if (repeatedCpf) errors.push("Este CPF já está no grupo.");
+
+
+
+&#x20;   if (errors.length > 0) {
+
+&#x20;     setHolderFormError(errors.join(" "));
+
+&#x20;     return;
+
+&#x20;   }
+
+
+
+&#x20;   setHolders((current) => {
+
+&#x20;     const alreadyExists = current.some(
+
+&#x20;       (holder) => holder.id === holderDraft.id,
+
+&#x20;     );
+
+
+
+&#x20;     return alreadyExists
+
+&#x20;       ? current.map((holder) =>
+
+&#x20;           holder.id === holderDraft.id ? holderDraft : holder,
+
+&#x20;         )
+
+&#x20;       : [...current, holderDraft];
+
+&#x20;   });
+
+&#x20;   setHolderDraft(null);
+
+&#x20;   setHolderFormError(null);
+
+&#x20; }
+
+
+
+&#x20; function generateGroupPdf() {
+
+&#x20;   if (!isValid) return;
+
+
+
+&#x20;   const printWindow = window\.open("", "\_blank", "width=900,height=700");
+
+
+
+&#x20;   if (!printWindow) {
+
+&#x20;     setSubmitError(
+
+&#x20;       "O navegador bloqueou a janela do PDF. Autorize pop-ups e tente novamente.",
+
+&#x20;     );
+
+&#x20;     return;
+
+&#x20;   }
+
+
+
+&#x20;   const holderRows = holders
+
+&#x20;     .map(
+
+&#x20;       (holder, index) => \`
+
+&#x20;         \<tr>
+
+&#x20;           \<td>${index + 1}\</td>
+
+&#x20;           \<td>${escapeHtml(holder.name.trim())}\</td>
+
+&#x20;           \<td>${escapeHtml(maskCPF(holder.cpf))}\</td>
+
+&#x20;           \<td>${escapeHtml(formatBirthDateBR(holder.birthDate))}\</td>
+
+&#x20;           \<td>${escapeHtml(holder.email.trim().toLowerCase())}\</td>
+
+&#x20;           \<td>${escapeHtml(formatPhone(holder.phone))}\</td>
+
+&#x20;           \<td>${planLabel(holder.plan)}\</td>
+
+&#x20;         \</tr>
+
+&#x20;       \`,
+
+&#x20;     )
+
+&#x20;     .join("");
+
+
+
+&#x20;   const companyRows =
+
+&#x20;     companyName.trim() || cnpj
+
+&#x20;       ? \`
+
+&#x20;         \<div class="data-grid">
+
+&#x20;           ${
+
+&#x20;             companyName.trim()
+
+&#x20;               ? \`\<div>\<span>Empresa\</span>\<strong>${escapeHtml(
+
+&#x20;                   companyName.trim(),
+
+&#x20;                 )}\</strong>\</div>\`
+
+&#x20;               : ""
+
+&#x20;           }
+
+&#x20;           ${
+
+&#x20;             cnpj
+
+&#x20;               ? \`\<div>\<span>CNPJ\</span>\<strong>${escapeHtml(cnpj)}\</strong>\</div>\`
+
+&#x20;               : ""
+
+&#x20;           }
+
+&#x20;         \</div>
+
+&#x20;       \`
+
+&#x20;       : "";
+
+
+
+&#x20;   printWindow\.document.write(\`
+
+&#x20;     \<!doctype html>
+
+&#x20;     \<html lang="pt-BR">
+
+&#x20;       \<head>
+
+&#x20;         \<meta charset="utf-8" />
+
+&#x20;         \<title>Relação prévia do plano coletivo\</title>
+
+&#x20;         \<style>
+
+&#x20;           \* { box-sizing: border-box; }
+
+&#x20;           body {
+
+&#x20;             margin: 0;
+
+&#x20;             padding: 32px;
+
+&#x20;             color: #12324a;
+
+&#x20;             font-family: Arial, Helvetica, sans-serif;
+
+&#x20;             background: #fff;
+
+&#x20;           }
+
+&#x20;           h1 { margin: 0; color: #0b4267; font-size: 26px; }
+
+&#x20;           h2 { margin: 28px 0 10px; color: #0b4267; font-size: 17px; }
+
+&#x20;           .subtitle { margin: 8px 0 24px; color: #557086; font-size: 13px; }
+
+&#x20;           .data-grid {
+
+&#x20;             display: grid;
+
+&#x20;             grid-template-columns: repeat(2, minmax(0, 1fr));
+
+&#x20;             gap: 10px;
+
+&#x20;             margin-top: 10px;
+
+&#x20;           }
+
+&#x20;           .data-grid div {
+
+&#x20;             border: 1px solid #d9e6ee;
+
+&#x20;             border-radius: 8px;
+
+&#x20;             padding: 10px;
+
+&#x20;           }
+
+&#x20;           .data-grid span {
+
+&#x20;             display: block;
+
+&#x20;             margin-bottom: 4px;
+
+&#x20;             color: #668096;
+
+&#x20;             font-size: 10px;
+
+&#x20;             font-weight: bold;
+
+&#x20;             text-transform: uppercase;
+
+&#x20;           }
+
+&#x20;           table {
+
+&#x20;             width: 100%;
+
+&#x20;             border-collapse: collapse;
+
+&#x20;             font-size: 11px;
+
+&#x20;           }
+
+&#x20;           th, td {
+
+&#x20;             border: 1px solid #d9e6ee;
+
+&#x20;             padding: 8px 6px;
+
+&#x20;             text-align: left;
+
+&#x20;             vertical-align: top;
+
+&#x20;           }
+
+&#x20;           th { color: #0b4267; background: #eef8fb; }
+
+&#x20;           .summary {
+
+&#x20;             display: grid;
+
+&#x20;             grid-template-columns: repeat(4, 1fr);
+
+&#x20;             gap: 10px;
+
+&#x20;             margin-top: 20px;
+
+&#x20;           }
+
+&#x20;           .summary div {
+
+&#x20;             border-radius: 8px;
+
+&#x20;             padding: 12px;
+
+&#x20;             color: #0b4267;
+
+&#x20;             background: #eafaf5;
+
+&#x20;           }
+
+&#x20;           .summary span { display: block; font-size: 10px; }
+
+&#x20;           .summary strong { display: block; margin-top: 4px; font-size: 16px; }
+
+&#x20;           .notice {
+
+&#x20;             margin-top: 24px;
+
+&#x20;             padding-top: 12px;
+
+&#x20;             border-top: 1px solid #d9e6ee;
+
+&#x20;             color: #668096;
+
+&#x20;             font-size: 10px;
+
+&#x20;           }
+
+&#x20;           @media print {
+
+&#x20;             body { padding: 0; }
+
+&#x20;             @page { size: A4 landscape; margin: 12mm; }
+
+&#x20;           }
+
+&#x20;         \</style>
+
+&#x20;       \</head>
+
+&#x20;       \<body>
+
+&#x20;         \<h1>ConsulToque — Relação prévia do plano coletivo\</h1>
+
+&#x20;         \<p class="subtitle">
+
+&#x20;           Gerado em ${new Date().toLocaleString("pt-BR")} · Indicador:
+
+&#x20;           ${escapeHtml(getCodColab())}
+
+&#x20;         \</p>
+
+
+
+&#x20;         ${companyRows}
+
+
+
+&#x20;         \<h2>Responsável financeiro\</h2>
+
+&#x20;         \<div class="data-grid">
+
+&#x20;           \<div>\<span>Nome\</span>\<strong>${escapeHtml(
+
+&#x20;             responsibleName.trim(),
+
+&#x20;           )}\</strong>\</div>
+
+&#x20;           \<div>\<span>CPF\</span>\<strong>${escapeHtml(
+
+&#x20;             maskCPF(responsibleCpf),
+
+&#x20;           )}\</strong>\</div>
+
+&#x20;           \<div>\<span>Nascimento\</span>\<strong>${escapeHtml(
+
+&#x20;             formatBirthDateBR(responsibleBirthDate),
+
+&#x20;           )}\</strong>\</div>
+
+&#x20;           \<div>\<span>E-mail\</span>\<strong>${escapeHtml(
+
+&#x20;             responsibleEmail.trim().toLowerCase(),
+
+&#x20;           )}\</strong>\</div>
+
+&#x20;           \<div>\<span>Telefone\</span>\<strong>${escapeHtml(
+
+&#x20;             formatPhone(responsiblePhone),
+
+&#x20;           )}\</strong>\</div>
+
+&#x20;         \</div>
+
+
+
+&#x20;         \<h2>Titulares\</h2>
+
+&#x20;         \<table>
+
+&#x20;           \<thead>
+
+&#x20;             \<tr>
+
+&#x20;               \<th>#\</th>
+
+&#x20;               \<th>Nome\</th>
+
+&#x20;               \<th>CPF\</th>
+
+&#x20;               \<th>Nascimento\</th>
+
+&#x20;               \<th>E-mail\</th>
+
+&#x20;               \<th>Telefone\</th>
+
+&#x20;               \<th>Plano\</th>
+
+&#x20;             \</tr>
+
+&#x20;           \</thead>
+
+&#x20;           \<tbody>${holderRows}\</tbody>
+
+&#x20;         \</table>
+
+
+
+&#x20;         \<div class="summary">
+
+&#x20;           \<div>\<span>Individuais\</span>\<strong>${breakdown.individualCount}\</strong>\</div>
+
+&#x20;           \<div>\<span>Familiares\</span>\<strong>${breakdown.familyCount}\</strong>\</div>
+
+&#x20;           \<div>\<span>Total\</span>\<strong>${breakdown.total}\</strong>\</div>
+
+&#x20;           \<div>\<span>Valor mensal\</span>\<strong>R$ ${breakdown.totalMonthly
+
+&#x20;             .toFixed(2)
+
+&#x20;             .replace(".", ",")}\</strong>\</div>
+
+&#x20;         \</div>
+
+
+
+&#x20;         \<p class="notice">
+
+&#x20;           Documento de conferência gerado antes da contratação. Esta relação
+
+&#x20;           não confirma pagamento nem ativação dos serviços.
+
+&#x20;         \</p>
+
+&#x20;         \<script>
+
+&#x20;           window\.addEventListener('load', function () {
+
+&#x20;             setTimeout(function () { window\.print(); }, 250);
+
+&#x20;           });
+
+&#x20;         \</script>
+
+&#x20;       \</body>
+
+&#x20;     \</html>
+
+&#x20;   \`);
+
+&#x20;   printWindow\.document.close();
+
+&#x20;   setSubmitError(null);
+
+&#x20; }
+
+
+
+&#x20; function openTerms() {
+
+&#x20;   if (!isValid || submitting) return;
+
+&#x20;   setAcceptedTerms(false);
+
+&#x20;   setShowTerms(true);
+
+&#x20; }
+
+
+
+&#x20; async function handleSubmit(e: FormEvent) {
+
+&#x20;   e.preventDefault();
+
+&#x20;   if (!isValid || !acceptedTerms || submitting) return;
+
+
+
+&#x20;   setSubmitting(true);
+
+&#x20;   setSubmitError(null);
+
+
+
+&#x20;   const agora = new Date().toISOString();
+
+&#x20;   const codColab = getCodColab();
+
+
+
+&#x20;   const payload = {
+
+&#x20;     origem: "site_consultoque_empresas",
+
+&#x20;     enviado_em: agora,
+
+
+
+&#x20;     cod_colab: codColab,
+
+
+
+&#x20;     nome_assoc: normalizarNome(responsibleName.trim()),
+
+&#x20;     cpf_assoc: onlyDigits(responsibleCpf),
+
+&#x20;     nasc_assoc: formatBirthDateBR(responsibleBirthDate),
+
+&#x20;     email_assoc: responsibleEmail.trim().toLowerCase(),
+
+&#x20;     tel_assoc: onlyDigits(responsiblePhone),
+
+&#x20;     empresa: companyName.trim(),
+
+&#x20;     cnpj: cnpjValidation?.cnpj_validado ? onlyDigits(cnpj) : "",
+
+&#x20;     tipo_doc_cobranca: cnpjValidation?.cnpj_validado ? "CNPJ" : "CPF",
+
+
+
+&#x20;     assoc_cpf_validado: Boolean(responsibleCpfValidation?.cpf_validado),
+
+&#x20;     assoc_maior_idade: Boolean(responsibleCpfValidation?.maior_idade),
+
+&#x20;     assoc_consulta_id: responsibleCpfValidation?.consulta_id || "",
+
+
+
+&#x20;     qtd_individual: breakdown.individualCount,
+
+&#x20;     qtd_familiar: breakdown.familyCount,
+
+&#x20;     vl_individual: breakdown.individualCount \* breakdown.individualUnit,
+
+&#x20;     vl_familiar: breakdown.familyCount \* breakdown.familyUnit,
+
+&#x20;     vl_total: breakdown.totalMonthly,
+
+
+
+&#x20;     desconto_coletivo: breakdown.hasBulkDiscount,
+
+&#x20;     economia_mensal: breakdown.savings,
+
+
+
+&#x20;     termos_aceitos: true,
+
+&#x20;     termos_aceitos_em: agora,
+
+&#x20;     versao_termo: VERSAO_TERMO_ASSOCIADO,
+
+
+
+&#x20;     titulares: holders.map((holder) => ({
+
+&#x20;       cpf_titular: onlyDigits(holder.cpf),
+
+&#x20;       nome_titular: normalizarNome(holder.name.trim()),
+
+&#x20;       nasc_titular: formatBirthDateBR(holder.birthDate),
+
+&#x20;       email_titular: holder.email.trim().toLowerCase(),
+
+&#x20;       tel_titular: onlyDigits(holder.phone),
+
+&#x20;       cod_plano: holder.plan === "individual" ? "2878" : "2880",
+
+&#x20;     })),
+
+&#x20;   };
+
+
+
+&#x20;   try {
+
+&#x20;     const res = await fetch(WEBHOOK_URL, {
+
+&#x20;       method: "POST",
+
+&#x20;       headers: { "Content-Type": "application/json" },
+
+&#x20;       body: JSON.stringify(payload),
+
+&#x20;     });
+
+
+
+&#x20;     const result = (await res
+
+&#x20;       .json()
+
+&#x20;       .catch(() => null)) as Partial\<PaymentResponse> | null;
+
+
+
+&#x20;     if (!res.ok) {
+
+&#x20;       throw new Error(result?.message || \`HTTP ${res.status}\`);
+
+&#x20;     }
+
+
+
+&#x20;     if (
+
+&#x20;       !result ||
+
+&#x20;       typeof result.url_pagamento !== "string" ||
+
+&#x20;       !/^https?:**\\/\\/**/i.test(result.url_pagamento)
+
+&#x20;     ) {
+
+&#x20;       throw new Error("O servidor não retornou o link do boleto.");
+
+&#x20;     }
+
+
+
+&#x20;     setPaymentResponse({
+
+&#x20;       status: String(result.status || "sucesso"),
+
+&#x20;       message: String(
+
+&#x20;         result.message ||
+
+&#x20;           "Boleto emitido com sucesso. Enviamos também o link para seu e-mail.",
+
+&#x20;       ),
+
+&#x20;       url_pagamento: result.url_pagamento,
+
+&#x20;       dt_vencimento: String(result.dt_vencimento || ""),
+
+&#x20;       dia_vencimento: String(result.dia_vencimento || ""),
+
+&#x20;       email: String(result.email || responsibleEmail.trim().toLowerCase()),
+
+&#x20;     });
+
+&#x20;     setShowTerms(false);
+
+&#x20;     setSubmitted(true);
+
+&#x20;   } catch (err) {
+
+&#x20;     setSubmitError(
+
+&#x20;       err instanceof Error
+
+&#x20;         ? \`Não foi possível enviar: ${err.message}\`
+
+&#x20;         : "Não foi possível enviar o formulário.",
+
+&#x20;     );
+
+&#x20;   } finally {
+
+&#x20;     setSubmitting(false);
+
+&#x20;   }
+
+&#x20; }
+
+
+
+&#x20; if (submitted) {
+
+&#x20;   return (
+
+&#x20;     \<div className="min-h-screen bg-ocean-50">
+
+&#x20;       \<div className="mx-auto max-w-5xl px-5 py-8 sm:px-8">
+
+&#x20;         \<div className="mx-auto max-w-xl rounded-3xl border border-mint-200 bg-white p-10 text-center shadow-card">
+
+&#x20;           \<div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-mint-100">
+
+&#x20;             \<CheckCircle2 className="h-9 w-9 text-mint-600" />
+
+&#x20;           \</div>
+
+&#x20;           \<h1 className="mt-5 font-display text-2xl font-extrabold text-ocean-900">
+
+&#x20;             Boleto emitido com sucesso!
+
+&#x20;           \</h1>
+
+&#x20;           \<p className="mt-3 text-ocean-600">
+
+&#x20;             Recebemos a inscrição coletiva de{" "}
+
+&#x20;             \<strong>{breakdown.total}\</strong> titular(es). O link do boleto
+
+&#x20;             também foi enviado para{" "}
+
+&#x20;             \<strong>{paymentResponse?.email || responsibleEmail}\</strong>.
+
+&#x20;           \</p>
+
+&#x20;           \<div className="mt-6 rounded-2xl bg-ocean-50 p-5 text-left">
+
+&#x20;             \<p className="text-sm text-ocean-700">
+
+&#x20;               Valor mensal total:{" "}
+
+&#x20;               \<strong className="text-mint-700">
+
+&#x20;                 R$ {breakdown.totalMonthly.toFixed(2).replace(".", ",")}
+
+&#x20;               \</strong>
+
+&#x20;             \</p>
+
+&#x20;             {paymentResponse?.dt_vencimento && (
+
+&#x20;               \<p className="mt-2 text-sm text-ocean-700">
+
+&#x20;                 Vencimento:{" "}
+
+&#x20;                 \<strong className="text-ocean-900">
+
+&#x20;                   {paymentResponse.dt_vencimento}
+
+&#x20;                 \</strong>
+
+&#x20;               \</p>
+
+&#x20;             )}
+
+&#x20;             {breakdown.hasBulkDiscount && (
+
+&#x20;               \<p className="mt-1 text-xs text-mint-600">
+
+&#x20;                 Desconto coletivo aplicado ({breakdown.total} inscrições).
+
+&#x20;               \</p>
+
+&#x20;             )}
+
+&#x20;           \</div>
+
+&#x20;           \<div className="mt-7 flex flex-col gap-3 sm:flex-row sm:justify-center">
+
+&#x20;             {paymentResponse?.url_pagamento && (
+
+&#x20;               \<a
+
+&#x20;                 href={paymentResponse.url_pagamento}
+
+&#x20;                 target="\_blank"
+
+&#x20;                 rel="noreferrer"
+
+&#x20;                 className="btn-primary"
+
+&#x20;               \>
+
+&#x20;                 Abrir boleto
+
+&#x20;               \</a>
+
+&#x20;             )}
+
+&#x20;             \<a
+
+&#x20;               href="https\://consultoque.com.br"
+
+&#x20;               className="inline-flex items-center justify-center rounded-xl border border-ocean-200 px-6 py-3 font-bold text-ocean-700 transition-colors hover:bg-ocean-50"
+
+&#x20;             \>
+
+&#x20;               Voltar ao início
+
+&#x20;             \</a>
+
+&#x20;           \</div>
+
+&#x20;         \</div>
+
+&#x20;       \</div>
+
+&#x20;     \</div>
+
+&#x20;   );
+
+&#x20; }
+
+
+
+&#x20; return (
+
+&#x20;   \<div className="min-h-screen bg-ocean-50">
+
+&#x20;     \<div className="mx-auto max-w-6xl px-5 py-6 sm:px-8 lg:py-8">
+
+&#x20;       \<a
+
+&#x20;         href="https\://consultoque.com.br"
+
+&#x20;         className="inline-flex items-center gap-2 text-sm font-semibold text-ocean-600 hover:text-ocean-900"
+
+&#x20;       \>
+
+&#x20;         \<ArrowLeft className="h-4 w-4" />
+
+&#x20;         Voltar ao início
+
+&#x20;       \</a>
+
+
+
+&#x20;       \<div className="mt-6 max-w-3xl">
+
+&#x20;         \<span className="section-eyebrow">Inscrição Coletiva\</span>
+
+&#x20;         \<h1 className="mt-4 font-display text-3xl font-extrabold tracking-tight text-ocean-900 sm:text-4xl">
+
+&#x20;           Monte o plano coletivo da sua empresa
+
+&#x20;         \</h1>
+
+&#x20;         \<p className="mt-3 text-ocean-600">
+
+&#x20;           Preencha os dados do responsável e adicione os titulares. Nome da
+
+&#x20;           empresa e CNPJ são opcionais. O valor é calculado em tempo real.
+
+&#x20;         \</p>
+
+
+
+&#x20;         \<div className="mt-5 rounded-2xl border border-mint-200 bg-mint-50 p-4 sm:flex sm:items-center sm:justify-between sm:gap-5">
+
+&#x20;           \<div>
+
+&#x20;             \<p className="font-bold text-ocean-900">
+
+&#x20;               Já iniciou uma adesão coletiva?
+
+&#x20;             \</p>
+
+&#x20;             \<p className="mt-1 text-sm text-ocean-600">
+
+&#x20;               Acrescente mais titulares antes do primeiro pagamento, sem criar
+
+&#x20;               outro contrato.
+
+&#x20;             \</p>
+
+&#x20;           \</div>
+
+
+
+&#x20;           \<a
+
+&#x20;             href="/completar-adesao"
+
+&#x20;             className="mt-3 inline-flex items-center justify-center gap-2 rounded-xl bg-mint-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-mint-700 sm:mt-0"
+
+&#x20;           \>
+
+&#x20;             \<Plus className="h-4 w-4" />
+
+&#x20;             Completar adesão pendente
+
+&#x20;           \</a>
+
+&#x20;         \</div>
+
+&#x20;       \</div>
+
+
+
+&#x20;       \<form
+
+&#x20;         id="collective-form"
+
+&#x20;         onSubmit={handleSubmit}
+
+&#x20;         className="mt-8 grid gap-8 lg:grid-cols-[1fr_360px]"
+
+&#x20;       \>
+
+&#x20;         {/\* Main column \*/}
+
+&#x20;         \<div className="space-y-8">
+
+&#x20;           {/\* Company + responsible \*/}
+
+&#x20;           \<section className="rounded-3xl border border-ocean-100 bg-white p-6 shadow-card sm:p-8">
+
+&#x20;             \<div className="flex items-center justify-between gap-4">
+
+&#x20;               \<h2 className="font-display text-xl font-bold text-ocean-900">
+
+&#x20;                 1\. Responsável pelo grupo
+
+&#x20;               \</h2>
+
+&#x20;               {responsibleSaved && (
+
+&#x20;                 \<span className="inline-flex items-center gap-1.5 rounded-full bg-mint-50 px-3 py-1 text-xs font-bold text-mint-700">
+
+&#x20;                   \<CheckCircle2 className="h-3.5 w-3.5" />
+
+&#x20;                   Salvo
+
+&#x20;                 \</span>
+
+&#x20;               )}
+
+&#x20;             \</div>
+
+
+
+&#x20;             {!responsibleSaved ? (
+
+&#x20;               \<div className="mt-6">
+
+&#x20;                 \<div className="grid gap-5 sm:grid-cols-2">
+
+&#x20;                   \<div className="sm:col-span-2">
+
+&#x20;                     \<label className="label-field" htmlFor="companyName">
+
+&#x20;                       Nome da empresa (opcional)
+
+&#x20;                     \</label>
+
+&#x20;                     \<input
+
+&#x20;                       id="companyName"
+
+&#x20;                       type="text"
+
+&#x20;                       value={companyName}
+
+&#x20;                       onChange={(e) =>
+
+&#x20;                         setCompanyName(normalizarNome(e.target.value))
+
+&#x20;                       }
+
+&#x20;                       disabled={!responsibleCpfValidation?.cpf_validado}
+
+&#x20;                       className="input-field disabled:cursor-not-allowed disabled:bg-slate-100"
+
+&#x20;                       placeholder="Razão social ou nome fantasia, se houver"
+
+&#x20;                     />
+
+&#x20;                   \</div>
+
+&#x20;                   \<div>
+
+&#x20;                     \<label className="label-field" htmlFor="cnpj">
+
+&#x20;                       CNPJ da empresa (opcional)
+
+&#x20;                     \</label>
+
+&#x20;                     \<input
+
+&#x20;                       id="cnpj"
+
+&#x20;                       type="text"
+
+&#x20;                       inputMode="numeric"
+
+&#x20;                       value={cnpj}
+
+&#x20;                       onChange={(e) => changeCnpj(e.target.value)}
+
+&#x20;                       disabled={
+
+&#x20;                         !responsibleCpfValidation?.cpf_validado ||
+
+&#x20;                         validatingCnpj
+
+&#x20;                       }
+
+&#x20;                       className="input-field disabled:cursor-not-allowed disabled:bg-slate-100"
+
+&#x20;                       placeholder="00.000.000/0000-00"
+
+&#x20;                     />
+
+&#x20;                     <button
+
+&#x20;                       type="button"
+
+&#x20;                       onClick={validateCnpj}
+
+&#x20;                       disabled={
+
+&#x20;                         !responsibleCpfValidation?.cpf_validado ||
+
+&#x20;                         validatingCnpj ||
+
+&#x20;                         !isValidCNPJ(cnpj)
+
+&#x20;                       }
+
+&#x20;                       className="mt-2 inline-flex items-center gap-2 rounded-xl bg-ocean-700 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-ocean-800 disabled:cursor-not-allowed disabled:opacity-50"
+
+&#x20;                     >
+
+&#x20;                       {validatingCnpj ? (
+
+&#x20;                         <Loader2 className="h-4 w-4 animate-spin" />
+
+&#x20;                       ) : (
+
+&#x20;                         <ShieldCheck className="h-4 w-4" />
+
+&#x20;                       )}
+
+&#x20;                       {validatingCnpj ? "Consultando..." : "Validar CNPJ"}
+
+&#x20;                     </button>
+
+
+
+&#x20;                     {cnpjValidation?.cnpj_validado && (
+
+&#x20;                       <p className="mt-2 flex items-center gap-1.5 text-xs font-bold text-mint-700">
+
+&#x20;                         <CheckCircle2 className="h-4 w-4" />
+
+&#x20;                         CNPJ validado: {cnpjValidation.razao_social}
+
+&#x20;                       </p>
+
+&#x20;                     )}
+
+
+
+&#x20;                     {cnpjError && (
+
+&#x20;                       <p className="mt-2 text-xs font-semibold text-red-600">
+
+&#x20;                         {cnpjError}
+
+&#x20;                       </p>
+
+&#x20;                     )}
+
+
+&#x20;                   \</div>
+
+&#x20;                   \<div>
+
+&#x20;                     \<label className="label-field" htmlFor="responsibleCpf">
+
+&#x20;                       CPF do responsável
+
+&#x20;                     \</label>
+
+&#x20;                     \<input
+
+&#x20;                       id="responsibleCpf"
+
+&#x20;                       type="text"
+
+&#x20;                       inputMode="numeric"
+
+&#x20;                       value={responsibleCpf}
+
+&#x20;                       onChange={(e) => changeResponsibleCpf(e.target.value)}
+
+&#x20;                       className="input-field"
+
+&#x20;                       placeholder="000.000.000-00"
+
+&#x20;                       disabled={validatingResponsibleCpf}
+
+&#x20;                     />
+
+&#x20;                     \<button
+
+&#x20;                       type="button"
+
+&#x20;                       onClick={validateResponsibleCpf}
+
+&#x20;                       disabled={
+
+&#x20;                         validatingResponsibleCpf ||
+
+&#x20;                         !validarCpf(responsibleCpf)
+
+&#x20;                       }
+
+&#x20;                       className="mt-2 inline-flex items-center gap-2 rounded-xl bg-ocean-700 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-ocean-800 disabled:cursor-not-allowed disabled:opacity-50"
+
+&#x20;                     \>
+
+&#x20;                       {validatingResponsibleCpf ? (
+
+&#x20;                         \<Loader2 className="h-4 w-4 animate-spin" />
+
+&#x20;                       ) : (
+
+&#x20;                         \<ShieldCheck className="h-4 w-4" />
+
+&#x20;                       )}
+
+&#x20;                       {validatingResponsibleCpf
+
+&#x20;                         ? "Consultando..."
+
+&#x20;                         : "Validar CPF"}
+
+&#x20;                     \</button>
+
+
+
+&#x20;                     {responsibleCpfValidation?.cpf_validado && (
+
+&#x20;                       \<p className="mt-2 flex items-center gap-1.5 text-xs font-bold text-mint-700">
+
+&#x20;                         \<CheckCircle2 className="h-4 w-4" />
+
+&#x20;                         CPF validado com sucesso.
+
+&#x20;                       \</p>
+
+&#x20;                     )}
+
+
+
+&#x20;                     {responsibleCpfError && (
+
+&#x20;                       \<p className="mt-2 text-xs font-semibold text-red-600">
+
+&#x20;                         {responsibleCpfError}
+
+&#x20;                       \</p>
+
+&#x20;                     )}
+
+&#x20;                   \</div>
+
+&#x20;                   \<div>
+
+&#x20;                     \<label className="label-field" htmlFor="responsibleName">
+
+&#x20;                       Nome do responsável pelo pagamento
+
+&#x20;                     \</label>
+
+&#x20;                     \<input
+
+&#x20;                       id="responsibleName"
+
+&#x20;                       type="text"
+
+&#x20;                       value={responsibleName}
+
+&#x20;                       readOnly
+
+&#x20;                       disabled={!responsibleCpfValidation?.cpf_validado}
+
+&#x20;                       className="input-field disabled:cursor-not-allowed disabled:bg-slate-100"
+
+&#x20;                       placeholder="Preenchido após validar o CPF"
+
+&#x20;                     />
+
+&#x20;                   \</div>
+
+&#x20;                   \<div>
+
+&#x20;                     \<label className="label-field" htmlFor="responsibleEmail">
+
+&#x20;                       E-mail do responsável
+
+&#x20;                     \</label>
+
+&#x20;                     \<input
+
+&#x20;                       id="responsibleEmail"
+
+&#x20;                       type="email"
+
+&#x20;                       value={responsibleEmail}
+
+&#x20;                       onChange={(e) => setResponsibleEmail(e.target.value)}
+
+&#x20;                       disabled={!responsibleCpfValidation?.cpf_validado}
+
+&#x20;                       className="input-field disabled:cursor-not-allowed disabled:bg-slate-100"
+
+&#x20;                       placeholder="responsavel\@empresa.com"
+
+&#x20;                     />
+
+&#x20;                   \</div>
+
+&#x20;                   \<div>
+
+&#x20;                     \<label className="label-field" htmlFor="responsiblePhone">
+
+&#x20;                       Telefone do responsável
+
+&#x20;                     \</label>
+
+&#x20;                     \<input
+
+&#x20;                       id="responsiblePhone"
+
+&#x20;                       type="tel"
+
+&#x20;                       inputMode="numeric"
+
+&#x20;                       value={responsiblePhone}
+
+&#x20;                       onChange={(e) =>
+
+&#x20;                         setResponsiblePhone(formatPhone(e.target.value))
+
+&#x20;                       }
+
+&#x20;                       disabled={!responsibleCpfValidation?.cpf_validado}
+
+&#x20;                       className="input-field disabled:cursor-not-allowed disabled:bg-slate-100"
+
+&#x20;                       placeholder="(00) 00000-0000"
+
+&#x20;                     />
+
+&#x20;                   \</div>
+
+&#x20;                   \<div>
+
+&#x20;                     \<label
+
+&#x20;                       className="label-field"
+
+&#x20;                       htmlFor="responsibleBirthDate"
+
+&#x20;                     \>
+
+&#x20;                       Nascimento do responsável
+
+&#x20;                     \</label>
+
+&#x20;                     \<input
+
+&#x20;                       id="responsibleBirthDate"
+
+&#x20;                       type="date"
+
+&#x20;                       value={responsibleBirthDate}
+
+&#x20;                       readOnly
+
+&#x20;                       disabled={!responsibleCpfValidation?.cpf_validado}
+
+&#x20;                       className="input-field disabled:cursor-not-allowed disabled:bg-slate-100"
+
+&#x20;                     />
+
+&#x20;                   \</div>
+
+&#x20;                 \</div>
+
+
+
+&#x20;                 {responsibleFormError && (
+
+&#x20;                   \<p className="mt-4 rounded-xl bg-red-50 p-3 text-sm font-semibold text-red-600">
+
+&#x20;                     {responsibleFormError}
+
+&#x20;                   \</p>
+
+&#x20;                 )}
+
+
+
+&#x20;                 \<div className="mt-6 flex justify-end">
+
+&#x20;                   \<button
+
+&#x20;                     type="button"
+
+&#x20;                     onClick={saveResponsible}
+
+&#x20;                     disabled={!responsibleCpfValidation?.cpf_validado}
+
+&#x20;                     className="btn-primary"
+
+&#x20;                   \>
+
+&#x20;                     \<CheckCircle2 className="h-4 w-4" />
+
+&#x20;                     Salvar responsável
+
+&#x20;                   \</button>
+
+&#x20;                 \</div>
+
+&#x20;               \</div>
+
+&#x20;             ) : (
+
+&#x20;               \<div className="mt-5 rounded-2xl border border-mint-200 bg-mint-50/50 p-5">
+
+&#x20;                 \<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+
+&#x20;                   \<div>
+
+&#x20;                     \<p className="font-display text-lg font-bold text-ocean-900">
+
+&#x20;                       {responsibleName}
+
+&#x20;                     \</p>
+
+&#x20;                     {companyName && (
+
+&#x20;                       \<p className="mt-1 text-sm font-semibold text-ocean-600">
+
+&#x20;                         {companyName}
+
+&#x20;                       \</p>
+
+&#x20;                     )}
+
+&#x20;                     \<p className="mt-2 text-sm text-ocean-600">
+
+&#x20;                       {maskCPF(responsibleCpf)} · {responsibleEmail}
+
+&#x20;                     \</p>
+
+&#x20;                     \<p className="mt-1 text-sm text-ocean-500">
+
+&#x20;                       {responsiblePhone}
+
+&#x20;                     \</p>
+
+&#x20;                   \</div>
+
+&#x20;                   \<div className="flex gap-2">
+
+&#x20;                     \<button
+
+&#x20;                       type="button"
+
+&#x20;                       onClick={editResponsible}
+
+&#x20;                       className="inline-flex items-center gap-2 rounded-xl border border-ocean-200 bg-white px-4 py-2 text-sm font-bold text-ocean-700 hover:bg-ocean-50"
+
+&#x20;                     \>
+
+&#x20;                       \<Pencil className="h-4 w-4" />
+
+&#x20;                       Editar
+
+&#x20;                     \</button>
+
+&#x20;                     \<button
+
+&#x20;                       type="button"
+
+&#x20;                       onClick={clearResponsible}
+
+&#x20;                       className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-bold text-red-600 hover:bg-red-50"
+
+&#x20;                     \>
+
+&#x20;                       \<Trash2 className="h-4 w-4" />
+
+&#x20;                       Limpar
+
+&#x20;                     \</button>
+
+&#x20;                   \</div>
+
+&#x20;                 \</div>
+
+&#x20;               \</div>
+
+&#x20;             )}
+
+&#x20;           \</section>
+
+
+
+&#x20;           {/\* Holders \*/}
+
+&#x20;           \<section className="rounded-3xl border border-ocean-100 bg-white p-6 shadow-card sm:p-8">
+
+&#x20;             \<div className="flex items-center justify-between gap-4">
+
+&#x20;               \<h2 className="font-display text-xl font-bold text-ocean-900">
+
+&#x20;                 2\. Titulares ({holders.length})
+
+&#x20;               \</h2>
+
+&#x20;               \<button
+
+&#x20;                 type="button"
+
+&#x20;                 onClick={addHolder}
+
+&#x20;                 disabled={!responsibleSaved || !!holderDraft}
+
+&#x20;                 className="inline-flex items-center gap-2 rounded-full bg-brand-gradient px-4 py-2 text-sm font-semibold text-white shadow-glow-blue transition-transform enabled:hover:scale-105 disabled:cursor-not-allowed disabled:opacity-40"
+
+&#x20;               \>
+
+&#x20;                 \<Plus className="h-4 w-4" />
+
+&#x20;                 Adicionar titular
+
+&#x20;               \</button>
+
+&#x20;             \</div>
+
+
+
+&#x20;             \<div className="mt-6 space-y-4">
+
+&#x20;               {holders.length === 0 && !holderDraft && (
+
+&#x20;                 \<div className="rounded-2xl border border-dashed border-ocean-200 bg-ocean-50/50 p-6 text-center">
+
+&#x20;                   \<p className="font-semibold text-ocean-700">
+
+&#x20;                     Nenhum titular salvo.
+
+&#x20;                   \</p>
+
+&#x20;                   \<p className="mt-1 text-sm text-ocean-500">
+
+&#x20;                     Salve o responsável e use “Adicionar titular”.
+
+&#x20;                   \</p>
+
+&#x20;                 \</div>
+
+&#x20;               )}
+
+
+
+&#x20;               {holders.map((holder, idx) =>
+
+&#x20;                 holderDraft?.id === holder.id ? null : (
+
+&#x20;                   \<div
+
+&#x20;                     key={holder.id}
+
+&#x20;                     className="rounded-2xl border border-ocean-100 bg-ocean-50/50 p-4 sm:p-5"
+
+&#x20;                   \>
+
+&#x20;                     \<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+
+&#x20;                       \<div className="min-w-0">
+
+&#x20;                         \<div className="flex flex-wrap items-center gap-2">
+
+&#x20;                           \<p className="font-display text-xs font-black uppercase tracking-wide text-ocean-500">
+
+&#x20;                             Titular #{idx + 1}
+
+&#x20;                           \</p>
+
+&#x20;                           \<span className="rounded-full bg-mint-100 px-2.5 py-1 text-xs font-bold text-mint-700">
+
+&#x20;                             {planLabel(holder.plan)}
+
+&#x20;                           \</span>
+
+&#x20;                         \</div>
+
+&#x20;                         \<p className="mt-2 truncate font-display text-lg font-bold text-ocean-900">
+
+&#x20;                           {holder.name}
+
+&#x20;                         \</p>
+
+&#x20;                       \</div>
+
+&#x20;                       \<div className="flex shrink-0 gap-2">
+
+&#x20;                         \<button
+
+&#x20;                           type="button"
+
+&#x20;                           onClick={() => editHolder(holder)}
+
+&#x20;                           disabled={!!holderDraft}
+
+&#x20;                           className="inline-flex items-center gap-2 rounded-xl border border-ocean-200 bg-white px-3 py-2 text-sm font-bold text-ocean-700 hover:bg-ocean-50 disabled:opacity-40"
+
+&#x20;                         \>
+
+&#x20;                           \<Pencil className="h-4 w-4" />
+
+&#x20;                           Editar
+
+&#x20;                         \</button>
+
+&#x20;                         \<button
+
+&#x20;                           type="button"
+
+&#x20;                           onClick={() => removeHolder(holder.id)}
+
+&#x20;                           disabled={!!holderDraft}
+
+&#x20;                           className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-white px-3 py-2 text-sm font-bold text-red-600 hover:bg-red-50 disabled:opacity-40"
+
+&#x20;                           aria-label="Remover titular"
+
+&#x20;                         \>
+
+&#x20;                           \<Trash2 className="h-4 w-4" />
+
+&#x20;                           Excluir
+
+&#x20;                         \</button>
+
+&#x20;                       \</div>
+
+&#x20;                     \</div>
+
+&#x20;                   \</div>
+
+&#x20;                 ),
+
+&#x20;               )}
+
+
+
+&#x20;               {holderDraft && (
+
+&#x20;                 \<div className="rounded-2xl border-2 border-mint-300 bg-white p-5 shadow-sm">
+
+&#x20;                   \<div className="flex items-center justify-between gap-4">
+
+&#x20;                     \<div>
+
+&#x20;                       \<p className="font-display text-lg font-bold text-ocean-900">
+
+&#x20;                         {holders.some(
+
+&#x20;                           (holder) => holder.id === holderDraft.id,
+
+&#x20;                         )
+
+&#x20;                           ? "Editar titular"
+
+&#x20;                           : "Novo titular"}
+
+&#x20;                       \</p>
+
+&#x20;                       \<p className="mt-1 text-sm text-ocean-500">
+
+&#x20;                         Preencha os dados e salve para fechar este cartão.
+
+&#x20;                       \</p>
+
+&#x20;                     \</div>
+
+&#x20;                     \<button
+
+&#x20;                       type="button"
+
+&#x20;                       onClick={cancelHolder}
+
+&#x20;                       className="rounded-xl p-2 text-ocean-500 hover:bg-ocean-50"
+
+&#x20;                       aria-label="Cancelar edição"
+
+&#x20;                     \>
+
+&#x20;                       \<X className="h-5 w-5" />
+
+&#x20;                     \</button>
+
+&#x20;                   \</div>
+
+
+
+&#x20;                   \<div className="mt-3 grid grid-cols-2 gap-2">
+
+&#x20;                     {(
+
+&#x20;                       [
+
+&#x20;                         {
+
+&#x20;                           key: "individual",
+
+&#x20;                           label: "Individual",
+
+&#x20;                           icon: User,
+
+&#x20;                           price: "R$ 33/mês",
+
+&#x20;                         },
+
+&#x20;                         {
+
+&#x20;                           key: "familia",
+
+&#x20;                           label: "Familiar",
+
+&#x20;                           icon: Heart,
+
+&#x20;                           price: "R$ 66/mês",
+
+&#x20;                         },
+
+&#x20;                       ] as const
+
+&#x20;                     ).map((opt) => (
+
+&#x20;                       \<button
+
+&#x20;                         key={opt.key}
+
+&#x20;                         type="button"
+
+&#x20;                         onClick={() => updateHolderDraft({ plan: opt.key })}
+
+&#x20;                         className={\`flex min-h-[72px] flex-col items-center justify-center gap-1.5 rounded-xl border-2 px-3 py-2.5 text-sm font-semibold transition-all sm:min-h-0 sm:flex-row sm:justify-start sm:gap-2 ${
+
+&#x20;                           holderDraft.plan === opt.key
+
+&#x20;                             ? "border-mint-500 bg-mint-50 text-mint-700"
+
+&#x20;                             : "border-ocean-200 bg-white text-ocean-600 hover:border-ocean-300"
+
+&#x20;                         }\`}
+
+&#x20;                       \>
+
+&#x20;                         \<span className="flex items-center gap-2">
+
+&#x20;                           \<opt.icon className="h-4 w-4" />
+
+&#x20;                           \<span>{opt.label}\</span>
+
+&#x20;                         \</span>
+
+
+
+&#x20;                         \<span className="text-xs text-ocean-400 sm:ml-auto">
+
+&#x20;                           {opt.price}
+
+&#x20;                         \</span>
+
+&#x20;                       \</button>
+
+&#x20;                     ))}
+
+&#x20;                   \</div>
+
+
+
+&#x20;                   \<div className="mt-4 space-y-4">
+
+&#x20;                     \<div className="grid gap-4 sm:grid-cols-2">
+
+&#x20;                       \<div>
+
+&#x20;                         \<label className="label-field">CPF do titular\</label>
+
+&#x20;                         \<input
+
+&#x20;                           type="text"
+
+&#x20;                           inputMode="numeric"
+
+&#x20;                           value={holderDraft.cpf}
+
+&#x20;                           onChange={(e) => updateHolderCpf(e.target.value)}
+
+&#x20;                           disabled={validatingHolderCpf}
+
+&#x20;                           className="input-field disabled:cursor-not-allowed disabled:bg-slate-100"
+
+&#x20;                           placeholder="000.000.000-00"
+
+&#x20;                         />
+
+
+
+&#x20;                         \<button
+
+&#x20;                           type="button"
+
+&#x20;                           onClick={validateHolderCpf}
+
+&#x20;                           disabled={
+
+&#x20;                             validatingHolderCpf ||
+
+&#x20;                             !validarCpf(holderDraft.cpf)
+
+&#x20;                           }
+
+&#x20;                           className="mt-2 inline-flex items-center gap-2 rounded-xl bg-ocean-700 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-ocean-800 disabled:cursor-not-allowed disabled:opacity-50"
+
+&#x20;                         \>
+
+&#x20;                           {validatingHolderCpf ? (
+
+&#x20;                             \<Loader2 className="h-4 w-4 animate-spin" />
+
+&#x20;                           ) : (
+
+&#x20;                             \<ShieldCheck className="h-4 w-4" />
+
+&#x20;                           )}
+
+&#x20;                           {validatingHolderCpf
+
+&#x20;                             ? "Consultando..."
+
+&#x20;                             : "Validar CPF"}
+
+&#x20;                         \</button>
+
+
+
+&#x20;                         {holderDraft.cpfValidated && (
+
+&#x20;                           \<p className="mt-2 flex items-center gap-1.5 text-xs font-bold text-mint-700">
+
+&#x20;                             \<CheckCircle2 className="h-4 w-4" />
+
+&#x20;                             CPF validado. Nome e nascimento preenchidos.
+
+&#x20;                           \</p>
+
+&#x20;                         )}
+
+
+
+&#x20;                         {somenteNumerosCpf(holderDraft.cpf).length === 11 &&
+
+&#x20;                           !validarCpf(holderDraft.cpf) && (
+
+&#x20;                             \<p className="mt-2 text-xs font-semibold text-red-600">
+
+&#x20;                               Informe um CPF válido.
+
+&#x20;                             \</p>
+
+&#x20;                           )}
+
+
+
+&#x20;                         {holderCpfError && (
+
+&#x20;                           \<p className="mt-2 text-xs font-semibold text-red-600">
+
+&#x20;                             {holderCpfError}
+
+&#x20;                           \</p>
+
+&#x20;                         )}
+
+&#x20;                       \</div>
+
+
+
+&#x20;                       \<div>
+
+&#x20;                         \<label className="label-field">Nome do titular\</label>
+
+&#x20;                         \<input
+
+&#x20;                           type="text"
+
+&#x20;                           value={holderDraft.name}
+
+&#x20;                           readOnly
+
+&#x20;                           disabled={!holderDraft.cpfValidated}
+
+&#x20;                           className="input-field disabled:cursor-not-allowed disabled:bg-slate-100"
+
+&#x20;                           placeholder="Preenchido após validar o CPF"
+
+&#x20;                         />
+
+&#x20;                       \</div>
+
+
+
+&#x20;                       \<div>
+
+&#x20;                         \<label className="label-field">
+
+&#x20;                           Nascimento do titular
+
+&#x20;                         \</label>
+
+&#x20;                         \<input
+
+&#x20;                           type="date"
+
+&#x20;                           value={holderDraft.birthDate}
+
+&#x20;                           readOnly
+
+&#x20;                           disabled={!holderDraft.cpfValidated}
+
+&#x20;                           className="input-field disabled:cursor-not-allowed disabled:bg-slate-100"
+
+&#x20;                         />
+
+&#x20;                         {holderDraft.birthDate &&
+
+&#x20;                           calcularIdade(holderDraft.birthDate) !== null && (
+
+&#x20;                             \<p className="mt-2 text-xs font-semibold text-ocean-500">
+
+&#x20;                               Idade: {calcularIdade(holderDraft.birthDate)}{" "}
+
+&#x20;                               anos
+
+&#x20;                             \</p>
+
+&#x20;                           )}
+
+&#x20;                       \</div>
+
+
+
+&#x20;                       \<div>
+
+&#x20;                         \<label className="label-field">
+
+&#x20;                           E-mail do titular (opcional)
+
+&#x20;                         \</label>
+
+&#x20;                         \<input
+
+&#x20;                           type="email"
+
+&#x20;                           value={holderDraft.email}
+
+&#x20;                           onChange={(e) =>
+
+&#x20;                             updateHolderDraft({
+
+&#x20;                               email: e.target.value,
+
+&#x20;                             })
+
+&#x20;                           }
+
+&#x20;                           disabled={!holderDraft.cpfValidated}
+
+&#x20;                           className="input-field disabled:cursor-not-allowed disabled:bg-slate-100"
+
+&#x20;                           placeholder="titular\@email.com"
+
+&#x20;                         />
+
+&#x20;                       \</div>
+
+
+
+&#x20;                       \<div>
+
+&#x20;                         \<label className="label-field">
+
+&#x20;                           Telefone do titular (opcional)
+
+&#x20;                         \</label>
+
+&#x20;                         \<input
+
+&#x20;                           type="tel"
+
+&#x20;                           inputMode="numeric"
+
+&#x20;                           value={holderDraft.phone}
+
+&#x20;                           onChange={(e) =>
+
+&#x20;                             updateHolderDraft({
+
+&#x20;                               phone: formatPhone(e.target.value),
+
+&#x20;                             })
+
+&#x20;                           }
+
+&#x20;                           disabled={!holderDraft.cpfValidated}
+
+&#x20;                           className="input-field disabled:cursor-not-allowed disabled:bg-slate-100"
+
+&#x20;                           placeholder="(00) 00000-0000"
+
+&#x20;                         />
+
+&#x20;                         \<p className="mt-2 text-xs font-semibold text-ocean-500">
+
+&#x20;                           Se não informar, usaremos o e-mail e telefone do
+
+&#x20;                           responsável pelo grupo.
+
+&#x20;                         \</p>
+
+&#x20;                       \</div>
+
+&#x20;                     \</div>
+
+&#x20;                   \</div>
+
+
+
+&#x20;                   {holderFormError && (
+
+&#x20;                     \<p className="mt-4 rounded-xl bg-red-50 p-3 text-sm font-semibold text-red-600">
+
+&#x20;                       {holderFormError}
+
+&#x20;                     \</p>
+
+&#x20;                   )}
+
+
+
+&#x20;                   \<div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+
+&#x20;                     \<button
+
+&#x20;                       type="button"
+
+&#x20;                       onClick={cancelHolder}
+
+&#x20;                       className="inline-flex items-center justify-center rounded-xl border border-ocean-200 px-5 py-3 text-sm font-bold text-ocean-700 hover:bg-ocean-50"
+
+&#x20;                     \>
+
+&#x20;                       Cancelar
+
+&#x20;                     \</button>
+
+&#x20;                     \<button
+
+&#x20;                       type="button"
+
+&#x20;                       onClick={saveHolder}
+
+&#x20;                       disabled={
+
+&#x20;                         !holderDraft.cpfValidated || validatingHolderCpf
+
+&#x20;                       }
+
+&#x20;                       className="btn-primary"
+
+&#x20;                     \>
+
+&#x20;                       \<CheckCircle2 className="h-4 w-4" />
+
+&#x20;                       Salvar titular
+
+&#x20;                     \</button>
+
+&#x20;                   \</div>
+
+&#x20;                 \</div>
+
+&#x20;               )}
+
+&#x20;             \</div>
+
+&#x20;           \</section>
+
+
+
+&#x20;           {/\* Terms \*/}
+
+&#x20;           \<section className="rounded-3xl border border-ocean-100 bg-white p-6 shadow-card sm:p-8">
+
+&#x20;             \<h2 className="font-display text-xl font-bold text-ocean-900">
+
+&#x20;               3\. Termos de adesão
+
+&#x20;             \</h2>
+
+&#x20;             \<p className="mt-3 text-sm leading-relaxed text-ocean-700">
+
+&#x20;               Depois de salvar todos os cartões, você pode gerar a lista em
+
+&#x20;               PDF. Ao emitir o boleto, o Termo de Adesão será exibido para
+
+&#x20;               leitura e aceite antes do envio.
+
+&#x20;             \</p>
+
+&#x20;           \</section>
+
+&#x20;         \</div>
+
+
+
+&#x20;         {/\* Sticky summary \*/}
+
+&#x20;         \<aside className="lg:sticky lg:top-8 lg:self-start">
+
+&#x20;           \<div className="rounded-3xl border border-ocean-100 bg-white p-6 shadow-card">
+
+&#x20;             \<div className="flex items-center gap-2">
+
+&#x20;               \<Calculator className="h-5 w-5 text-mint-600" />
+
+&#x20;               \<h3 className="font-display text-lg font-bold text-ocean-900">
+
+&#x20;                 Resumo do pedido
+
+&#x20;               \</h3>
+
+&#x20;             \</div>
+
+
+
+&#x20;             \<div className="mt-5 space-y-3 text-sm">
+
+&#x20;               \<div className="flex items-center justify-between">
+
+&#x20;                 \<span className="text-ocean-600">Individuais\</span>
+
+&#x20;                 \<span className="font-semibold text-ocean-900">
+
+&#x20;                   {breakdown.individualCount} × R${" "}
+
+&#x20;                   {breakdown.individualUnit.toFixed(2).replace(".", ",")}
+
+&#x20;                 \</span>
+
+&#x20;               \</div>
+
+&#x20;               \<div className="flex items-center justify-between">
+
+&#x20;                 \<span className="text-ocean-600">Familiares\</span>
+
+&#x20;                 \<span className="font-semibold text-ocean-900">
+
+&#x20;                   {breakdown.familyCount} × R${" "}
+
+&#x20;                   {breakdown.familyUnit.toFixed(2).replace(".", ",")}
+
+&#x20;                 \</span>
+
+&#x20;               \</div>
+
+&#x20;               \<div className="flex items-center justify-between border-t border-ocean-100 pt-3">
+
+&#x20;                 \<span className="text-ocean-600">Total de inscrições\</span>
+
+&#x20;                 \<span className="font-semibold text-ocean-900">
+
+&#x20;                   {breakdown.total}
+
+&#x20;                 \</span>
+
+&#x20;               \</div>
+
+&#x20;             \</div>
+
+
+
+&#x20;             \<div className="mt-5 rounded-2xl bg-mint-gradient p-5 text-white">
+
+&#x20;               \<p className="text-sm text-white/85">Valor mensal total\</p>
+
+&#x20;               \<p className="mt-1 font-display text-3xl font-extrabold">
+
+&#x20;                 R$ {breakdown.totalMonthly.toFixed(2).replace(".", ",")}
+
+&#x20;               \</p>
+
+&#x20;               {breakdown.hasBulkDiscount && (
+
+&#x20;                 \<p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-semibold">
+
+&#x20;                   \<CheckCircle2 className="h-3.5 w-3.5" />
+
+&#x20;                   Desconto coletivo aplicado
+
+&#x20;                 \</p>
+
+&#x20;               )}
+
+&#x20;               {breakdown.savings > 0 && (
+
+&#x20;                 \<p className="mt-2 text-xs text-white/85">
+
+&#x20;                   Você economiza R${" "}
+
+&#x20;                   {breakdown.savings.toFixed(2).replace(".", ",")}/mês
+
+&#x20;                 \</p>
+
+&#x20;               )}
+
+&#x20;             \</div>
+
+
+
+&#x20;             {breakdown.total < BULK_THRESHOLD && (
+
+&#x20;               \<div className="mt-4 flex items-start gap-2 rounded-xl bg-ocean-50 p-3 text-xs text-ocean-600">
+
+&#x20;                 \<Info className="mt-0.5 h-4 w-4 shrink-0 text-ocean-400" />
+
+&#x20;                 \<span>
+
+&#x20;                   Faltam {BULK_THRESHOLD - breakdown.total} inscrição(ões)
+
+&#x20;                   para o desconto coletivo (a partir de {BULK_THRESHOLD} no
+
+&#x20;                   total).
+
+&#x20;                 \</span>
+
+&#x20;               \</div>
+
+&#x20;             )}
+
+
+
+&#x20;             {/\* Validation summary \*/}
+
+&#x20;             {!isValid && (
+
+&#x20;               \<div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3">
+
+&#x20;                 \<p className="flex items-center gap-1.5 text-xs font-bold text-amber-700">
+
+&#x20;                   \<AlertCircle className="h-4 w-4" />
+
+&#x20;                   Corrija antes de enviar:
+
+&#x20;                 \</p>
+
+&#x20;                 \<ul className="mt-2 list-inside list-disc space-y-0.5 text-xs text-amber-700">
+
+&#x20;                   {validation.slice(0, 5).map((err) => (
+
+&#x20;                     \<li key={err}>{err}\</li>
+
+&#x20;                   ))}
+
+&#x20;                 \</ul>
+
+&#x20;               \</div>
+
+&#x20;             )}
+
+
+
+&#x20;             \<button
+
+&#x20;               type="button"
+
+&#x20;               onClick={generateGroupPdf}
+
+&#x20;               disabled={!isValid || submitting}
+
+&#x20;               className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-ocean-200 bg-white px-6 py-3.5 text-sm font-bold text-ocean-700 transition-colors enabled:hover:bg-ocean-50 disabled:cursor-not-allowed disabled:opacity-50"
+
+&#x20;             \>
+
+&#x20;               \<FileText className="h-5 w-5" />
+
+&#x20;               Gerar lista em PDF
+
+&#x20;             \</button>
+
+
+
+&#x20;             \<button
+
+&#x20;               type="button"
+
+&#x20;               onClick={openTerms}
+
+&#x20;               disabled={!isValid || submitting}
+
+&#x20;               className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-brand-gradient px-6 py-4 text-base font-bold text-white shadow-glow-blue transition-all duration-300 enabled:hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50"
+
+&#x20;             \>
+
+&#x20;               \<ShieldCheck className="h-5 w-5" />
+
+&#x20;               Emitir boleto e concluir
+
+&#x20;             \</button>
+
+
+
+&#x20;             {submitError && (
+
+&#x20;               \<p className="mt-3 rounded-xl bg-red-50 p-3 text-xs text-red-600">
+
+&#x20;                 {submitError}
+
+&#x20;               \</p>
+
+&#x20;             )}
+
+&#x20;           \</div>
+
+&#x20;         \</aside>
+
+&#x20;       \</form>
+
+
+
+&#x20;       \<TermoAdesaoAssociado
+
+&#x20;         aberto={showTerms}
+
+&#x20;         aceito={acceptedTerms}
+
+&#x20;         carregando={submitting}
+
+&#x20;         plano="Plano Coletivo ConsulToque"
+
+&#x20;         valorMensal={breakdown.totalMonthly}
+
+&#x20;         descricaoPlano={\`${breakdown.individualCount} individual(is) e ${breakdown.familyCount} familiar(es)\`}
+
+&#x20;         onAceite={setAcceptedTerms}
+
+&#x20;         onFechar={() => setShowTerms(false)}
+
+&#x20;         onConfirmar={() => {
+
+&#x20;           document
+
+&#x20;             .querySelector\<HTMLFormElement>("#collective-form")
+
+&#x20;             ?.requestSubmit();
+
+&#x20;         }}
+
+&#x20;       />
+
+&#x20;     \</div>
+
+&#x20;   \</div>
+
+&#x20; );
+
+}
