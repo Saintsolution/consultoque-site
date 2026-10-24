@@ -1,5 +1,5 @@
-const FORMULARIO_PESSOAL =
-  'https://coletivo.consultoque.com.br/formpessoal';
+const FORMULARIO_COLETIVO =
+  'https://coletivo.consultoque.com.br/formcoletivo';
 
 function obterCodigoIndicador() {
   const armazenado =
@@ -29,7 +29,7 @@ function criarLinkFormulario() {
     obterCodigoIndicador();
 
   return (
-    `${FORMULARIO_PESSOAL}` +
+    `${FORMULARIO_COLETIVO}` +
     `?ref=${encodeURIComponent(indicador)}`
   );
 }

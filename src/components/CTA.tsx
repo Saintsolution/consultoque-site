@@ -1,7 +1,7 @@
 import { Check } from 'lucide-react';
 
-const FORMULARIO_PESSOAL =
-  'https://coletivo.consultoque.com.br/formpessoal';
+const FORMULARIO_COLETIVO =
+  'https://coletivo.consultoque.com.br/formcoletivo';
 
 const features = [
   'Telemedicina 24 horas, 7 dias por semana',
@@ -41,7 +41,7 @@ function criarLinkFormulario() {
     obterCodigoIndicador();
 
   return (
-    `${FORMULARIO_PESSOAL}` +
+    `${FORMULARIO_COLETIVO}` +
     `?ref=${encodeURIComponent(indicador)}`
   );
 }
