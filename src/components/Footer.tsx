@@ -131,7 +131,7 @@ export function Footer() {
             <ul className="space-y-2 text-sm">
               <li>
                 <a
-                  href="https://coletivo.consultoque.com.br/admin"
+                  href="/admin"
                   className="hover:text-amber-400 text-amber-500 font-bold"
                 >
                   Área Administrativa

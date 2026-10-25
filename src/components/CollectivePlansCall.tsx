@@ -1,5 +1,5 @@
 const URL_PLANOS_COLETIVOS =
-  'https://coletivo.consultoque.com.br';
+  '/coletivo';
 
 export function CollectivePlansCall() {
   return (
@@ -13,19 +13,19 @@ export function CollectivePlansCall() {
         </p>
 
         <h2 className="mb-4 text-3xl font-extrabold md:text-4xl">
-          Temos Planos Coletivos
+          ATENDEMOS EMPRESAS E PLANOS COLETIVOS
         </h2>
 
         <p className="mx-auto mb-8 max-w-3xl text-lg text-blue-50 md:text-xl">
-          Soluções acessíveis para empresas, grupos e equipes cuidarem
-          da saúde de seus colaboradores.
+          Sua empresa, associação ou grupo também pode oferecer acesso à telemedicina.
+          Conheça nossas soluções coletivas.
         </p>
 
         <a
           href={URL_PLANOS_COLETIVOS}
           className="inline-flex items-center justify-center rounded-full bg-white px-10 py-4 text-lg font-black text-blue-700 shadow-xl transition-all duration-300 hover:scale-105 hover:bg-blue-50 active:scale-95"
         >
-          Saiba mais sobre os planos coletivos
+          SAIBA MAIS
         </a>
       </div>
     </section>

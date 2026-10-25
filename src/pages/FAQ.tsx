@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { HeaderVisual } from '../components/HeaderVisual';
 import { Footer } from '../components/Footer';
 import { ChevronDown, ChevronUp } from 'lucide-react';

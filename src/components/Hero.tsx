@@ -1,5 +1,5 @@
 const FORMULARIO_COLETIVO =
-  'https://coletivo.consultoque.com.br/formcoletivo';
+  '/contratar';
 
 function obterCodigoIndicador() {
   const armazenado =

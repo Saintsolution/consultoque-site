@@ -1,0 +1,4252 @@
+import { enviarIntegracao } from '@/services/http';
+import { ColaboradorDashboard_WEBHOOK_DASHBOARD as WEBHOOK_DASHBOARD, ColaboradorDashboard_WEBHOOK_ATUALIZAR_DADOS as WEBHOOK_ATUALIZAR_DADOS, ColaboradorDashboard_WEBHOOK_VALIDAR_APELIDO as WEBHOOK_VALIDAR_APELIDO } from '@/services/endpoints';
+import {
+
+  type FormEvent,
+
+  useEffect,
+
+  useState,
+
+} from 'react';
+
+
+
+import {
+
+  Link,
+
+  useNavigate,
+
+} from 'react-router-dom';
+
+
+
+import {
+
+  AlertCircle,
+
+  ArrowLeft,
+
+  ArrowRight,
+
+  Building2,
+
+  CheckCircle2,
+
+  Copy,
+
+  DollarSign,
+
+  KeyRound,
+
+  Loader2,
+
+  LogOut,
+
+  Megaphone,
+
+  Pencil,
+
+
+
+  RefreshCw,
+
+  Save,
+
+  ShoppingCart,
+
+  Users,
+
+  WalletCards,
+
+  X,
+
+} from 'lucide-react';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+type ColaboradorLogado = {
+
+  cod_colab: string;
+
+  nome_colab: string;
+
+  email_colab: string;
+
+  link_indicacao: string;
+
+  apelido_referencia?: string;
+
+  tel_colab?: string;
+
+  pix_colab?: string;
+
+};
+
+
+
+type FormularioDados = {
+
+  email_colab: string;
+
+  tel_colab: string;
+
+  pix_colab: string;
+
+  apelido_referencia: string;
+
+  senha_atual: string;
+
+  nova_senha: string;
+
+  confirmar_senha: string;
+
+};
+
+
+
+type RespostaValidacaoApelido = {
+
+  sucesso?: boolean;
+
+  permitido?: boolean;
+
+  disponivel?: boolean;
+
+  existente?: boolean;
+
+  encontrado?: boolean;
+
+  mensagem?: string;
+
+};
+
+
+
+type DashboardCards = {
+
+  qtd_vendas: number;
+
+  qtd_vendas_pagas: number;
+
+  qtd_vendas_nao_pagas: number;
+
+  total_vendido: number;
+
+  total_vendido_pago: number;
+
+  qtd_individual: number;
+
+  qtd_familiar: number;
+
+  qtd_comissoes: number;
+
+  total_comissoes: number;
+
+  total_a_receber: number;
+
+  total_recebido: number;
+
+  qtd_equipe: number;
+
+  qtd_equipe_ativa: number;
+
+};
+
+
+
+type VendaDashboard = {
+
+  num_contrato: string;
+
+  nome_assoc: string;
+
+  empresa: string;
+
+  qtd_individual: number;
+
+  qtd_familiar: number;
+
+  vl_total: number;
+
+  dia_vencimento:
+
+    | number
+
+    | string;
+
+  status_pagamento: string;
+
+  dt_cadastro: string;
+
+};
+
+
+
+type ComissaoDashboard = {
+
+  id_comissao: string;
+
+  num_contrato: string;
+
+  tipo_comissao: string;
+
+  percentual: number;
+
+  vl_base: number;
+
+  vl_comissao: number;
+
+  competencia: string;
+
+  status_comissao: string;
+
+  dt_prevista_pagamento: string;
+
+  dt_pagamento: string;
+
+};
+
+
+
+type EquipeDashboard = {
+
+  cod_colab: string;
+
+  nome_colab: string;
+
+  email_colab: string;
+
+  status_colab: string;
+
+  dt_cadastro: string;
+
+};
+
+
+
+type DashboardResposta = {
+
+  status: string;
+
+  mensagem: string;
+
+
+
+  colaborador: {
+
+    cod_colab: string;
+
+    cod_pai: string;
+
+    nome_colab: string;
+
+    email_colab: string;
+
+    tel_colab: string;
+
+    pix_colab: string;
+
+    apelido_referencia?: string;
+
+    status_colab: string;
+
+  };
+
+
+
+  cards: DashboardCards;
+
+
+
+  listas: {
+
+    vendas: VendaDashboard[];
+
+    comissoes: ComissaoDashboard[];
+
+    equipe: EquipeDashboard[];
+
+  };
+
+
+
+  gerado_em: string;
+
+};
+
+
+
+function limparSessao() {
+
+  sessionStorage.removeItem(
+
+    'colaborador'
+
+  );
+
+
+
+  sessionStorage.removeItem(
+
+    'colaborador_dados'
+
+  );
+
+
+
+  sessionStorage.removeItem(
+
+    'colaborador_token'
+
+  );
+
+}
+
+
+
+function formatarMoeda(
+
+  valor: unknown
+
+) {
+
+  const numero =
+
+    Number(valor ?? 0);
+
+
+
+  return new Intl.NumberFormat(
+
+    'pt-BR',
+
+    {
+
+      style: 'currency',
+
+      currency: 'BRL',
+
+    }
+
+  ).format(
+
+    Number.isFinite(numero)
+
+      ? numero
+
+      : 0
+
+  );
+
+}
+
+
+
+function formatarData(
+
+  valor: unknown
+
+) {
+
+  const texto =
+
+    String(valor ?? '')
+
+      .trim();
+
+
+
+  if (!texto) {
+
+    return '—';
+
+  }
+
+
+
+  if (
+
+    /^\d{2}\/\d{2}\/\d{4}$/.test(
+
+      texto
+
+    )
+
+  ) {
+
+    return texto;
+
+  }
+
+
+
+  const data =
+
+    new Date(texto);
+
+
+
+  if (
+
+    Number.isNaN(
+
+      data.getTime()
+
+    )
+
+  ) {
+
+    return texto;
+
+  }
+
+
+
+  return new Intl.DateTimeFormat(
+
+    'pt-BR'
+
+  ).format(data);
+
+}
+
+
+
+function formatarStatus(
+
+  valor: unknown
+
+) {
+
+  const texto =
+
+    String(valor ?? '')
+
+      .trim()
+
+      .toUpperCase();
+
+
+
+  const nomes:
+
+    Record<string, string> = {
+
+      NAO_PAGO:
+
+        'Não pago',
+
+
+
+      PAGO:
+
+        'Pago',
+
+
+
+      RECEBIDO:
+
+        'Recebido',
+
+
+
+      RECEIVED:
+
+        'Recebido',
+
+
+
+      PENDENTE:
+
+        'Pendente',
+
+
+
+      ATIVO:
+
+        'Ativo',
+
+
+
+      INATIVO:
+
+        'Inativo',
+
+
+
+      CANCELADO:
+
+        'Cancelado',
+
+    };
+
+
+
+  return (
+
+    nomes[texto] ||
+
+    texto.replace(
+
+      /_/g,
+
+      ' '
+
+    ) ||
+
+    '—'
+
+  );
+
+}
+
+
+
+function statusPositivo(
+
+  valor: unknown
+
+) {
+
+  const status =
+
+    String(valor ?? '')
+
+      .trim()
+
+      .toUpperCase();
+
+
+
+  return [
+
+    'PAGO',
+
+    'PAGA',
+
+    'RECEBIDO',
+
+    'RECEBIDA',
+
+    'RECEIVED',
+
+    'ATIVO',
+
+  ].includes(status);
+
+}
+
+
+
+
+function normalizarApelido(valor: string) {
+
+  return valor
+
+    .normalize('NFD')
+
+    .replace(/[\u0300-\u036f]/g, '')
+
+    .toLowerCase()
+
+    .replace(/[^a-z0-9]+/g, '-')
+
+    .replace(/^-+|-+$/g, '')
+
+    .slice(0, 40);
+
+}
+
+
+
+export default function ColaboradorDashboard() {
+
+  const navigate =
+
+    useNavigate();
+
+
+
+  const [
+
+    colaborador,
+
+    setColaborador,
+
+  ] =
+
+    useState<ColaboradorLogado | null>(
+
+      null
+
+    );
+
+
+
+  const [
+
+    dashboard,
+
+    setDashboard,
+
+  ] =
+
+    useState<DashboardResposta | null>(
+
+      null
+
+    );
+
+
+
+  const [
+
+    carregando,
+
+    setCarregando,
+
+  ] = useState(true);
+
+
+
+  const [
+
+    erro,
+
+    setErro,
+
+  ] = useState('');
+
+
+
+  const [
+
+    linkCopiado,
+
+    setLinkCopiado,
+
+  ] = useState(false);
+
+
+
+  const [
+
+    tentativa,
+
+    setTentativa,
+
+  ] = useState(0);
+
+
+
+  const [
+
+    editandoDados,
+
+    setEditandoDados,
+
+  ] = useState(false);
+
+
+
+  const [
+
+    salvandoDados,
+
+    setSalvandoDados,
+
+  ] = useState(false);
+
+
+
+  const [
+
+    erroDados,
+
+    setErroDados,
+
+  ] = useState('');
+
+
+
+  const [
+
+    sucessoDados,
+
+    setSucessoDados,
+
+  ] = useState('');
+
+
+
+  const [
+
+    validandoApelido,
+
+    setValidandoApelido,
+
+  ] = useState(false);
+
+
+
+  const [
+
+    apelidoValidado,
+
+    setApelidoValidado,
+
+  ] = useState('');
+
+
+
+  const [
+
+    erroApelido,
+
+    setErroApelido,
+
+  ] = useState('');
+
+
+
+  const [
+
+    formulario,
+
+    setFormulario,
+
+  ] = useState<FormularioDados>({
+
+    email_colab: '',
+
+    tel_colab: '',
+
+    pix_colab: '',
+
+    apelido_referencia: '',
+
+    senha_atual: '',
+
+    nova_senha: '',
+
+    confirmar_senha: '',
+
+  });
+
+
+
+  /*
+
+   * Recupera a sessão do login.
+
+   */
+
+  useEffect(() => {
+
+    const sessao =
+
+      sessionStorage.getItem(
+
+        'colaborador'
+
+      );
+
+
+
+    const token =
+
+      sessionStorage.getItem(
+
+        'colaborador_token'
+
+      );
+
+
+
+    if (
+
+      !sessao ||
+
+      !token
+
+    ) {
+
+      limparSessao();
+
+
+
+      navigate(
+
+        '/colaborador',
+
+        {
+
+          replace: true,
+
+        }
+
+      );
+
+
+
+      return;
+
+    }
+
+
+
+    try {
+
+      const dados =
+
+        JSON.parse(
+
+          sessao
+
+        ) as ColaboradorLogado;
+
+
+
+      if (
+
+        !dados.cod_colab
+
+      ) {
+
+        throw new Error(
+
+          'Sessão inválida.'
+
+        );
+
+      }
+
+
+
+      setColaborador(
+
+        dados
+
+      );
+
+    } catch {
+
+      limparSessao();
+
+
+
+      navigate(
+
+        '/colaborador',
+
+        {
+
+          replace: true,
+
+        }
+
+      );
+
+    }
+
+  }, [
+
+    navigate,
+
+  ]);
+
+
+
+  /*
+
+   * Busca os dados reais
+
+   * do dashboard no n8n.
+
+   */
+
+  useEffect(() => {
+
+    if (!colaborador) {
+
+      return;
+
+    }
+
+
+
+    const colaboradorAtual =
+
+      colaborador;
+
+
+
+    let cancelado =
+
+      false;
+
+
+
+    async function carregarDashboard() {
+
+      const token =
+
+        sessionStorage.getItem(
+
+          'colaborador_token'
+
+        );
+
+
+
+      if (!token) {
+
+        limparSessao();
+
+
+
+        navigate(
+
+          '/colaborador',
+
+          {
+
+            replace: true,
+
+          }
+
+        );
+
+
+
+        return;
+
+      }
+
+
+
+      setCarregando(true);
+
+      setErro('');
+
+
+
+      try {
+
+        const resposta =
+
+          await enviarIntegracao(
+
+            WEBHOOK_DASHBOARD,
+
+            {
+
+              method:
+
+                'POST',
+
+
+
+              headers: {
+
+                'Content-Type':
+
+                  'application/json',
+
+
+
+                'X-Colaborador-Token':
+
+                  token,
+
+              },
+
+
+
+              body:
+
+                JSON.stringify({
+
+                  cod_colab:
+
+                    colaboradorAtual
+
+                      .cod_colab,
+
+                }),
+
+            }
+
+          );
+
+
+
+        const texto =
+
+          await resposta.text();
+
+
+
+        let dados:
+
+          | DashboardResposta
+
+          | DashboardResposta[];
+
+
+
+        try {
+
+          dados =
+
+            JSON.parse(
+
+              texto
+
+            );
+
+        } catch {
+
+          throw new Error(
+
+            'O servidor não retornou um JSON válido.'
+
+          );
+
+        }
+
+
+
+        const resultado =
+
+          Array.isArray(dados)
+
+            ? dados[0]
+
+            : dados;
+
+
+
+        if (
+
+          resposta.status === 401 ||
+
+          resposta.status === 403
+
+        ) {
+
+          limparSessao();
+
+
+
+          navigate(
+
+            '/colaborador',
+
+            {
+
+              replace: true,
+
+            }
+
+          );
+
+
+
+          return;
+
+        }
+
+
+
+        if (
+
+          !resposta.ok ||
+
+          !resultado ||
+
+          resultado.status !==
+
+            'sucesso'
+
+        ) {
+
+          throw new Error(
+
+            resultado
+
+              ?.mensagem ||
+
+            'Não foi possível carregar o dashboard.'
+
+          );
+
+        }
+
+
+
+        if (!cancelado) {
+
+          setDashboard(
+
+            resultado
+
+          );
+
+
+
+          setFormulario({
+
+            email_colab:
+
+              resultado.colaborador
+
+                .email_colab ||
+
+              colaboradorAtual
+
+                .email_colab ||
+
+              '',
+
+
+
+            tel_colab:
+
+              resultado.colaborador
+
+                .tel_colab ||
+
+              colaboradorAtual
+
+                .tel_colab ||
+
+              '',
+
+
+
+            pix_colab:
+
+              resultado.colaborador
+
+                .pix_colab ||
+
+              colaboradorAtual
+
+                .pix_colab ||
+
+              '',
+
+
+
+            apelido_referencia:
+
+              resultado.colaborador
+
+                .apelido_referencia ||
+
+              colaboradorAtual
+
+                .apelido_referencia ||
+
+              '',
+
+
+
+            senha_atual: '',
+
+            nova_senha: '',
+
+            confirmar_senha: '',
+
+          });
+
+
+
+          setApelidoValidado(
+
+            resultado.colaborador.apelido_referencia ||
+
+              colaboradorAtual.apelido_referencia ||
+
+              ''
+
+          );
+
+        }
+
+      } catch (
+
+        problema
+
+      ) {
+
+        if (!cancelado) {
+
+          setErro(
+
+            problema instanceof
+
+              Error
+
+              ? problema.message
+
+              : 'Não foi possível carregar o dashboard.'
+
+          );
+
+        }
+
+      } finally {
+
+        if (!cancelado) {
+
+          setCarregando(
+
+            false
+
+          );
+
+        }
+
+      }
+
+    }
+
+
+
+    carregarDashboard();
+
+
+
+    return () => {
+
+      cancelado =
+
+        true;
+
+    };
+
+  }, [
+
+    colaborador,
+
+    navigate,
+
+    tentativa,
+
+  ]);
+
+
+
+  function sair() {
+
+    limparSessao();
+
+
+
+    navigate(
+
+      '/colaborador',
+
+      {
+
+        replace: true,
+
+      }
+
+    );
+
+  }
+
+
+
+  async function copiarLink() {
+
+    if (
+
+      !colaborador
+
+        ?.link_indicacao
+
+    ) {
+
+      return;
+
+    }
+
+
+
+    try {
+
+      await navigator
+
+        .clipboard
+
+        .writeText(
+
+          colaborador
+
+            .link_indicacao
+
+        );
+
+
+
+      setLinkCopiado(
+
+        true
+
+      );
+
+
+
+      window.setTimeout(
+
+        () => {
+
+          setLinkCopiado(
+
+            false
+
+          );
+
+        },
+
+        2000
+
+      );
+
+    } catch {
+
+      window.prompt(
+
+        'Copie seu link:',
+
+        colaborador
+
+          .link_indicacao
+
+      );
+
+    }
+
+  }
+
+
+
+  function abrirEdicao() {
+
+    const colaboradorAtual =
+
+      colaborador;
+
+
+
+    if (!colaboradorAtual) {
+
+      return;
+
+    }
+
+
+
+    setErroDados('');
+
+    setSucessoDados('');
+
+    setErroApelido('');
+
+
+
+    setFormulario({
+
+      email_colab:
+
+        dashboard?.colaborador
+
+          .email_colab ||
+
+        colaboradorAtual.email_colab ||
+
+        '',
+
+
+
+      tel_colab:
+
+        dashboard?.colaborador
+
+          .tel_colab ||
+
+        colaboradorAtual.tel_colab ||
+
+        '',
+
+
+
+      pix_colab:
+
+        dashboard?.colaborador
+
+          .pix_colab ||
+
+        colaboradorAtual.pix_colab ||
+
+        '',
+
+
+
+      apelido_referencia:
+
+        dashboard?.colaborador
+
+          .apelido_referencia ||
+
+        colaboradorAtual.apelido_referencia ||
+
+        '',
+
+
+
+      senha_atual: '',
+
+      nova_senha: '',
+
+      confirmar_senha: '',
+
+    });
+
+
+
+    setApelidoValidado(
+
+      dashboard?.colaborador.apelido_referencia ||
+
+        colaboradorAtual.apelido_referencia ||
+
+        ''
+
+    );
+
+
+
+    setEditandoDados(true);
+
+  }
+
+
+
+  function cancelarEdicao() {
+
+    setEditandoDados(false);
+
+    setErroDados('');
+
+    setErroApelido('');
+
+    setApelidoValidado('');
+
+  }
+
+
+
+  async function validarApelidoReferencia() {
+
+    const apelido = normalizarApelido(
+
+      formulario.apelido_referencia
+
+    );
+
+
+
+    setFormulario((atual) => ({
+
+      ...atual,
+
+      apelido_referencia: apelido,
+
+    }));
+
+
+
+    setErroApelido('');
+
+    setApelidoValidado('');
+
+
+
+    if (apelido.length < 3 || apelido.length > 40) {
+
+      setErroApelido(
+
+        'Escolha um endereço de divulgação entre 3 e 40 caracteres.'
+
+      );
+
+
+
+      return;
+
+    }
+
+
+
+    if (/^\d+$/.test(apelido)) {
+
+      setErroApelido(
+
+        'O endereço de divulgação não pode ser apenas numérico.'
+
+      );
+
+
+
+      return;
+
+    }
+
+
+
+    setValidandoApelido(true);
+
+
+
+    try {
+
+      const resposta = await enviarIntegracao(WEBHOOK_VALIDAR_APELIDO, {
+
+        method: 'POST',
+
+        headers: {
+
+          'Content-Type': 'application/json',
+
+        },
+
+        body: JSON.stringify({
+
+          apelido_referencia: apelido,
+
+          referencia: apelido,
+
+          cod_colab: colaborador?.cod_colab,
+
+        }),
+
+      });
+
+
+
+      const dados: RespostaValidacaoApelido | RespostaValidacaoApelido[] =
+
+        await resposta.json();
+
+
+
+      const resultado = Array.isArray(dados) ? dados[0] : dados;
+
+      const permitido =
+
+        resultado?.permitido === true ||
+
+        resultado?.disponivel === true ||
+
+        resultado?.existente === false ||
+
+        resultado?.encontrado === false;
+
+
+
+      if (!resposta.ok || !permitido) {
+
+        throw new Error(
+
+          resultado?.mensagem ||
+
+            'Esse endereço de divulgação já está em uso.'
+
+        );
+
+      }
+
+
+
+      setApelidoValidado(apelido);
+
+    } catch (problema) {
+
+      setErroApelido(
+
+        problema instanceof Error
+
+          ? problema.message
+
+          : 'Não foi possível validar esse endereço agora.'
+
+      );
+
+    } finally {
+
+      setValidandoApelido(false);
+
+    }
+
+  }
+
+
+
+  async function salvarDados(
+
+    evento:
+
+      FormEvent<HTMLFormElement>
+
+  ) {
+
+    evento.preventDefault();
+
+
+
+    const colaboradorAtual =
+
+      colaborador;
+
+
+
+    if (!colaboradorAtual) {
+
+      setErroDados(
+
+        'Não foi possível identificar o colaborador.'
+
+      );
+
+
+
+      return;
+
+    }
+
+
+
+    const token =
+
+      sessionStorage.getItem(
+
+        'colaborador_token'
+
+      );
+
+
+
+    if (!token) {
+
+      limparSessao();
+
+
+
+      navigate(
+
+        '/colaborador',
+
+        {
+
+          replace: true,
+
+        }
+
+      );
+
+
+
+      return;
+
+    }
+
+
+
+    const email =
+
+      formulario.email_colab
+
+        .trim()
+
+        .toLowerCase();
+
+
+
+    const telefone = String(formulario.tel_colab ?? '').replace(/\D/g, '');
+
+
+
+    const pix =
+
+      formulario.pix_colab
+
+        .trim();
+
+
+
+    const apelido = normalizarApelido(
+
+      formulario.apelido_referencia
+
+    );
+
+
+
+    const senhaAtual =
+
+      formulario.senha_atual;
+
+
+
+    const novaSenha =
+
+      formulario.nova_senha;
+
+
+
+    if (
+
+      !/^\S+@\S+\.\S+$/.test(
+
+        email
+
+      )
+
+    ) {
+
+      setErroDados(
+
+        'Informe um e-mail válido.'
+
+      );
+
+
+
+      return;
+
+    }
+
+
+
+    if (
+
+      telefone.length < 10 ||
+
+      telefone.length > 11
+
+    ) {
+
+      setErroDados(
+
+        'Informe um telefone com DDD.'
+
+      );
+
+
+
+      return;
+
+    }
+
+
+
+    if (!pix) {
+
+      setErroDados(
+
+        'Informe sua chave PIX.'
+
+      );
+
+
+
+      return;
+
+    }
+
+
+
+    if (apelido && apelido !== apelidoValidado) {
+
+      setErroDados(
+
+        'Valide a disponibilidade do seu endereço de divulgação antes de salvar.'
+
+      );
+
+
+
+      return;
+
+    }
+
+
+
+    if (novaSenha) {
+
+      if (!senhaAtual) {
+
+        setErroDados(
+
+          'Informe a senha atual para criar uma nova senha.'
+
+        );
+
+
+
+        return;
+
+      }
+
+
+
+      if (novaSenha.length < 8) {
+
+        setErroDados(
+
+          'A nova senha deve ter pelo menos 8 caracteres.'
+
+        );
+
+
+
+        return;
+
+      }
+
+
+
+      if (
+
+        novaSenha !==
+
+        formulario.confirmar_senha
+
+      ) {
+
+        setErroDados(
+
+          'A confirmação da nova senha não confere.'
+
+        );
+
+
+
+        return;
+
+      }
+
+    }
+
+
+
+    setSalvandoDados(true);
+
+    setErroDados('');
+
+    setSucessoDados('');
+
+
+
+    try {
+
+      const resposta =
+
+        await enviarIntegracao(
+
+          WEBHOOK_ATUALIZAR_DADOS,
+
+          {
+
+            method: 'POST',
+
+
+
+            headers: {
+
+              'Content-Type':
+
+                'application/json',
+
+
+
+              'X-Colaborador-Token':
+
+                token,
+
+            },
+
+
+
+            body:
+
+              JSON.stringify({
+
+                cod_colab:
+
+                  colaboradorAtual.cod_colab,
+
+
+
+                email_colab:
+
+                  email,
+
+
+
+                tel_colab:
+
+                  telefone,
+
+
+
+                pix_colab:
+
+                  pix,
+
+
+
+                ...(apelido
+
+                  ? { apelido_referencia: apelido }
+
+                  : {}),
+
+
+
+                senha_atual:
+
+                  senhaAtual,
+
+
+
+                nova_senha:
+
+                  novaSenha,
+
+              }),
+
+          }
+
+        );
+
+
+
+      const texto =
+
+        await resposta.text();
+
+
+
+      let dados:
+
+        | {
+
+            status?: string;
+
+            mensagem?: string;
+
+            colaborador?: {
+
+              cod_colab?: string;
+
+              email_colab?: string;
+
+              tel_colab?: string;
+
+              pix_colab?: string;
+
+              apelido_referencia?: string;
+
+              link_indicacao?: string;
+
+            };
+
+          }
+
+        | Array<{
+
+            status?: string;
+
+            mensagem?: string;
+
+            colaborador?: {
+
+              cod_colab?: string;
+
+              email_colab?: string;
+
+              tel_colab?: string;
+
+              pix_colab?: string;
+
+              apelido_referencia?: string;
+
+              link_indicacao?: string;
+
+            };
+
+          }>;
+
+
+
+      try {
+
+        dados =
+
+          JSON.parse(texto);
+
+      } catch {
+
+        throw new Error(
+
+          'O servidor não retornou uma resposta válida.'
+
+        );
+
+      }
+
+
+
+      const resultado =
+
+        Array.isArray(dados)
+
+          ? dados[0]
+
+          : dados;
+
+
+
+      if (
+
+        resposta.status === 401 ||
+
+        resposta.status === 403
+
+      ) {
+
+        limparSessao();
+
+
+
+        navigate(
+
+          '/colaborador',
+
+          {
+
+            replace: true,
+
+          }
+
+        );
+
+
+
+        return;
+
+      }
+
+
+
+      if (
+
+        !resposta.ok ||
+
+        resultado?.status !==
+
+          'sucesso'
+
+      ) {
+
+        throw new Error(
+
+          resultado?.mensagem ||
+
+          'Não foi possível atualizar os dados.'
+
+        );
+
+      }
+
+
+
+      const apelidoAtualizado =
+
+        resultado.colaborador?.apelido_referencia ||
+
+        apelido ||
+
+        colaboradorAtual.apelido_referencia;
+
+
+
+      const linkAtualizado =
+
+        resultado.colaborador?.link_indicacao ||
+
+        (apelidoAtualizado
+
+          ? `https://consultoque.com.br/${apelidoAtualizado}`
+
+          : colaboradorAtual.link_indicacao);
+
+
+
+      const colaboradorAtualizado:
+
+        ColaboradorLogado = {
+
+          ...colaboradorAtual,
+
+          email_colab: email,
+
+          tel_colab: telefone,
+
+          pix_colab: pix,
+
+          apelido_referencia: apelidoAtualizado,
+
+          link_indicacao: linkAtualizado,
+
+        };
+
+
+
+      setColaborador(
+
+        colaboradorAtualizado
+
+      );
+
+
+
+      sessionStorage.setItem(
+
+        'colaborador',
+
+        JSON.stringify(
+
+          colaboradorAtualizado
+
+        )
+
+      );
+
+
+
+      sessionStorage.setItem(
+
+        'colaborador_dados',
+
+        JSON.stringify(
+
+          colaboradorAtualizado
+
+        )
+
+      );
+
+
+
+      setDashboard(
+
+        (atual) =>
+
+          atual
+
+            ? {
+
+                ...atual,
+
+                colaborador: {
+
+                  ...atual.colaborador,
+
+                  email_colab: email,
+
+                  tel_colab: telefone,
+
+                  pix_colab: pix,
+
+                  apelido_referencia: apelidoAtualizado,
+
+                },
+
+              }
+
+            : atual
+
+      );
+
+
+
+      setFormulario(
+
+        (atual) => ({
+
+          ...atual,
+
+          email_colab: email,
+
+          tel_colab: telefone,
+
+          pix_colab: pix,
+
+          apelido_referencia: apelidoAtualizado || '',
+
+          senha_atual: '',
+
+          nova_senha: '',
+
+          confirmar_senha: '',
+
+        })
+
+      );
+
+
+
+      setApelidoValidado(apelidoAtualizado || '');
+
+
+
+      setEditandoDados(false);
+
+      setSucessoDados(
+
+        resultado.mensagem ||
+
+        'Dados atualizados com sucesso.'
+
+      );
+
+    } catch (problema) {
+
+      setErroDados(
+
+        problema instanceof Error
+
+          ? problema.message
+
+          : 'Não foi possível atualizar os dados.'
+
+      );
+
+    } finally {
+
+      setSalvandoDados(false);
+
+    }
+
+  }
+
+
+
+  if (!colaborador) {
+
+    return (
+
+      <main className="flex min-h-screen items-center justify-center bg-slate-50">
+
+        <p className="animate-pulse text-slate-500">
+
+          Carregando painel...
+
+        </p>
+
+      </main>
+
+    );
+
+  }
+
+
+
+  const cards =
+
+    dashboard?.cards;
+
+
+
+  const vendas =
+
+    dashboard
+
+      ?.listas
+
+      .vendas ||
+
+    [];
+
+
+
+  const comissoes =
+
+    dashboard
+
+      ?.listas
+
+      .comissoes ||
+
+    [];
+
+
+
+  const equipe =
+
+    dashboard
+
+      ?.listas
+
+      .equipe ||
+
+    [];
+
+
+
+  return (
+
+    <main className="min-h-screen bg-slate-50">
+
+      <section className="container-app py-8 md:py-12">
+
+        {/* Navegação */}
+
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
+
+          <a
+
+            href="/"
+
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:border-green-400 hover:text-green-700"
+
+          >
+
+            <ArrowLeft className="h-4 w-4" />
+
+            Voltar ao site
+
+          </a>
+
+
+
+          <button
+
+            type="button"
+
+            onClick={sair}
+
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:border-red-300 hover:bg-red-50 hover:text-red-700"
+
+          >
+
+            <LogOut className="h-4 w-4" />
+
+            Sair
+
+          </button>
+
+        </div>
+
+
+
+        {/* Apresentação */}
+
+        <div>
+
+          <p className="text-sm font-bold uppercase tracking-wider text-green-600">
+
+            Área do colaborador
+
+          </p>
+
+
+
+          <h1 className="mt-1 font-display text-3xl font-black text-slate-900">
+
+            Olá,{' '}
+
+            {colaborador.nome_colab}
+
+          </h1>
+
+
+
+          <p className="mt-2 text-slate-500">
+
+            Código do colaborador:{' '}
+
+
+
+            <strong className="text-slate-800">
+
+              {colaborador.cod_colab}
+
+            </strong>
+
+          </p>
+
+        </div>
+
+
+
+        {/* Erro */}
+
+        {erro && (
+
+          <article className="mt-8 rounded-2xl border border-red-200 bg-red-50 p-6">
+
+            <div className="flex items-start gap-3">
+
+              <AlertCircle className="mt-0.5 h-6 w-6 shrink-0 text-red-600" />
+
+
+
+              <div>
+
+                <h2 className="font-bold text-red-900">
+
+                  Não foi possível carregar o painel
+
+                </h2>
+
+
+
+                <p className="mt-1 text-sm text-red-700">
+
+                  {erro}
+
+                </p>
+
+
+
+                <button
+
+                  type="button"
+
+                  onClick={() => {
+
+                    setTentativa(
+
+                      (valor) =>
+
+                        valor + 1
+
+                    );
+
+                  }}
+
+                  className="mt-4 inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-red-700"
+
+                >
+
+                  <RefreshCw className="h-4 w-4" />
+
+                  Tentar novamente
+
+                </button>
+
+              </div>
+
+            </div>
+
+          </article>
+
+        )}
+
+
+
+        {/* Carregamento */}
+
+        {carregando && (
+
+          <article className="mt-8 rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+
+            <RefreshCw className="mx-auto h-7 w-7 animate-spin text-blue-600" />
+
+
+
+            <p className="mt-3 font-semibold text-slate-600">
+
+              Buscando vendas e comissões...
+
+            </p>
+
+          </article>
+
+        )}
+
+
+
+        {/* Indicadores */}
+
+        {!carregando &&
+
+          !erro &&
+
+          cards && (
+
+            <>
+
+              <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+
+                <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+
+                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-100 text-blue-700">
+
+                    <ShoppingCart className="h-5 w-5" />
+
+                  </span>
+
+
+
+                  <p className="mt-4 text-sm font-semibold text-slate-500">
+
+                    Vendas realizadas
+
+                  </p>
+
+
+
+                  <p className="mt-1 text-3xl font-black text-slate-900">
+
+                    {cards.qtd_vendas}
+
+                  </p>
+
+
+
+                  <p className="mt-2 text-sm text-slate-500">
+
+                    {cards.qtd_vendas_pagas}{' '}
+
+                    pagas e{' '}
+
+                    {cards.qtd_vendas_nao_pagas}{' '}
+
+                    pendentes
+
+                  </p>
+
+                </article>
+
+
+
+                <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+
+                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+
+                    <WalletCards className="h-5 w-5" />
+
+                  </span>
+
+
+
+                  <p className="mt-4 text-sm font-semibold text-slate-500">
+
+                    Comissões previstas
+
+                  </p>
+
+
+
+                  <p className="mt-1 text-3xl font-black text-slate-900">
+
+                    {formatarMoeda(
+
+                      cards.total_a_receber
+
+                    )}
+
+                  </p>
+
+
+
+                  <p className="mt-2 text-sm text-slate-500">
+
+                    {cards.qtd_comissoes}{' '}
+
+                    comissão(ões)
+
+                  </p>
+
+                </article>
+
+
+
+                <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+
+                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-green-100 text-green-700">
+
+                    <DollarSign className="h-5 w-5" />
+
+                  </span>
+
+
+
+                  <p className="mt-4 text-sm font-semibold text-slate-500">
+
+                    Comissões recebidas
+
+                  </p>
+
+
+
+                  <p className="mt-1 text-3xl font-black text-slate-900">
+
+                    {formatarMoeda(
+
+                      cards.total_recebido
+
+                    )}
+
+                  </p>
+
+
+
+                  <p className="mt-2 text-sm text-slate-500">
+
+                    Total gerado:{' '}
+
+
+
+                    {formatarMoeda(
+
+                      cards.total_comissoes
+
+                    )}
+
+                  </p>
+
+                </article>
+
+
+
+                <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+
+                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-purple-100 text-purple-700">
+
+                    <Users className="h-5 w-5" />
+
+                  </span>
+
+
+
+                  <p className="mt-4 text-sm font-semibold text-slate-500">
+
+                    Equipe direta
+
+                  </p>
+
+
+
+                  <p className="mt-1 text-3xl font-black text-slate-900">
+
+                    {cards.qtd_equipe}
+
+                  </p>
+
+
+
+                  <p className="mt-2 text-sm text-slate-500">
+
+                    {cards.qtd_equipe_ativa}{' '}
+
+                    ativo(s)
+
+                  </p>
+
+                </article>
+
+              </div>
+
+
+
+              {/* Resumo dos planos */}
+
+              <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+
+                <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+
+                  <p className="text-sm text-slate-500">
+
+                    Total vendido
+
+                  </p>
+
+
+
+                  <p className="mt-1 text-xl font-black text-slate-900">
+
+                    {formatarMoeda(
+
+                      cards.total_vendido
+
+                    )}
+
+                  </p>
+
+                </article>
+
+
+
+                <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+
+                  <p className="text-sm text-slate-500">
+
+                    Total pago
+
+                  </p>
+
+
+
+                  <p className="mt-1 text-xl font-black text-green-700">
+
+                    {formatarMoeda(
+
+                      cards.total_vendido_pago
+
+                    )}
+
+                  </p>
+
+                </article>
+
+
+
+                <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+
+                  <p className="text-sm text-slate-500">
+
+                    Planos individuais
+
+                  </p>
+
+
+
+                  <p className="mt-1 text-xl font-black text-slate-900">
+
+                    {cards.qtd_individual}
+
+                  </p>
+
+                </article>
+
+
+
+                <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+
+                  <p className="text-sm text-slate-500">
+
+                    Planos familiares
+
+                  </p>
+
+
+
+                  <p className="mt-1 text-xl font-black text-slate-900">
+
+                    {cards.qtd_familiar}
+
+                  </p>
+
+                </article>
+
+              </div>
+
+            </>
+
+          )}
+
+
+
+        {/* Material promocional */}
+
+        <article className="mt-8 overflow-hidden rounded-2xl bg-gradient-to-br from-blue-800 via-blue-700 to-green-600 text-white shadow-lg">
+
+          <div className="grid items-center gap-6 p-6 sm:p-8 lg:grid-cols-[1fr_auto]">
+
+            <div>
+
+              <div className="flex items-center gap-3">
+
+                <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/15">
+
+                  <Megaphone className="h-6 w-6" />
+
+                </span>
+
+
+
+                <p className="text-sm font-bold uppercase tracking-wider text-green-200">
+
+                  Área de divulgação
+
+                </p>
+
+              </div>
+
+
+
+              <h2 className="mt-5 text-2xl font-black sm:text-3xl">
+
+                Seu material promocional está pronto
+
+              </h2>
+
+
+
+              <p className="mt-3 max-w-3xl leading-relaxed text-blue-50">
+
+                Gere seu QR Code, compartilhe vídeos com seu número, copie textos e monte panfletos personalizados.
+
+              </p>
+
+            </div>
+
+
+
+            <Link
+
+              to="/material-promocional"
+
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-6 py-3 font-black text-blue-800 shadow-md transition hover:bg-blue-50"
+
+            >
+
+              Acessar materiais
+
+              <ArrowRight className="h-5 w-5" />
+
+            </Link>
+
+          </div>
+
+        </article>
+
+
+
+        {/* Link e cadastro */}
+
+        <div className="mt-8 grid gap-6 lg:grid-cols-3">
+
+          <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2">
+
+            <p className="text-sm font-bold uppercase tracking-wider text-slate-400">
+
+              Seu link de indicação
+
+            </p>
+
+
+
+            <p className="mt-3 break-all text-lg font-semibold text-cyan-600">
+
+              {colaborador.link_indicacao}
+
+            </p>
+
+
+
+            <button
+
+              type="button"
+
+              onClick={copiarLink}
+
+              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-green-600 px-5 py-3 font-bold text-white transition hover:bg-green-700"
+
+            >
+
+              <Copy className="h-4 w-4" />
+
+
+
+              {linkCopiado
+
+                ? 'Link copiado!'
+
+                : 'Copiar link'}
+
+            </button>
+
+          </article>
+
+
+
+          <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+
+            <div className="flex items-start justify-between gap-3">
+
+              <div>
+
+                <p className="text-sm font-bold uppercase tracking-wider text-slate-400">
+
+                  Meus dados
+
+                </p>
+
+
+
+                <p className="mt-3 break-all font-semibold text-slate-900">
+
+                  {colaborador.email_colab}
+
+                </p>
+
+
+
+                <p className="mt-1 text-sm text-slate-500">
+
+                  Telefone:{' '}
+
+                  {dashboard?.colaborador
+
+                    .tel_colab ||
+
+                    colaborador.tel_colab ||
+
+                    '—'}
+
+                </p>
+
+
+
+                <p className="mt-1 break-all text-sm text-slate-500">
+
+                  PIX:{' '}
+
+                  {dashboard?.colaborador
+
+                    .pix_colab ||
+
+                    colaborador.pix_colab ||
+
+                    '—'}
+
+                </p>
+
+
+
+                <p className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-green-600">
+
+                  <CheckCircle2 className="h-4 w-4" />
+
+                  Colaborador ativo
+
+                </p>
+
+              </div>
+
+
+
+              <button
+
+                type="button"
+
+                onClick={abrirEdicao}
+
+                className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-blue-700"
+
+              >
+
+                <Pencil className="h-4 w-4" />
+
+                Editar
+
+              </button>
+
+            </div>
+
+          </article>
+
+        </div>
+
+
+
+        {sucessoDados && (
+
+          <div className="mt-6 rounded-2xl border border-green-200 bg-green-50 p-4 text-sm font-semibold text-green-700">
+
+            {sucessoDados}
+
+          </div>
+
+        )}
+
+
+
+        {editandoDados && (
+
+          <article className="mt-6 rounded-2xl border border-blue-200 bg-white p-6 shadow-sm sm:p-8">
+
+            <div className="flex items-start justify-between gap-4">
+
+              <div>
+
+                <p className="text-sm font-bold uppercase tracking-wider text-blue-600">
+
+                  Atualização cadastral
+
+                </p>
+
+
+
+                <h2 className="mt-1 text-2xl font-black text-slate-900">
+
+                  Editar meus dados
+
+                </h2>
+
+
+
+                <p className="mt-2 text-sm text-slate-500">
+
+                  Nome, CPF e código do colaborador não podem ser alterados aqui.
+
+                </p>
+
+              </div>
+
+
+
+              <button
+
+                type="button"
+
+                onClick={cancelarEdicao}
+
+                className="rounded-xl border border-slate-200 p-2.5 text-slate-500 transition hover:bg-slate-50 hover:text-slate-900"
+
+                aria-label="Fechar edição"
+
+              >
+
+                <X className="h-5 w-5" />
+
+              </button>
+
+            </div>
+
+
+
+            <form
+
+              onSubmit={salvarDados}
+
+              className="mt-6"
+
+            >
+
+              <div className="grid gap-5 md:grid-cols-2">
+
+                <label className="block">
+
+                  <span className="text-sm font-bold text-slate-700">
+
+                    E-mail
+
+                  </span>
+
+
+
+                  <input
+
+                    type="email"
+
+                    required
+
+                    value={formulario.email_colab}
+
+                    onChange={(evento) => {
+
+                      setFormulario(
+
+                        (atual) => ({
+
+                          ...atual,
+
+                          email_colab:
+
+                            evento.target.value,
+
+                        })
+
+                      );
+
+                    }}
+
+                    className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+
+                  />
+
+                </label>
+
+
+
+                <label className="block">
+
+                  <span className="text-sm font-bold text-slate-700">
+
+                    Telefone com DDD
+
+                  </span>
+
+
+
+                  <input
+
+                    type="tel"
+
+                    required
+
+                    value={formulario.tel_colab}
+
+                    onChange={(evento) => {
+
+                      setFormulario(
+
+                        (atual) => ({
+
+                          ...atual,
+
+                          tel_colab:
+
+                            evento.target.value,
+
+                        })
+
+                      );
+
+                    }}
+
+                    placeholder="21999999999"
+
+                    className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+
+                  />
+
+                </label>
+
+
+
+                <label className="block md:col-span-2">
+
+                  <span className="text-sm font-bold text-slate-700">
+
+                    Chave PIX
+
+                  </span>
+
+
+
+                  <input
+
+                    type="text"
+
+                    required
+
+                    value={formulario.pix_colab}
+
+                    onChange={(evento) => {
+
+                      setFormulario(
+
+                        (atual) => ({
+
+                          ...atual,
+
+                          pix_colab:
+
+                            evento.target.value,
+
+                        })
+
+                      );
+
+                    }}
+
+                    className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+
+                  />
+
+                </label>
+
+
+
+                <label className="block md:col-span-2">
+
+                  <span className="text-sm font-bold text-slate-700">
+
+                    Link de divulgação
+
+                  </span>
+
+
+
+                  <div className="mt-2 flex overflow-hidden rounded-xl border border-slate-300 bg-white focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-100">
+
+                    <span className="flex shrink-0 items-center border-r border-slate-200 bg-slate-50 px-3 text-sm text-slate-500">
+
+                      consultoque.com.br/
+
+                    </span>
+
+
+
+                    <input
+
+                      type="text"
+
+                      autoComplete="off"
+
+                      maxLength={40}
+
+                      value={formulario.apelido_referencia}
+
+                      onChange={(evento) => {
+
+                        setFormulario((atual) => ({
+
+                          ...atual,
+
+                          apelido_referencia: normalizarApelido(
+
+                            evento.target.value
+
+                          ),
+
+                        }));
+
+                        setApelidoValidado('');
+
+                        setErroApelido('');
+
+                      }}
+
+                      placeholder="suaempresa"
+
+                      className="min-w-0 flex-1 px-4 py-3 text-slate-900 outline-none"
+
+                    />
+
+                  </div>
+
+
+
+                  <div className="mt-3 flex flex-wrap items-center gap-3">
+
+                    <button
+
+                      type="button"
+
+                      onClick={validarApelidoReferencia}
+
+                      disabled={
+
+                        validandoApelido ||
+
+                        !formulario.apelido_referencia.trim()
+
+                      }
+
+                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+
+                    >
+
+                      {validandoApelido ? (
+
+                        <>
+
+                          <Loader2 className="h-4 w-4 animate-spin" />
+
+                          Validando...
+
+                        </>
+
+                      ) : (
+
+                        'Validar link'
+
+                      )}
+
+                    </button>
+
+
+
+                    {apelidoValidado ===
+
+                      formulario.apelido_referencia.trim() &&
+
+                      formulario.apelido_referencia.trim() && (
+
+                        <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-green-700">
+
+                          <CheckCircle2 className="h-4 w-4" />
+
+                          Nome disponível.
+
+                        </span>
+
+                      )}
+
+                  </div>
+
+
+
+                  {erroApelido && (
+
+                    <p className="mt-2 text-sm font-medium text-red-600">
+
+                      {erroApelido}
+
+                    </p>
+
+                  )}
+
+
+
+                  <span className="mt-2 block text-xs text-slate-500">
+
+                    Opcional: use o nome da sua empresa, corretora, canal ou nome profissional. Letras, números e hífen; sem espaços.
+
+                  </span>
+
+                </label>
+
+              </div>
+
+
+
+              <div className="mt-7 rounded-2xl bg-slate-50 p-5">
+
+                <div className="flex items-center gap-2">
+
+                  <KeyRound className="h-5 w-5 text-slate-600" />
+
+
+
+                  <h3 className="font-black text-slate-900">
+
+                    Alterar senha
+
+                  </h3>
+
+                </div>
+
+
+
+                <p className="mt-1 text-sm text-slate-500">
+
+                  Deixe estes campos vazios se não quiser trocar a senha.
+
+                </p>
+
+
+
+                <div className="mt-4 grid gap-5 md:grid-cols-3">
+
+                  <label className="block">
+
+                    <span className="text-sm font-bold text-slate-700">
+
+                      Senha atual
+
+                    </span>
+
+
+
+                    <input
+
+                      type="password"
+
+                      value={formulario.senha_atual}
+
+                      onChange={(evento) => {
+
+                        setFormulario(
+
+                          (atual) => ({
+
+                            ...atual,
+
+                            senha_atual:
+
+                              evento.target.value,
+
+                          })
+
+                        );
+
+                      }}
+
+                      autoComplete="current-password"
+
+                      className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+
+                    />
+
+                  </label>
+
+
+
+                  <label className="block">
+
+                    <span className="text-sm font-bold text-slate-700">
+
+                      Nova senha
+
+                    </span>
+
+
+
+                    <input
+
+                      type="password"
+
+                      value={formulario.nova_senha}
+
+                      onChange={(evento) => {
+
+                        setFormulario(
+
+                          (atual) => ({
+
+                            ...atual,
+
+                            nova_senha:
+
+                              evento.target.value,
+
+                          })
+
+                        );
+
+                      }}
+
+                      autoComplete="new-password"
+
+                      className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+
+                    />
+
+                  </label>
+
+
+
+                  <label className="block">
+
+                    <span className="text-sm font-bold text-slate-700">
+
+                      Confirmar nova senha
+
+                    </span>
+
+
+
+                    <input
+
+                      type="password"
+
+                      value={formulario.confirmar_senha}
+
+                      onChange={(evento) => {
+
+                        setFormulario(
+
+                          (atual) => ({
+
+                            ...atual,
+
+                            confirmar_senha:
+
+                              evento.target.value,
+
+                          })
+
+                        );
+
+                      }}
+
+                      autoComplete="new-password"
+
+                      className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+
+                    />
+
+                  </label>
+
+                </div>
+
+              </div>
+
+
+
+              {erroDados && (
+
+                <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
+
+                  {erroDados}
+
+                </div>
+
+              )}
+
+
+
+              <div className="mt-6 flex flex-wrap gap-3">
+
+                <button
+
+                  type="submit"
+
+                  disabled={
+
+                    salvandoDados ||
+
+                    Boolean(formulario.apelido_referencia.trim()) &&
+
+                      apelidoValidado !==
+
+                        formulario.apelido_referencia.trim()
+
+                  }
+
+                  className="inline-flex items-center gap-2 rounded-xl bg-green-600 px-6 py-3 font-bold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
+
+                >
+
+                  {salvandoDados ? (
+
+                    <RefreshCw className="h-5 w-5 animate-spin" />
+
+                  ) : (
+
+                    <Save className="h-5 w-5" />
+
+                  )}
+
+
+
+                  {salvandoDados
+
+                    ? 'Salvando...'
+
+                    : 'Salvar alterações'}
+
+                </button>
+
+
+
+                <button
+
+                  type="button"
+
+                  onClick={cancelarEdicao}
+
+                  disabled={salvandoDados}
+
+                  className="rounded-xl border border-slate-300 bg-white px-6 py-3 font-bold text-slate-700 transition hover:bg-slate-50 disabled:opacity-60"
+
+                >
+
+                  Cancelar
+
+                </button>
+
+              </div>
+
+            </form>
+
+          </article>
+
+        )}
+
+
+
+        {/* Vendas */}
+
+        {!carregando &&
+
+          !erro &&
+
+          dashboard && (
+
+            <section className="mt-8">
+
+              <div className="mb-4 flex items-center gap-3">
+
+                <ShoppingCart className="h-6 w-6 text-blue-700" />
+
+
+
+                <h2 className="text-2xl font-black text-slate-900">
+
+                  Minhas vendas
+
+                </h2>
+
+              </div>
+
+
+
+              {vendas.length ===
+
+              0 ? (
+
+                <article className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-slate-500 shadow-sm">
+
+                  Nenhuma venda encontrada.
+
+                </article>
+
+              ) : (
+
+                <div className="grid gap-4">
+
+                  {vendas.map(
+
+                    (venda) => (
+
+                      <article
+
+                        key={
+
+                          venda.num_contrato
+
+                        }
+
+                        className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+
+                      >
+
+                        <div className="flex flex-wrap items-start justify-between gap-4">
+
+                          <div>
+
+                            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
+
+                              {
+
+                                venda.num_contrato
+
+                              }
+
+                            </p>
+
+
+
+                            <h3 className="mt-1 text-lg font-black text-slate-900">
+
+                              {
+
+                                venda.nome_assoc
+
+                              }
+
+                            </h3>
+
+
+
+                            <p className="mt-1 inline-flex items-center gap-2 text-sm text-slate-500">
+
+                              <Building2 className="h-4 w-4" />
+
+                              {venda.empresa ||
+
+                                'Empresa não informada'}
+
+                            </p>
+
+                          </div>
+
+
+
+                          <span
+
+                            className={
+
+                              statusPositivo(
+
+                                venda.status_pagamento
+
+                              )
+
+                                ? 'rounded-full bg-green-100 px-3 py-1.5 text-xs font-bold text-green-700'
+
+                                : 'rounded-full bg-amber-100 px-3 py-1.5 text-xs font-bold text-amber-700'
+
+                            }
+
+                          >
+
+                            {formatarStatus(
+
+                              venda.status_pagamento
+
+                            )}
+
+                          </span>
+
+                        </div>
+
+
+
+                        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+
+                          <div>
+
+                            <p className="text-xs text-slate-400">
+
+                              Valor
+
+                            </p>
+
+
+
+                            <p className="font-bold text-slate-900">
+
+                              {formatarMoeda(
+
+                                venda.vl_total
+
+                              )}
+
+                            </p>
+
+                          </div>
+
+
+
+                          <div>
+
+                            <p className="text-xs text-slate-400">
+
+                              Individuais
+
+                            </p>
+
+
+
+                            <p className="font-bold text-slate-900">
+
+                              {
+
+                                venda.qtd_individual
+
+                              }
+
+                            </p>
+
+                          </div>
+
+
+
+                          <div>
+
+                            <p className="text-xs text-slate-400">
+
+                              Familiares
+
+                            </p>
+
+
+
+                            <p className="font-bold text-slate-900">
+
+                              {
+
+                                venda.qtd_familiar
+
+                              }
+
+                            </p>
+
+                          </div>
+
+
+
+                          <div>
+
+                            <p className="text-xs text-slate-400">
+
+                              Vencimento
+
+                            </p>
+
+
+
+                            <p className="font-bold text-slate-900">
+
+                              Dia{' '}
+
+                              {
+
+                                venda.dia_vencimento
+
+                              }
+
+                            </p>
+
+                          </div>
+
+
+
+                          <div>
+
+                            <p className="text-xs text-slate-400">
+
+                              Cadastro
+
+                            </p>
+
+
+
+                            <p className="font-bold text-slate-900">
+
+                              {formatarData(
+
+                                venda.dt_cadastro
+
+                              )}
+
+                            </p>
+
+                          </div>
+
+                        </div>
+
+                      </article>
+
+                    )
+
+                  )}
+
+                </div>
+
+              )}
+
+            </section>
+
+          )}
+
+
+
+        {/* Comissões */}
+
+        {!carregando &&
+
+          !erro &&
+
+          dashboard && (
+
+            <section className="mt-8">
+
+              <div className="mb-4 flex items-center gap-3">
+
+                <WalletCards className="h-6 w-6 text-green-700" />
+
+
+
+                <h2 className="text-2xl font-black text-slate-900">
+
+                  Minhas comissões
+
+                </h2>
+
+              </div>
+
+
+
+              {comissoes.length ===
+
+              0 ? (
+
+                <article className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-slate-500 shadow-sm">
+
+                  Nenhuma comissão encontrada.
+
+                </article>
+
+              ) : (
+
+                <div className="grid gap-4">
+
+                  {comissoes.map(
+
+                    (comissao) => (
+
+                      <article
+
+                        key={
+
+                          comissao.id_comissao
+
+                        }
+
+                        className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+
+                      >
+
+                        <div className="flex flex-wrap items-start justify-between gap-4">
+
+                          <div>
+
+                            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
+
+                              {
+
+                                comissao.id_comissao
+
+                              }
+
+                              {' · '}
+
+                              {
+
+                                comissao.num_contrato
+
+                              }
+
+                            </p>
+
+
+
+                            <p className="mt-2 text-2xl font-black text-slate-900">
+
+                              {formatarMoeda(
+
+                                comissao.vl_comissao
+
+                              )}
+
+                            </p>
+
+                          </div>
+
+
+
+                          <span
+
+                            className={
+
+                              statusPositivo(
+
+                                comissao.status_comissao
+
+                              )
+
+                                ? 'rounded-full bg-green-100 px-3 py-1.5 text-xs font-bold text-green-700'
+
+                                : 'rounded-full bg-amber-100 px-3 py-1.5 text-xs font-bold text-amber-700'
+
+                            }
+
+                          >
+
+                            {formatarStatus(
+
+                              comissao.status_comissao
+
+                            )}
+
+                          </span>
+
+                        </div>
+
+
+
+                        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+
+                          <div>
+
+                            <p className="text-xs text-slate-400">
+
+                              Tipo
+
+                            </p>
+
+
+
+                            <p className="font-bold text-slate-900">
+
+                              {formatarStatus(
+
+                                comissao.tipo_comissao
+
+                              )}
+
+                            </p>
+
+                          </div>
+
+
+
+                          <div>
+
+                            <p className="text-xs text-slate-400">
+
+                              Percentual
+
+                            </p>
+
+
+
+                            <p className="font-bold text-slate-900">
+
+                              {Math.round(
+
+                                Number(
+
+                                  comissao.percentual
+
+                                ) *
+
+                                  100
+
+                              )}
+
+                              %
+
+                            </p>
+
+                          </div>
+
+
+
+                          <div>
+
+                            <p className="text-xs text-slate-400">
+
+                              Competência
+
+                            </p>
+
+
+
+                            <p className="font-bold text-slate-900">
+
+                              {
+
+                                comissao.competencia
+
+                              }
+
+                            </p>
+
+                          </div>
+
+
+
+                          <div>
+
+                            <p className="text-xs text-slate-400">
+
+                              Pagamento previsto
+
+                            </p>
+
+
+
+                            <p className="font-bold text-slate-900">
+
+                              {formatarData(
+
+                                comissao
+
+                                  .dt_prevista_pagamento
+
+                              )}
+
+                            </p>
+
+                          </div>
+
+                        </div>
+
+                      </article>
+
+                    )
+
+                  )}
+
+                </div>
+
+              )}
+
+            </section>
+
+          )}
+
+
+
+        {/* Equipe */}
+
+        {!carregando &&
+
+          !erro &&
+
+          dashboard && (
+
+            <section className="mt-8">
+
+              <div className="mb-4 flex items-center gap-3">
+
+                <Users className="h-6 w-6 text-purple-700" />
+
+
+
+                <h2 className="text-2xl font-black text-slate-900">
+
+                  Minha equipe direta
+
+                </h2>
+
+              </div>
+
+
+
+              {equipe.length ===
+
+              0 ? (
+
+                <article className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-slate-500 shadow-sm">
+
+                  Você ainda não possui colaboradores diretos.
+
+                </article>
+
+              ) : (
+
+                <div className="grid gap-4 md:grid-cols-2">
+
+                  {equipe.map(
+
+                    (membro) => (
+
+                      <article
+
+                        key={
+
+                          membro.cod_colab
+
+                        }
+
+                        className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+
+                      >
+
+                        <div className="flex items-start justify-between gap-3">
+
+                          <div>
+
+                            <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
+
+                              Código{' '}
+
+                              {
+
+                                membro.cod_colab
+
+                              }
+
+                            </p>
+
+
+
+                            <h3 className="mt-1 font-black text-slate-900">
+
+                              {
+
+                                membro.nome_colab
+
+                              }
+
+                            </h3>
+
+
+
+                            <p className="mt-1 break-all text-sm text-slate-500">
+
+                              {
+
+                                membro.email_colab
+
+                              }
+
+                            </p>
+
+                          </div>
+
+
+
+                          <span
+
+                            className={
+
+                              statusPositivo(
+
+                                membro.status_colab
+
+                              )
+
+                                ? 'rounded-full bg-green-100 px-3 py-1.5 text-xs font-bold text-green-700'
+
+                                : 'rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-600'
+
+                            }
+
+                          >
+
+                            {formatarStatus(
+
+                              membro.status_colab
+
+                            )}
+
+                          </span>
+
+                        </div>
+
+                      </article>
+
+                    )
+
+                  )}
+
+                </div>
+
+              )}
+
+            </section>
+
+          )}
+
+      </section>
+
+    </main>
+
+  );
+
+}

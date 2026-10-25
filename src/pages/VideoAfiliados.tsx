@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { Play as PlayIcon } from "lucide-react";
 
+type VideoAfiliadoApi = { bind: (evento: string, callback: () => void) => void; play: () => void };
+
 declare global {
   interface Window {
-    _wq: any[];
-    Wistia: any;
+    _wq: { id: string; options: { autoPlay: boolean; playerColor: string }; onReady: (video: VideoAfiliadoApi) => void }[];
   }
 }
 
@@ -27,7 +28,7 @@ export function VideoAfiliados() {
         autoPlay: true,
         playerColor: "2566af",
       },
-      onReady: (video: any) => {
+      onReady: (video: VideoAfiliadoApi) => {
         setVideoReady(true);
         video.bind("end", () => {
           setShowButton(true);

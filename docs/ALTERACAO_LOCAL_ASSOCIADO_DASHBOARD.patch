@@ -1,0 +1,109 @@
+diff --git a/src/pages/AssociadoDashboard.tsx b/src/pages/AssociadoDashboard.tsx
+index 4e2f1f6..23c0427 100644
+--- a/src/pages/AssociadoDashboard.tsx
++++ b/src/pages/AssociadoDashboard.tsx
+@@ -1782,22 +1782,28 @@ async function confirmarExclusao() {
+                       </label>
+                       <input
+                         value={inclusao.nome_titular}
++                        disabled={salvandoInclusao || consultandoCpfInclusao || cpfInclusaoValidado !== inclusao.cpf_titular}
+                         onChange={(evento) =>
+                           setInclusao((atual) => ({
+                             ...atual,
+                             nome_titular: evento.target.value,
+                           }))
+                         }
+-                        className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
++                        className="w-full disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+                       />
+                     </div>
+ 
+-                    <div>
++                    <div className="rounded-2xl border-2 border-emerald-400 bg-emerald-50 p-4">
++                      <p className="mb-2 text-xs font-extrabold uppercase tracking-wide text-emerald-700">Comece por aqui</p>
+                       <label className="mb-2 block text-sm font-bold text-slate-700">
+                         CPF
+                       </label>
++                      <p id="orientacao-cpf-inclusao" className="mb-3 text-sm text-emerald-800">
++                        Informe e valide o CPF para liberar os demais campos.
++                      </p>
+                       <input
+                         inputMode="numeric"
++                        aria-describedby="orientacao-cpf-inclusao"
+                         value={inclusao.cpf_titular}
+                         disabled={salvandoInclusao}
+                         onChange={(evento) => {
+@@ -1809,7 +1815,7 @@ async function confirmarExclusao() {
+                           }));
+                         }}
+                         maxLength={11}
+-                        className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
++                        className="w-full disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+                       />
+                       <button
+                         type="button"
+@@ -1832,13 +1838,14 @@ async function confirmarExclusao() {
+                       <input
+                         type="date"
+                         value={inclusao.nasc_titular}
++                        disabled={salvandoInclusao || consultandoCpfInclusao || cpfInclusaoValidado !== inclusao.cpf_titular}
+                         onChange={(evento) =>
+                           setInclusao((atual) => ({
+                             ...atual,
+                             nasc_titular: evento.target.value,
+                           }))
+                         }
+-                        className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
++                        className="w-full disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+                       />
+                     </div>
+ 
+@@ -1849,13 +1856,14 @@ async function confirmarExclusao() {
+                       <input
+                         type="email"
+                         value={inclusao.email_titular}
++                        disabled={salvandoInclusao || consultandoCpfInclusao || cpfInclusaoValidado !== inclusao.cpf_titular}
+                         onChange={(evento) =>
+                           setInclusao((atual) => ({
+                             ...atual,
+                             email_titular: evento.target.value,
+                           }))
+                         }
+-                        className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
++                        className="w-full disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+                       />
+                     </div>
+ 
+@@ -1867,6 +1875,7 @@ async function confirmarExclusao() {
+                         type="tel"
+                         inputMode="numeric"
+                         value={inclusao.tel_titular}
++                        disabled={salvandoInclusao || consultandoCpfInclusao || cpfInclusaoValidado !== inclusao.cpf_titular}
+                         onChange={(evento) =>
+                           setInclusao((atual) => ({
+                             ...atual,
+@@ -1874,7 +1883,7 @@ async function confirmarExclusao() {
+                           }))
+                         }
+                         maxLength={11}
+-                        className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
++                        className="w-full disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+                       />
+                     </div>
+ 
+@@ -1884,13 +1893,14 @@ async function confirmarExclusao() {
+                       </label>
+                       <select
+                         value={inclusao.cod_plano}
++                        disabled={salvandoInclusao || consultandoCpfInclusao || cpfInclusaoValidado !== inclusao.cpf_titular}
+                         onChange={(evento) =>
+                           setInclusao((atual) => ({
+                             ...atual,
+                             cod_plano: evento.target.value as '2878' | '2880',
+                           }))
+                         }
+-                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
++                        className="w-full disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+                       >
+                         <option value="2878">Individual — R$ 33</option>
+                         <option value="2880">Familiar — R$ 66</option>

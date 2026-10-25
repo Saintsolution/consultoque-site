@@ -7,7 +7,7 @@ import {
 } from 'react-router-dom';
 
 const URL_CADASTRO_COLABORADOR =
-  'https://coletivo.consultoque.com.br/seja-colaborador';
+  '/seja-colaborador';
 
 function obterCodigoIndicador() {
   const armazenado =

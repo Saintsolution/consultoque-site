@@ -10,7 +10,7 @@ export function HeaderVisual() {
     { name: 'Área do Colaborador', path: '/colaborador' },
     {
       name: 'Área Administrativa',
-      path: 'https://coletivo.consultoque.com.br/admin',
+      path: '/admin',
       externo: true,
     },
   ];
