@@ -37,7 +37,7 @@ export default function SejaColaboradorCTA() {
 
             {/* Botão verde */}
             <Link
-              to="/seja-colaborador"
+              to="/seja-afiliado"
               className="group inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-green-500 px-7 py-4 text-base font-extrabold text-white shadow-lg transition-all hover:-translate-y-1 hover:bg-green-400 hover:shadow-xl"
             >
               Quero ser colaborador
