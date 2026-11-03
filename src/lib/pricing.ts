@@ -19,8 +19,8 @@ export interface HolderEntry {
   cpf: string;
 }
 
-export function priceForPlan(plan: PlanType, total: number): number {
-  if (total >= BULK_THRESHOLD) {
+export function priceForPlan(plan: PlanType, total: number, parceiro = false): number {
+  if (parceiro || total >= BULK_THRESHOLD) {
     return plan === 'individual' ? INDIVIDUAL_PRICE_BULK : FAMILY_PRICE_BULK;
   }
   return plan === 'individual' ? INDIVIDUAL_PRICE : FAMILY_PRICE;
@@ -39,13 +39,13 @@ export interface PriceBreakdown {
   savings: number;
 }
 
-export function calculatePrice(holders: HolderEntry[]): PriceBreakdown {
+export function calculatePrice(holders: HolderEntry[], parceiro = false): PriceBreakdown {
   const total = holders.length;
   const individualCount = holders.filter((h) => h.plan === 'individual').length;
   const familyCount = holders.filter((h) => h.plan === 'familia').length;
 
-  const individualUnit = priceForPlan('individual', total);
-  const familyUnit = priceForPlan('familia', total);
+  const individualUnit = priceForPlan('individual', total, parceiro);
+  const familyUnit = priceForPlan('familia', total, parceiro);
 
   const individualSubtotal = individualCount * individualUnit;
   const familySubtotal = familyCount * familyUnit;

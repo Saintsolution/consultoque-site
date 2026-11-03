@@ -1,3 +1,4 @@
+import { linkOrigemVisual } from '../../../app/origemVisual';
 import { Link } from 'react-router-dom';
 
 export function LegalCompliance() {
@@ -67,7 +68,7 @@ export function LegalCompliance() {
         </a>
 
         <Link
-          to="/associado"
+          to={linkOrigemVisual("/associado", "coletivo")}
           className="text-xs font-semibold text-blue-700 hover:text-blue-900 transition-colors underline underline-offset-2"
         >
           Portal do Associado

@@ -1,3 +1,4 @@
+import { retornoVisual, linkOrigemVisual } from '../../app/origemVisual';
 import { enviarIntegracao } from '@/services/http';
 import { Colaborador_WEBHOOK_LOGIN as WEBHOOK_LOGIN, Colaborador_WEBHOOK_RECUPERAR_SENHA as WEBHOOK_RECUPERAR_SENHA } from '@/services/endpoints';
 import {
@@ -435,7 +436,7 @@ export default function Colaborador() {
         <div className="mx-auto max-w-md">
           {/* Retorno ao site */}
           <a
-            href="/"
+            href={retornoVisual()}
             className="mb-5 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:border-green-400 hover:text-green-700"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -562,7 +563,7 @@ export default function Colaborador() {
                   {codigoErro ===
                     'COLABORADOR_NAO_ENCONTRADO' && (
                     <Link
-                      to="/seja-colaborador"
+                      to={linkOrigemVisual("/seja-colaborador")}
                       className="mt-3 inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-green-700"
                     >
                       Preencher meus dados
@@ -637,7 +638,7 @@ export default function Colaborador() {
 
             <div className="mt-3 flex flex-col items-center gap-3 text-center text-sm">
               <Link
-                to="/seja-colaborador"
+                to={linkOrigemVisual("/seja-colaborador")}
                 className="text-slate-600 hover:text-slate-900"
               >
                 Ainda não sou colaborador

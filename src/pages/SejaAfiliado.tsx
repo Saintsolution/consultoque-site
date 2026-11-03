@@ -1,3 +1,4 @@
+import { retornoVisual, linkOrigemVisual } from '../app/origemVisual';
 import type {
   MouseEvent,
 } from 'react';
@@ -48,7 +49,7 @@ function abrirCadastro(
   event.preventDefault();
 
   window.location.href =
-    criarLinkCadastro();
+    linkOrigemVisual(criarLinkCadastro());
 }
 
 export function SejaAfiliado() {
@@ -57,7 +58,7 @@ export function SejaAfiliado() {
       {/* VOLTAR */}
       <div className="p-6">
         <Link
-          to="/"
+          to={retornoVisual()}
           className="font-semibold text-blue-600"
         >
           ← Voltar para o site

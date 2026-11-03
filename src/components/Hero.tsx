@@ -1,42 +1,12 @@
-const FORMULARIO_COLETIVO =
-  '/contratar';
-
-function obterCodigoIndicador() {
-  const armazenado =
-    localStorage.getItem(
-      'referenciador_id'
-    );
-
-  const numeros =
-    String(armazenado ?? '')
-      .replace(/\D/g, '');
-
-  if (
-    numeros.length < 1 ||
-    numeros.length > 4
-  ) {
-    return '0001';
-  }
-
-  return numeros.padStart(
-    4,
-    '0'
-  );
-}
-
-function criarLinkFormulario() {
-  const indicador =
-    obterCodigoIndicador();
-
-  return (
-    `${FORMULARIO_COLETIVO}` +
-    `?ref=${encodeURIComponent(indicador)}`
-  );
-}
+import { comOrigemVisual } from '../app/origemVisual';
+import { useParceiro } from '../app/ContextoParceiro';
+import { armazenamentoReferencia } from '../services/referencia';
+import { linkComercial } from '../services/parceiro';
 
 export function Hero() {
-  const linkFormulario =
-    criarLinkFormulario();
+  const parceiro = useParceiro();
+  const linkBase = linkComercial('/contratar', parceiro, armazenamentoReferencia.ler() || '0001');
+  const linkFormulario = comOrigemVisual(linkBase, 'home');
 
   return (
     <section
@@ -46,7 +16,7 @@ export function Hero() {
       <div className="w-full px-6 pb-32 pt-20 text-center">
         <p className="mx-auto mb-6 max-w-5xl text-3xl font-extrabold leading-tight text-blue-50 md:text-5xl lg:text-7xl">
           CONSULTA <br className="hidden md:block" />
-          por R$ 33,00
+          por R$ {parceiro ? '30,00' : '33,00'}
         </p>
 
         <p className="mx-auto mb-14 max-w-4xl text-lg font-medium leading-relaxed text-blue-100/95 md:text-2xl lg:text-3xl">
@@ -71,7 +41,7 @@ export function Hero() {
             </span>
 
             <span className="my-1 text-3xl font-black">
-              R$ 33,00
+              R$ {parceiro ? '30,00' : '33,00'}
             </span>
 
             <span className="text-xs font-bold uppercase opacity-90">
@@ -92,7 +62,7 @@ export function Hero() {
             </span>
 
             <span className="my-1 text-3xl font-black">
-              R$ 66,00
+              R$ {parceiro ? '60,00' : '66,00'}
             </span>
 
             <span className="text-xs font-bold uppercase opacity-90">

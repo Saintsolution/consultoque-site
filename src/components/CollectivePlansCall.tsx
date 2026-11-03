@@ -1,7 +1,11 @@
+import { comOrigemVisual } from '../app/origemVisual';
+import { useParceiro } from '../app/ContextoParceiro';
+import { linkComercial } from '../services/parceiro';
 const URL_PLANOS_COLETIVOS =
   '/coletivo';
 
 export function CollectivePlansCall() {
+  const parceiro = useParceiro();
   return (
     <section
       id="planos-coletivos"
@@ -22,7 +26,7 @@ export function CollectivePlansCall() {
         </p>
 
         <a
-          href={URL_PLANOS_COLETIVOS}
+          href={parceiro ? comOrigemVisual(linkComercial('/contratar', parceiro, parceiro.codigo), 'home') : URL_PLANOS_COLETIVOS}
           className="inline-flex items-center justify-center rounded-full bg-white px-10 py-4 text-lg font-black text-blue-700 shadow-xl transition-all duration-300 hover:scale-105 hover:bg-blue-50 active:scale-95"
         >
           SAIBA MAIS

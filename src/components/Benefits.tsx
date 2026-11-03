@@ -1,6 +1,6 @@
 import { CheckCircle2, HeartPulse, UserCircle, Target, Calendar } from 'lucide-react';
 
-export function Benefits() {
+export function Benefits({ showVideo = true }: { showVideo?: boolean }) {
   const especialidadesMedicas = [
     'Cardiologia', 'Dermatologia', 'Endocrinologia', 'Gastroenterologia', 
     'Geriatria', 'Ginecologia', 'Medicina da Família', 'Oftalmologia', 
@@ -12,14 +12,14 @@ export function Benefits() {
       <div className="max-w-5xl mx-auto px-4 space-y-16">
         
         {/* VÍDEO WISTIA */}
-        <div className="aspect-video w-full max-w-4xl mx-auto bg-black rounded-3xl overflow-hidden shadow-2xl border-4 border-white">
+        {showVideo && <div className="aspect-video w-full max-w-4xl mx-auto bg-black rounded-3xl overflow-hidden shadow-2xl border-4 border-white">
           <iframe
             src="https://fast.wistia.net/embed/iframe/6a7aa410u4?videoFoam=true"
             title="Vídeo de Apresentação ConsulToque"
             allow="autoplay; fullscreen"
             className="w-full h-full"
           ></iframe>
-        </div>
+        </div>}
 
         {/* TEXTO EXPLICATIVO GERAL (Redundância removida abaixo) */}
         <div className="text-center max-w-2xl mx-auto space-y-3">

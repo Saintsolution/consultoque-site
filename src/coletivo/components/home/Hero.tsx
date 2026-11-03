@@ -1,3 +1,4 @@
+import { comOrigemVisual } from '../../../app/origemVisual';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight,
@@ -140,7 +141,7 @@ export default function Hero() {
             }}
           >
             <Link
-              to="/formcoletivo"
+              to={comOrigemVisual('/formcoletivo', 'coletivo')}
               className="hero-main-button group inline-flex items-center justify-center gap-4 border text-xl font-black text-white"
             >
               Montar meu plano

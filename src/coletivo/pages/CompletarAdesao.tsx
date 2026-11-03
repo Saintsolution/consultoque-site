@@ -1,3 +1,4 @@
+import { retornoVisual } from '../../app/origemVisual';
 import { enviarIntegracao } from '@/services/http';
 import { CompletarAdesao_WEBHOOK_BUSCAR_ADESAO as WEBHOOK_BUSCAR_ADESAO, CompletarAdesao_WEBHOOK_COMPLEMENTAR_ADESAO as WEBHOOK_COMPLEMENTAR_ADESAO } from '@/services/endpoints';
 import { useMemo, useState } from "react";
@@ -38,6 +39,7 @@ type Titular = {
 };
 
 type Contrato = {
+  tipo_venda?: string;
   num_contrato?: string;
   qtd_individual?: number | string;
   qtd_familiar?: number | string;
@@ -134,6 +136,8 @@ export default function CompletarAdesao() {
   } | null>(null);
 
   const titularesExistentes = dados?.titulares ?? [];
+  const ehParceiroContrato =
+    String(dados?.contrato?.tipo_venda ?? '').trim().toUpperCase() === 'PARCEIRO';
   const resumo = useMemo(
     () =>
       calculatePrice([
@@ -144,8 +148,8 @@ export default function CompletarAdesao() {
           name: titular.nome,
           cpf: onlyDigits(titular.cpf),
         })),
-      ]),
-    [titularesExistentes, novos],
+      ], ehParceiroContrato),
+    [titularesExistentes, novos, ehParceiroContrato],
   );
 
   async function buscarAdesao() {
@@ -339,7 +343,7 @@ export default function CompletarAdesao() {
       `}</style>
       <div className="mx-auto max-w-4xl">
         <a
-          href="/"
+          href={retornoVisual()}
           className="inline-flex items-center gap-2 text-sm font-bold text-ocean-700 hover:text-ocean-900"
         >
           <ArrowLeft className="h-4 w-4" /> Voltar ao início

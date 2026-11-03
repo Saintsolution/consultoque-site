@@ -1,3 +1,4 @@
+import { consultarParceiro } from '../src/services/parceiro';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -178,4 +179,98 @@ test('ponte de indicação prioriza cookie válido e sincroniza chaves legadas s
 test('encoding inválido de URL não derruba o roteador nem transforma rota reservada em apelido', () => {
   assert.doesNotThrow(() => referenciaDaUrl('/%E0%A4%A', ''));
   assert.equal(referenciaDaUrl('/%63ontratar', '').referencia, null);
+});
+
+test('parceiro exige confirmação do cadastro, código correspondente e marca exata', async () => {
+  assert.deepEqual(await consultarParceiro('timewebesportes', '0012', (async () => response({ encontrado: true, cod_colab: '0012', parceiro: 'PARCEIRO', apelido_referencia: 'timewebesportes' })) as typeof fetch), { codigo: '0012', apelido: 'timewebesportes' });
+  assert.deepEqual(await consultarParceiro('adesaodigital', '0002', (async () => response({ encontrado: true, cod_colab: '0002', parceiro: 'PARCEIRO', referencia: 'outro' })) as typeof fetch), {codigo:'0002',apelido:'0002'});
+  for (const parceiro of [undefined, null, '', 'sim', true, 1, 'parceiro teste']) {
+    assert.equal(await consultarParceiro('adesaodigital', '0002', (async () => response({ encontrado: true, cod_colab: '0002', apelido_referencia: 'adesaodigital', parceiro })) as typeof fetch), null);
+  }
+  for (const parceiro of ['PARCEIRO', 'parceiro', ' Parceiro ']) {
+    assert.deepEqual(await consultarParceiro('0002', '0002', (async () => response({ encontrado: true, cod_colab: '0002', apelido_referencia: 'adesaodigital', parceiro })) as typeof fetch), { codigo: '0002', apelido: 'adesaodigital' });
+  }
+  await assert.rejects(consultarParceiro('0002', '0002', (async () => response({ encontrado: false, cod_colab: '0002', parceiro: 'PARCEIRO' })) as typeof fetch));
+  await assert.rejects(consultarParceiro('0002', '0002', (async () => response({ encontrado: true, cod_colab: '0042', parceiro: 'PARCEIRO' })) as typeof fetch));
+  await assert.rejects(consultarParceiro('0002', '0002', (async () => response({ sucesso: false, encontrado: true, cod_colab: '0002', parceiro: 'PARCEIRO' })) as typeof fetch));
+  await assert.rejects(consultarParceiro('0002', '0002', semRede));
+});
+test('parceiro reaproveita 30/60 sem alterar o limiar coletivo nem o cálculo padrão', () => {
+  for (const total of [1, 9, 10, 11]) {
+    for (const plan of ['individual', 'familia'] as const) {
+      const holders = Array.from({length:total}, (_, i) => ({ id:String(i), plan, name:'SINTETICO', cpf:'' }));
+      const especial = calculatePrice(holders, true);
+      assert.equal(especial.totalMonthly, total * (plan === 'individual' ? 30 : 60));
+      assert.equal(especial.hasBulkDiscount, total >= 10);
+      assert.equal(calculatePrice(holders).totalMonthly, total * (plan === 'individual' ? (total >= 10 ? 30 : 33) : (total >= 10 ? 60 : 66)));
+    }
+  }
+});
+
+test('oferta persiste apenas identidade e prazo fixo de trinta dias; leitura não renova', async () => {
+  const { criarPersistenciaOferta, ofertaNoPrazo, VALIDADE_OFERTA_PARCEIRO, CHAVE_OFERTA_PARCEIRO, linkComercial } = await import('../src/services/parceiro');
+  const itens = new Map<string,string>();
+  const store = { getItem: (k:string) => itens.get(k) ?? null, setItem: (k:string,v:string) => { itens.set(k,v); }, removeItem: (k:string) => { itens.delete(k); } };
+  const p = criarPersistenciaOferta(store);
+  const oferta = {codigo:'0002',apelido:'adesaodigital'};
+  const inicio = 1000000;
+  const c = p.salvar(oferta,inicio);
+  assert.deepEqual(Object.keys(c).sort(),['apelido','codigo','expiraEm','iniciadoEm']);
+  assert.equal(c.expiraEm,inicio+VALIDADE_OFERTA_PARCEIRO);
+  assert.deepEqual(p.ler(),c);
+  assert.equal(ofertaNoPrazo(c,inicio+VALIDADE_OFERTA_PARCEIRO-1),true);
+  assert.equal(ofertaNoPrazo(c,c.expiraEm),false);
+  assert.equal(ofertaNoPrazo(c,inicio-1),false);
+  assert.equal(p.ler()?.iniciadoEm,inicio);
+  assert.equal(linkComercial('/contratar',oferta,'0002'),'/contratar?ref=0002&oferta=adesaodigital');
+  assert.equal(linkComercial('/contratar',null,'0042'),'/contratar?ref=0042');
+  store.setItem(CHAVE_OFERTA_PARCEIRO,JSON.stringify({...c,expiraEm:c.expiraEm+1}));
+  assert.equal(p.ler(),null);
+  p.salvar(oferta,inicio);p.limpar();assert.equal(p.ler(),null);
+});
+
+test('prévia do complemento usa modalidade contratual com composições de 1, 9, 10 e 11', () => {
+  for (const modalidade of [undefined, '', 'PADRAO', 'PARCEIRO', ' parceiro ', 'OUTRO']) {
+    for (const total of [1, 9, 10, 11]) {
+      for (const familiares of [0, Math.floor(total / 2), total]) {
+        const holders = Array.from({ length: total }, (_, i) => ({ id: String(i), name: '', cpf: '', plan: i < familiares ? 'familia' as const : 'individual' as const }));
+        const parceiro = String(modalidade ?? '').trim().toUpperCase() === 'PARCEIRO';
+        const resumo = calculatePrice(holders, parceiro);
+        const reduzida = parceiro || total >= 10;
+        assert.equal(resumo.totalMonthly, (total - familiares) * (reduzida ? 30 : 33) + familiares * (reduzida ? 60 : 66));
+        assert.equal(resumo.hasBulkDiscount, total >= 10);
+      }
+    }
+  }
+});
+
+
+test('origem visual aceita somente destinos cadastrados e não modifica referência ou oferta', async () => {
+  const { destinoOrigemVisual, comOrigemVisual } = await import('../src/app/origemVisual');
+  for (const [origem, destino] of [['home', '/'], ['coletivo', '/coletivo'], ['parceiro:adesaodigital', '/adesaodigital'], ['parceiro:0002', '/0002'], ['parceiro:novo-parceiro', '/novo-parceiro']]) {
+    const link = comOrigemVisual('/contratar?ref=0042&oferta=outra', origem);
+    assert.equal(destinoOrigemVisual(link.slice(link.indexOf('?'))), destino);
+    const params = new URLSearchParams(link.slice(link.indexOf('?')));
+    assert.equal(params.get('ref'), '0042');
+    assert.equal(params.get('oferta'), 'outra');
+  }
+  for (const search of ['', '?ref=0002&oferta=adesaodigital', '?origem_visual=https://example.invalid', '?origem_visual=//example.invalid', '?origem_visual=/adesaodigital', '?origem_visual=parceiro:admin', '?origem_visual=parceiro:..', '?origem_visual=__proto__', '?origem_visual=constructor', '?origem_visual=home&origem_visual=coletivo']) {
+    assert.equal(destinoOrigemVisual(search), '/');
+  }
+});
+
+ test('modalidade não depende de identidade visual e rejeita status inativo', async () => {
+  const mock = (dados: object) => (async () => response(dados)) as typeof fetch;
+  assert.deepEqual(await consultarParceiro('0020', '0020', mock({ encontrado: true, status_colab: 'ATIVO', cod_colab: '0020', parceiro: 'PARCEIRO', apelido_referencia: 'novo-parceiro' })), { codigo: '0020', apelido: 'novo-parceiro' });
+  assert.deepEqual(await consultarParceiro('0021', '0021', mock({ encontrado: true, status_colab: 'ATIVO', cod_colab: '0021', parceiro: 'PARCEIRO' })), { codigo: '0021', apelido: '0021' });
+  await assert.rejects(consultarParceiro('0020', '0020', mock({ encontrado: true, status_colab: 'INATIVO', cod_colab: '0020', parceiro: 'PARCEIRO' })));
+ });
+
+test('consulta de modalidade envia exclusivamente o código já normalizado', async () => {
+  const fetchCodigo = (async (_url: unknown, init: RequestInit) => {
+    assert.deepEqual(JSON.parse(String(init.body)), {cod_colab:'0002'});
+    return response({encontrado:true,cod_colab:'0002',status_colab:'ATIVO',parceiro:'PARCEIRO',apelido_referencia:'adesaodigital'});
+  }) as typeof fetch;
+  assert.deepEqual(await consultarParceiro('apelido-apenas-publico','2',fetchCodigo),{codigo:'0002',apelido:'adesaodigital'});
+  await assert.rejects(consultarParceiro('adesaodigital','invalido',semRede),/Código/);
 });

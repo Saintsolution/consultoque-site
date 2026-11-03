@@ -1,3 +1,4 @@
+import { linkOrigemVisual } from '../../app/origemVisual';
 import { Link } from 'react-router-dom';
 import {
   Stethoscope,
@@ -119,7 +120,7 @@ export default function Footer() {
 
               <li>
                 <Link
-                  to="/seja-colaborador"
+                  to={linkOrigemVisual("/seja-colaborador", "coletivo")}
                   className="inline-flex items-center gap-2 font-semibold text-mint-400 transition-colors hover:text-mint-300"
                 >
                   <UserPlus className="h-4 w-4" />
@@ -183,7 +184,7 @@ export default function Footer() {
 
             <div className="mt-4 flex flex-col gap-3">
               <Link
-                to="/associado"
+                to={linkOrigemVisual("/associado", "coletivo")}
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm font-semibold text-white transition-all hover:border-brand-400/60 hover:bg-white/10"
               >
                 <User className="h-4 w-4 text-brand-400" />
@@ -191,7 +192,7 @@ export default function Footer() {
               </Link>
 
               <Link
-                to="/colaborador"
+                to={linkOrigemVisual("/colaborador", "coletivo")}
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm font-semibold text-white transition-all hover:border-mint-400/60 hover:bg-white/10"
               >
                 <Users className="h-4 w-4 text-mint-400" />

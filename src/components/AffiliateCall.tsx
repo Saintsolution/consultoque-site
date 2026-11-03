@@ -1,3 +1,4 @@
+import { linkOrigemVisual } from '../app/origemVisual';
 import { Link } from 'react-router-dom';
 
 export function AffiliateCall() {
@@ -14,7 +15,7 @@ export function AffiliateCall() {
       </p>
 
       <Link
-        to="/seja-afiliado"
+        to={linkOrigemVisual("/seja-afiliado", "home")}
         className="inline-block bg-white text-green-600 px-14 py-6 rounded-full
                    text-xl md:text-2xl font-black shadow-2xl
                    transition hover:scale-105 active:scale-95"

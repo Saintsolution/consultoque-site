@@ -1,14 +1,14 @@
 {
   "src/coletivo/pages/Associado.tsx": {
     "formatarCpf": "253cd04ed6f79f4be47820d23c3188bb0fdc083f71b820cad2a05e59826a24c6",
-    "Associado": "cff99754451d4ac9b97f4f8742ad9d1935a8431fda7cac2ecef4d5253f7e96fd",
+    "Associado": "d920f35fc45a68371d257ee0534a6c509e170a68e2d9eccc059ac2ff59c7c000",
     "handleRecoverPassword": "d0f942b7e6ba829e61ea504b24d7985844f7c8b41012d9568ad56c754599a121",
     "handleSubmit": "27ee256a9d86ad72b3e73bde6bf0077d9299cff0a7aa6c94e1ad9bd5e9e1ca34"
   },
   "src/coletivo/pages/Colaborador.tsx": {
     "somenteNumeros": "9751163e18d33f30c8e018d8ca7c31ee3a39410b50dca1626c16a4947ac02899",
     "formatarCPF": "2b61646f70718c27726f269d0c4f824616f2edf5829fc467b84bc0ab2b415e03",
-    "Colaborador": "8de4ba7ed3d6298f6abc931fc9be3e35c1fd37ae914783e9e419a4730fc01819",
+    "Colaborador": "81bee71ae8e8f86c36495f2bb0305456dee80a154fd14497d73717c9b97e32d0",
     "recuperarSenha": "06dcff0ee1804fc316713f9750605259387c58815c650444e983b7da3792c064",
     "entrar": "567eef3d9f44354619991bc607b45544bfa2a2c37f3ebfcaab0fdb4279526563"
   },
@@ -58,7 +58,7 @@
     "moeda": "848ccd24e0414648263c8751173699ae2d2bb00f564bc3178620a990b6bc7dfd",
     "novoTitular": "571a614685b36775fc398478da076c4fcccf8a1f4cdc30d6761af48f2c2bfeff",
     "paraEntry": "d99ab31c96ef7861174de66d97628eaca40471b18143253566b0811addb1d25b",
-    "CompletarAdesao": "96f7dad23700d8787f6e344a9fb31b1fcdfb6dc9dde802feb17b12b1dc2e4f2b",
+    "CompletarAdesao": "d262b00786d1b81ad1aba6443c1f30ab7cbeb317f260306194a636c79e3d407e",
     "buscarAdesao": "4f2ebd0ab45580f4db39f1875ad2555f5aeef1c2b0c4739b5495193698344530",
     "alterarRascunho": "2a381085309924f11b54ba3c26f2c6b72a7f6fcc6d767b570b26a8f903087fae",
     "alterarCpfTitular": "388c9aefd9eda6b0f4bf0707815685e44564f6224cc6d9e847768355ab3b74cf",

@@ -1,3 +1,4 @@
+import { retornoVisual, linkOrigemVisual } from '../../app/origemVisual';
 import {
   useRef,
   useState,
@@ -481,7 +482,7 @@ export function MaterialPromocional() {
           </p>
 
           <Link
-            to="/colaborador"
+            to={linkOrigemVisual("/colaborador")}
             className="mt-6 inline-flex rounded-xl bg-blue-700 px-6 py-3 font-bold text-white transition hover:bg-blue-800"
           >
             Ir para o login
@@ -498,7 +499,7 @@ export function MaterialPromocional() {
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div>
             <a
-              href="/"
+              href={retornoVisual()}
               className="text-2xl font-black tracking-tight"
             >
               <span className="text-blue-700">
@@ -525,7 +526,7 @@ export function MaterialPromocional() {
             </Link>
 
             <a
-              href="/"
+              href={retornoVisual()}
               className="px-3 py-2 text-sm font-semibold text-slate-600 hover:text-slate-900"
             >
               Início do site
@@ -846,7 +847,7 @@ export function MaterialPromocional() {
               </p>
 
               <Link
-                to="/panfletos-promocionais"
+                to={linkOrigemVisual("/panfletos-promocionais")}
                 className="mt-6 inline-flex items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white hover:bg-blue-800"
               >
                 <QrCode className="h-5 w-5" />

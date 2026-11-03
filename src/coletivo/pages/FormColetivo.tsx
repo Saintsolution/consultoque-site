@@ -1,3 +1,7 @@
+import { destinoOrigemVisual } from '@/app/origemVisual';
+import { identidadeParceiro } from '@/app/identidadesParceiros';
+import { consultarParceiro } from '@/services/parceiro';
+import { useParceiro } from '@/app/ContextoParceiro';
 import { construirContratacao } from '@/services/contratacao';
 import { enviarIntegracao } from '@/services/http';
 import { FormColetivo_WEBHOOK_URL as WEBHOOK_URL, FormColetivo_WEBHOOK_VALIDAR_CPF as WEBHOOK_VALIDAR_CPF, FormColetivo_WEBHOOK_VALIDAR_CNPJ as WEBHOOK_VALIDAR_CNPJ } from '@/services/endpoints';
@@ -180,6 +184,7 @@ function escapeHtml(value: string): string {
 }
 
 export default function FormColetivo() {
+  const parceiro = useParceiro();
   const [companyName, setCompanyName] = useState("");
   const [cnpj, setCnpj] = useState("");
   const [cobrancaEmpresa, setCobrancaEmpresa] = useState(false);
@@ -215,6 +220,13 @@ export default function FormColetivo() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [paymentResponse, setPaymentResponse] =
     useState<PaymentResponse | null>(null);
+
+  const retornoComercial = destinoOrigemVisual(window.location.search);
+  const temPreenchimento = Boolean(
+    companyName || cnpj || cobrancaEmpresa || responsibleName || responsibleCpf ||
+    responsibleBirthDate || responsibleEmail || responsiblePhone || responsibleSaved ||
+    holders.length || holderDraft || acceptedTerms
+  );
 
   useEffect(() => {
     const salvo = sessionStorage.getItem(CHAVE_TRANSFERENCIA_COLETIVO);
@@ -253,8 +265,8 @@ export default function FormColetivo() {
   }, []);
 
   const breakdown = useMemo(
-    () => calculatePrice(holders.map(toHolderEntry)),
-    [holders],
+    () => calculatePrice(holders.map(toHolderEntry), Boolean(parceiro)),
+    [holders, parceiro],
   );
 
   const cnpjConfirmado = Boolean(
@@ -879,6 +891,13 @@ export default function FormColetivo() {
       responsibleCpfValidation, breakdown, holders, versaoTermo: VERSAO_TERMO_ASSOCIADO,
     });
 
+      if (parceiro) {
+        if (codColab !== parceiro.codigo) throw new Error('Oferta não confirmada.');
+        const reconfirmada = await consultarParceiro(codColab, codColab);
+        if (!reconfirmada || reconfirmada.apelido !== parceiro.apelido) throw new Error('Oferta de parceiro não confirmada.');
+        if (getCodColab() !== codColab) throw new Error('A indicação mudou durante a confirmação. Reconfirme antes de continuar.');
+        Object.assign(payload, { tipo_venda: 'PARCEIRO', parceiro_apelido: parceiro.apelido });
+      }
       const res = await enviarIntegracao(WEBHOOK_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -991,7 +1010,13 @@ export default function FormColetivo() {
     <div className="min-h-screen bg-ocean-50">
       <div className="mx-auto max-w-6xl px-5 py-6 sm:px-8 lg:py-8">
         <a
-          href="/"
+          href={retornoComercial}
+          onClick={(event) => {
+            if (temPreenchimento &&
+                !window.confirm('Deseja sair da contratação? Os dados preenchidos neste formulário serão descartados.')) {
+              event.preventDefault();
+            }
+          }}
           className="inline-flex items-center gap-2 text-sm font-semibold text-ocean-600 hover:text-ocean-900"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -1408,13 +1433,13 @@ export default function FormColetivo() {
                             key: "individual",
                             label: "Individual",
                             icon: User,
-                            price: "R$ 33/mês",
+                            price: parceiro ? "R$ 30/mês" : "R$ 33/mês",
                           },
                           {
                             key: "familia",
                             label: "Familiar",
                             icon: Heart,
-                            price: "R$ 66/mês",
+                            price: parceiro ? "R$ 60/mês" : "R$ 66/mês",
                           },
                         ] as const
                       ).map((opt) => (
@@ -1665,7 +1690,7 @@ export default function FormColetivo() {
                 )}
               </div>
 
-              {breakdown.total < BULK_THRESHOLD && (
+              {!parceiro && breakdown.total < BULK_THRESHOLD && (
                 <div className="mt-4 flex items-start gap-2 rounded-xl bg-ocean-50 p-3 text-xs text-ocean-600">
                   <Info className="mt-0.5 h-4 w-4 shrink-0 text-ocean-400" />
                   <span>
@@ -1676,6 +1701,7 @@ export default function FormColetivo() {
                 </div>
               )}
 
+              {parceiro && <p role="status" className="mt-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">{identidadeParceiro(parceiro).nome} · indicação {parceiro.codigo} · planos R$ 30/R$ 60. Valores confirmados novamente pelo servidor antes da emissão.</p>}
               {/* Validation summary */}
               {!isValid && (
                 <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3">

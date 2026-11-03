@@ -1,3 +1,5 @@
+import { comOrigemVisual } from '../../../app/origemVisual';
+import { useParceiro } from '../../../app/ContextoParceiro';
 import { Link } from 'react-router-dom';
 
 import {
@@ -30,8 +32,10 @@ const features = [
 ];
 
 export default function Pricing() {
+  const parceiro = useParceiro();
   return (
     <section
+
       id="planos"
       className="px-4 py-16 md:py-20"
       style={{
@@ -134,7 +138,7 @@ export default function Pricing() {
                         '#0f172a',
                     }}
                   >
-                    33
+                    {parceiro ? 30 : 33}
                   </span>
 
                   <span
@@ -162,8 +166,7 @@ export default function Pricing() {
                         '#15803d',
                     }}
                   >
-                    Com 10 vidas ou
-                    mais
+                    {parceiro ? 'Parceiro: desde a primeira inscrição' : 'Com 10 vidas ou mais'}
                   </p>
 
                   <p
@@ -221,7 +224,7 @@ export default function Pricing() {
                         '#0f172a',
                     }}
                   >
-                    66
+                    {parceiro ? 60 : 66}
                   </span>
 
                   <span
@@ -249,8 +252,7 @@ export default function Pricing() {
                         '#15803d',
                     }}
                   >
-                    Com 10 vidas ou
-                    mais
+                    {parceiro ? 'Parceiro: desde a primeira inscrição' : 'Com 10 vidas ou mais'}
                   </p>
 
                   <p
@@ -295,14 +297,7 @@ export default function Pricing() {
                     '#166534',
                 }}
               >
-                Ao alcançar 10 vidas,
-                os valores passam
-                automaticamente de
-                R$ 33 para R$ 30 e
-                de R$ 66 para R$ 60.
-                Você pode combinar
-                livremente as duas
-                opções.
+                {parceiro ? 'Oferta de parceiro confirmada: R$ 30 individual e R$ 60 familiar desde a primeira inscrição, para qualquer composição do grupo.' : 'Ao alcançar 10 vidas, os valores passam automaticamente de R$ 33 para R$ 30 e de R$ 66 para R$ 60. Você pode combinar livremente as duas opções.'}
               </p>
             </div>
 
@@ -348,7 +343,7 @@ export default function Pricing() {
             {/* Botão único */}
             <div className="mt-9 flex justify-center">
               <Link
-                to="/formcoletivo"
+                to={comOrigemVisual('/formcoletivo', 'coletivo')}
                 className="pricing-main-button group inline-flex items-center justify-center gap-3 text-lg font-black text-white"
               >
                 Monte seu plano

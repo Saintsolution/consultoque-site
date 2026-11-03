@@ -1,3 +1,4 @@
+import { retornoVisual, linkOrigemVisual } from '../../app/origemVisual';
 import { enviarIntegracao } from '@/services/http';
 import { SejaColaborador_WEBHOOK_CADASTRO as WEBHOOK_CADASTRO, SejaColaborador_WEBHOOK_VALIDAR_CPF as WEBHOOK_VALIDAR_CPF, SejaColaborador_WEBHOOK_VALIDAR_APELIDO as WEBHOOK_VALIDAR_APELIDO } from '@/services/endpoints';
 import { referenciaComercial } from '@/services/referencia';
@@ -599,7 +600,7 @@ export default function SejaColaborador() {
         <div className="container-app">
           <div className="mx-auto mb-6 max-w-2xl">
             <a
-              href="/"
+              href={retornoVisual()}
               className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:border-mint-400 hover:text-mint-600"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -664,7 +665,7 @@ export default function SejaColaborador() {
             )}
 
             <Link
-              to="/colaborador"
+              to={linkOrigemVisual("/colaborador")}
               className="mt-7 inline-flex items-center justify-center gap-2 rounded-xl bg-mint-500 px-7 py-3 font-bold text-white transition hover:bg-mint-600"
             >
               Acessar área do colaborador
@@ -681,7 +682,7 @@ export default function SejaColaborador() {
       <div className="container-app">
         <div className="mx-auto mb-6 max-w-5xl">
           <a
-            href="/"
+            href={retornoVisual()}
             className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:border-mint-400 hover:text-mint-600"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -1106,7 +1107,7 @@ export default function SejaColaborador() {
               <p className="mt-5 text-center text-sm text-slate-500">
                 Já possui cadastro?{" "}
                 <Link
-                  to="/colaborador"
+                  to={linkOrigemVisual("/colaborador")}
                   className="font-bold text-brand-600 hover:text-brand-700"
                 >
                   Acesse sua área

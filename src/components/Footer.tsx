@@ -1,3 +1,4 @@
+import { linkOrigemVisual } from '../app/origemVisual';
 import { Link } from 'react-router-dom';
 import {
   MessageCircle,
@@ -68,7 +69,7 @@ export function Footer() {
 
               <li>
                 <Link
-                  to="/seja-afiliado"
+                  to={linkOrigemVisual("/seja-afiliado", "home")}
                   className="hover:text-blue-400 transition-colors font-bold text-blue-300"
                 >
                   Quero ser Colaborador
@@ -140,7 +141,7 @@ export function Footer() {
 
               <li>
                 <Link
-                  to="/colaborador"
+                  to={linkOrigemVisual("/colaborador", "home")}
                   className="hover:text-blue-400 transition-colors"
                 >
                   Área do Colaborador
@@ -149,7 +150,7 @@ export function Footer() {
 
               <li>
                 <Link
-                  to="/cliente"
+                  to={linkOrigemVisual("/cliente", "home")}
                   className="hover:text-blue-400 transition-colors"
                 >
                   Área do Associado

@@ -1,3 +1,4 @@
+import { retornoVisual, linkOrigemVisual } from '../../app/origemVisual';
 import { SolicitarImpressos_WEBHOOK_PEDIDO_IMPRESSOS as WEBHOOK_PEDIDO_IMPRESSOS } from '@/services/endpoints';
 import {
   useEffect,
@@ -498,7 +499,7 @@ export function SolicitarImpressos() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <a
-              href="/"
+              href={retornoVisual()}
               className="text-2xl font-black tracking-tight"
             >
               <span className="text-blue-700">
@@ -516,7 +517,7 @@ export function SolicitarImpressos() {
           </div>
 
           <a
-            href="/panfletos-promocionais"
+            href={linkOrigemVisual("/panfletos-promocionais")}
             className="text-sm font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg"
           >
             ← Escolher outra arte
@@ -903,7 +904,7 @@ function MensagemCentral({
         </p>
 
         <a
-          href={link}
+          href={linkOrigemVisual(link)}
           className="inline-flex mt-6 bg-blue-700 hover:bg-blue-800 text-white font-bold px-6 py-3 rounded-xl"
         >
           {textoLink}

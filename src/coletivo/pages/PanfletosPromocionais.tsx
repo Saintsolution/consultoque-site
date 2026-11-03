@@ -1,3 +1,4 @@
+import { retornoVisual, linkOrigemVisual } from '../../app/origemVisual';
 import {
   Link,
 } from 'react-router-dom';
@@ -208,7 +209,7 @@ export function PanfletosPromocionais() {
           </p>
 
           <Link
-            to="/colaborador"
+            to={linkOrigemVisual("/colaborador")}
             className="mt-6 inline-flex rounded-xl bg-blue-700 px-6 py-3 font-bold text-white transition hover:bg-blue-800"
           >
             Ir para o login
@@ -225,7 +226,7 @@ export function PanfletosPromocionais() {
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div>
             <Link
-              to="/"
+              to={retornoVisual()}
               className="text-2xl font-black tracking-tight"
             >
               <span className="text-blue-700">
@@ -244,7 +245,7 @@ export function PanfletosPromocionais() {
 
           <div className="flex flex-wrap gap-3">
             <Link
-              to="/material-promocional"
+              to={linkOrigemVisual("/material-promocional")}
               className="inline-flex items-center gap-2 rounded-lg bg-blue-50 px-4 py-2 text-sm font-bold text-blue-700 transition hover:bg-blue-100"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -380,9 +381,9 @@ export function PanfletosPromocionais() {
 
                       <Link
                         to={
-                          `/montar-folder?modelo=${encodeURIComponent(
+                          linkOrigemVisual(`/montar-folder?modelo=${encodeURIComponent(
                             panfleto.id
-                          )}`
+                          )}`)
                         }
                         className="mt-5 flex items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 text-center font-bold text-white transition hover:bg-blue-800"
                       >

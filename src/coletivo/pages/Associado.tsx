@@ -1,3 +1,4 @@
+import { retornoVisual } from '../../app/origemVisual';
 import { enviarIntegracao } from '@/services/http';
 import { Associado_ASSOCIADO_LOGIN_URL as ASSOCIADO_LOGIN_URL, Associado_ASSOCIADO_RECUPERAR_SENHA_URL as ASSOCIADO_RECUPERAR_SENHA_URL } from '@/services/endpoints';
 import { useState, type FormEvent } from 'react';
@@ -321,7 +322,7 @@ export default function Associado() {
       <div className="container-app">
         <div className="mx-auto max-w-md">
           <a
-            href="/"
+            href={retornoVisual()}
             className="mb-5 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 shadow-sm transition hover:border-slate-300 hover:text-slate-900"
           >
             <ArrowLeft className="h-4 w-4" />

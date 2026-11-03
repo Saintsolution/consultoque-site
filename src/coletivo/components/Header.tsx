@@ -1,3 +1,4 @@
+import { linkOrigemVisual } from '../../app/origemVisual';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -85,7 +86,7 @@ export default function Header() {
                     link.href
                   }
                   to={
-                    link.href
+                    ['/associado', '/colaborador'].includes(link.href) ? linkOrigemVisual(link.href, 'coletivo') : link.href
                   }
                   className={
                     link.acesso
@@ -144,7 +145,7 @@ export default function Header() {
                     link.href
                   }
                   to={
-                    link.href
+                    ['/associado', '/colaborador'].includes(link.href) ? linkOrigemVisual(link.href, 'coletivo') : link.href
                   }
                   onClick={() =>
                     setOpen(

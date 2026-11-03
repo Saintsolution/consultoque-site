@@ -1,3 +1,4 @@
+import { linkOrigemVisual } from '../app/origemVisual';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
@@ -52,7 +53,7 @@ export function HeaderVisual() {
             ) : (
               <Link
                 key={item.path}
-                to={item.path}
+                to={linkOrigemVisual(item.path, "home")}
                 className="text-white font-bold text-sm uppercase tracking-wide hover:text-green-100 transition-colors"
               >
                 {item.name}
@@ -77,7 +78,7 @@ export function HeaderVisual() {
             ) : (
               <Link
                 key={item.path}
-                to={item.path}
+                to={linkOrigemVisual(item.path, "home")}
                 onClick={() => setIsOpen(false)}
                 className="text-white font-bold text-sm uppercase py-2 border-b border-green-600"
               >
