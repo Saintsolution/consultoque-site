@@ -1433,13 +1433,13 @@ export default function FormColetivo() {
                             key: "individual",
                             label: "Individual",
                             icon: User,
-                            price: parceiro ? "R$ 30/mês" : "R$ 33/mês",
+                            price: `R$ ${breakdown.individualUnit.toFixed(2).replace(".", ",")}/mês`,
                           },
                           {
                             key: "familia",
                             label: "Familiar",
                             icon: Heart,
-                            price: parceiro ? "R$ 60/mês" : "R$ 66/mês",
+                            price: `R$ ${breakdown.familyUnit.toFixed(2).replace(".", ",")}/mês`,
                           },
                         ] as const
                       ).map((opt) => (
@@ -1690,18 +1690,18 @@ export default function FormColetivo() {
                 )}
               </div>
 
-              {!parceiro && breakdown.total < BULK_THRESHOLD && (
+              {breakdown.total < BULK_THRESHOLD && (
                 <div className="mt-4 flex items-start gap-2 rounded-xl bg-ocean-50 p-3 text-xs text-ocean-600">
                   <Info className="mt-0.5 h-4 w-4 shrink-0 text-ocean-400" />
                   <span>
                     Faltam {BULK_THRESHOLD - breakdown.total} inscrição(ões)
                     para o desconto coletivo (a partir de {BULK_THRESHOLD} no
-                    total).
+                    mesmo contrato).
                   </span>
                 </div>
               )}
 
-              {parceiro && <p role="status" className="mt-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">{identidadeParceiro(parceiro).nome} · indicação {parceiro.codigo} · planos R$ 30/R$ 60. Valores confirmados novamente pelo servidor antes da emissão.</p>}
+              {parceiro && <p role="status" className="mt-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">{identidadeParceiro(parceiro).nome} · indicação {parceiro.codigo} · planos R$ {breakdown.individualUnit.toFixed(2).replace(".", ",")}/R$ {breakdown.familyUnit.toFixed(2).replace(".", ",")}. {breakdown.hasBulkDiscount ? "Faixa de dez ou mais titulares aplicada." : "Com dez ou mais titulares no mesmo contrato, os valores passam a R$ 27/R$ 54."} Valores validados pelo servidor antes da emissão.</p>}
               {/* Validation summary */}
               {!isValid && (
                 <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3">

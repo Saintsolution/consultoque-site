@@ -1,3 +1,4 @@
+import { priceForPlan, BULK_THRESHOLD } from '../../../lib/pricing';
 import { comOrigemVisual } from '../../../app/origemVisual';
 import { useParceiro } from '../../../app/ContextoParceiro';
 import { Link } from 'react-router-dom';
@@ -138,7 +139,7 @@ export default function Pricing() {
                         '#0f172a',
                     }}
                   >
-                    {parceiro ? 30 : 33}
+                    {priceForPlan('individual', 1, Boolean(parceiro))}
                   </span>
 
                   <span
@@ -166,7 +167,7 @@ export default function Pricing() {
                         '#15803d',
                     }}
                   >
-                    {parceiro ? 'Parceiro: desde a primeira inscrição' : 'Com 10 vidas ou mais'}
+                    {parceiro ? 'Com 10 titulares no mesmo contrato' : 'Com 10 vidas ou mais'}
                   </p>
 
                   <p
@@ -176,7 +177,7 @@ export default function Pricing() {
                         '#16a34a',
                     }}
                   >
-                    R$ 30
+                    R$ {priceForPlan('individual', BULK_THRESHOLD, Boolean(parceiro))}
                     <span className="ml-1 text-sm font-bold">
                       /mês
                     </span>
@@ -224,7 +225,7 @@ export default function Pricing() {
                         '#0f172a',
                     }}
                   >
-                    {parceiro ? 60 : 66}
+                    {priceForPlan('familia', 1, Boolean(parceiro))}
                   </span>
 
                   <span
@@ -252,7 +253,7 @@ export default function Pricing() {
                         '#15803d',
                     }}
                   >
-                    {parceiro ? 'Parceiro: desde a primeira inscrição' : 'Com 10 vidas ou mais'}
+                    {parceiro ? 'Com 10 titulares no mesmo contrato' : 'Com 10 vidas ou mais'}
                   </p>
 
                   <p
@@ -262,7 +263,7 @@ export default function Pricing() {
                         '#16a34a',
                     }}
                   >
-                    R$ 60
+                    R$ {priceForPlan('familia', BULK_THRESHOLD, Boolean(parceiro))}
                     <span className="ml-1 text-sm font-bold">
                       /mês
                     </span>
@@ -297,7 +298,7 @@ export default function Pricing() {
                     '#166534',
                 }}
               >
-                {parceiro ? 'Oferta de parceiro confirmada: R$ 30 individual e R$ 60 familiar desde a primeira inscrição, para qualquer composição do grupo.' : 'Ao alcançar 10 vidas, os valores passam automaticamente de R$ 33 para R$ 30 e de R$ 66 para R$ 60. Você pode combinar livremente as duas opções.'}
+                {parceiro ? 'Parceiro: R$ 30 individual e R$ 60 familiar até nove titulares. Com dez ou mais titulares no mesmo contrato, R$ 27 e R$ 54 por titular/mês. Você pode combinar os planos; dependentes não aumentam a contagem.' : 'Ao alcançar 10 vidas, os valores passam automaticamente de R$ 33 para R$ 30 e de R$ 66 para R$ 60. Você pode combinar livremente as duas opções.'}
               </p>
             </div>
 

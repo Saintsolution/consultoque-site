@@ -4,6 +4,8 @@
 // Discount applies when the TOTAL number of enrollments reaches 10 or more,
 // regardless of plan type (e.g. 4 individual + 6 family = 10 -> discount on both).
 
+import { calcularPolitica, type PoliticaComercial } from './politicaComercial';
+
 export const INDIVIDUAL_PRICE = 33;
 export const INDIVIDUAL_PRICE_BULK = 30;
 export const FAMILY_PRICE = 66;
@@ -19,11 +21,13 @@ export interface HolderEntry {
   cpf: string;
 }
 
-export function priceForPlan(plan: PlanType, total: number, parceiro = false): number {
-  if (parceiro || total >= BULK_THRESHOLD) {
-    return plan === 'individual' ? INDIVIDUAL_PRICE_BULK : FAMILY_PRICE_BULK;
-  }
-  return plan === 'individual' ? INDIVIDUAL_PRICE : FAMILY_PRICE;
+function contextoPolitica(contexto: boolean | PoliticaComercial): PoliticaComercial {
+  return typeof contexto === 'boolean' ? { familia: contexto ? 'PARCEIRO' : 'PADRAO' } : contexto;
+}
+
+export function priceForPlan(plan: PlanType, total: number, contexto: boolean | PoliticaComercial = false): number {
+  const preco = calcularPolitica(contextoPolitica(contexto), total, 0);
+  return (plan === 'individual' ? preco.individualCentavos : preco.familiarCentavos) / 100;
 }
 
 export interface PriceBreakdown {
@@ -39,13 +43,15 @@ export interface PriceBreakdown {
   savings: number;
 }
 
-export function calculatePrice(holders: HolderEntry[], parceiro = false): PriceBreakdown {
+export function calculatePrice(holders: HolderEntry[], contexto: boolean | PoliticaComercial = false): PriceBreakdown {
   const total = holders.length;
   const individualCount = holders.filter((h) => h.plan === 'individual').length;
   const familyCount = holders.filter((h) => h.plan === 'familia').length;
 
-  const individualUnit = priceForPlan('individual', total, parceiro);
-  const familyUnit = priceForPlan('familia', total, parceiro);
+  if (individualCount + familyCount !== total) throw new Error('Plano sem preço configurado.');
+  const preco = calcularPolitica(contextoPolitica(contexto), individualCount, familyCount);
+  const individualUnit = preco.individualCentavos / 100;
+  const familyUnit = preco.familiarCentavos / 100;
 
   const individualSubtotal = individualCount * individualUnit;
   const familySubtotal = familyCount * familyUnit;

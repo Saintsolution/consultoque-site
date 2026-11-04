@@ -1,3 +1,4 @@
+import { priceForPlan, BULK_THRESHOLD } from '../lib/pricing';
 import { comOrigemVisual, linkOrigemVisual } from '../app/origemVisual';
 import { identidadeParceiro } from '../app/identidadesParceiros';
 import { useState } from 'react';
@@ -55,14 +56,15 @@ export function PaginaParceiro({ oferta }: { oferta: OfertaParceiro }) {
         <div className="mx-auto max-w-4xl">
           <div className="text-center"><p className="text-xs font-bold uppercase tracking-widest text-green-700">Condição especial da parceria</p><h2 className="mt-3 text-3xl font-black text-blue-950 sm:text-4xl">Seu cuidado começa aqui</h2><p className="mt-4 text-slate-600">Individual ou familiar. Condição especial desde a primeira inscrição.</p></div>
           <div className="mt-10 grid gap-6 md:grid-cols-2">
-            {[{ name: 'Individual', old: 33, price: 30, description: '1 titular' }, { name: 'Familiar', old: 66, price: 60, description: '1 titular + 3 dependentes' }].map(plan => <article key={plan.name} className={`timeweb-plan-card ${plan.name === 'Familiar' ? 'timeweb-family-card' : ''} rounded-3xl p-7 sm:p-9`}>
+            {[{ name: 'Individual', old: priceForPlan('individual', 1), price: priceForPlan('individual', 1, true), bulk: priceForPlan('individual', BULK_THRESHOLD, true), description: '1 titular' }, { name: 'Familiar', old: priceForPlan('familia', 1), price: priceForPlan('familia', 1, true), bulk: priceForPlan('familia', BULK_THRESHOLD, true), description: '1 titular + 3 dependentes' }].map(plan => <article key={plan.name} className={`timeweb-plan-card ${plan.name === 'Familiar' ? 'timeweb-family-card' : ''} rounded-3xl p-7 sm:p-9`}>
               <h3 className="text-2xl font-black text-blue-950">{plan.name}</h3><p className="mt-2 text-sm text-slate-600">{plan.description}</p>
               <p className="mt-7 text-sm text-slate-500">De <del>R$ {plan.old},00</del> por</p><p className="mt-1 flex items-baseline gap-1"><span className="text-lg font-bold text-green-700">R$</span><span className="text-6xl font-black tracking-tight text-green-700">{plan.price}</span><span className="text-slate-500">/mês</span></p>
+              <p className="mt-4 rounded-xl bg-green-50 p-3 text-sm font-semibold text-green-800">Com {BULK_THRESHOLD} ou mais titulares no mesmo contrato: R$ {plan.bulk},00 por titular/mês.</p>
               <ul className="my-7 space-y-3 text-sm text-slate-600">{['Clínico geral 24 horas', 'Especialidades com agendamento', 'Clube de vantagens'].map(item => <li key={item} className="flex items-center gap-2"><CheckCircle2 size={17} className="shrink-0 text-green-600" />{item}</li>)}</ul>
               <button type="button" onClick={() => oferta ? navigate(comOrigemVisual(`/contratar?oferta=${oferta.apelido}&ref=${oferta.codigo}`, origem)) : setSelection(plan.name)} className="flex w-full items-center justify-center gap-2 rounded-xl bg-green-600 px-5 py-4 font-bold text-white hover:bg-green-700">Quero o plano {plan.name.toLowerCase()} <ArrowRight size={18} /></button>
             </article>)}
           </div>
-          <p className="mt-5 text-center text-xs leading-relaxed text-slate-500">A oferta e a contratação especial dependem de validação no servidor. Consulte as condições e o Termo de Adesão.</p>
+          <p className="mt-5 text-center text-xs leading-relaxed text-slate-500">Você pode combinar planos individuais e familiares no mesmo contrato. Cada plano familiar conta como um titular; dependentes não aumentam a contagem. A oferta e a contratação especial dependem de validação no servidor. Consulte as condições e o Termo de Adesão.</p>
         </div>
       </section>
       <div className="mx-auto max-w-5xl px-6 py-10"><LegalCompliance /></div>

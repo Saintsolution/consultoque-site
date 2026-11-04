@@ -1,3 +1,4 @@
+import { priceForPlan, BULK_THRESHOLD } from '../lib/pricing';
 import { comOrigemVisual } from '../app/origemVisual';
 import { useParceiro } from '../app/ContextoParceiro';
 import { armazenamentoReferencia } from '../services/referencia';
@@ -28,7 +29,7 @@ export function PlanGrid() {
           </span>
 
           <span className="my-2 text-4xl font-black">
-            R$ {parceiro ? '30,00' : '33,00'}
+            R$ {priceForPlan('individual', 1, Boolean(parceiro)).toFixed(2).replace('.', ',')}
           </span>
 
           <span className="text-xs font-bold uppercase opacity-90">
@@ -49,7 +50,7 @@ export function PlanGrid() {
           </span>
 
           <span className="my-2 text-4xl font-black">
-            R$ {parceiro ? '60,00' : '66,00'}
+            R$ {priceForPlan('familia', 1, Boolean(parceiro)).toFixed(2).replace('.', ',')}
           </span>
 
           <span className="text-xs font-bold uppercase opacity-90">
@@ -57,6 +58,7 @@ export function PlanGrid() {
           </span>
         </a>
       </div>
+      {parceiro && <p className="mx-auto max-w-2xl px-6 text-center text-sm text-green-800">Com {BULK_THRESHOLD} ou mais titulares no mesmo contrato: R$ {priceForPlan('individual', BULK_THRESHOLD, true)},00 individual e R$ {priceForPlan('familia', BULK_THRESHOLD, true)},00 familiar por titular/mês. Você pode combinar os planos.</p>}
     </section>
   );
 }
