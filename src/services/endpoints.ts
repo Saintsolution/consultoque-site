@@ -11,6 +11,9 @@ export const Admin_WEBHOOK_DASHBOARD_ADMIN =
   import.meta.env.VITE_WEBHOOK_EMP_ADMIN_DASHBOARD ??
   "https://n8n.saintsolution.com.br/webhook/admin-dashboard";
 
+export const Admin_ENDPOINT_BAIXAS_COMISSOES =
+  "/.netlify/functions/admin-baixas-comissoes";
+
 export const Associado_ASSOCIADO_LOGIN_URL =
   'https://n8n.saintsolution.com.br/webhook/associado-login';
 

@@ -2,6 +2,7 @@ import { enviarIntegracao } from '@/services/http';
 import { Admin_WEBHOOK_LOGIN_ADMIN as WEBHOOK_LOGIN_ADMIN, Admin_WEBHOOK_DASHBOARD_ADMIN as WEBHOOK_DASHBOARD_ADMIN } from '@/services/endpoints';
 import { useEffect, useMemo, useState } from "react";
 import { CortesiasAdmin } from "../components/CortesiasAdmin";
+import { ComissoesAdmin, type PagamentosComissao } from "../components/ComissoesAdmin";
 import {
   BarChart3,
   CircleDollarSign,
@@ -104,6 +105,9 @@ type RankingColaborador = {
   total_comissao_direta?: number;
   total_comissao_rede?: number;
   total_comissoes?: number;
+  valor_total_comissao?: number;
+  total_pago?: number;
+  total_pendente?: number;
 };
 
 type DashboardResposta = {
@@ -111,6 +115,7 @@ type DashboardResposta = {
   autorizado?: boolean;
   mensagem?: string;
   gerado_em?: string;
+  atualizado_em?: string;
   cards?: Partial<CardsDashboard>;
   graficos?: {
     vendas_por_mes?: Registro[];
@@ -122,6 +127,7 @@ type DashboardResposta = {
   };
   ranking_colaboradores?: RankingColaborador[];
   ranking_comissoes?: RankingColaborador[];
+  pagamentos_comissao?: PagamentosComissao | null;
   listas?: {
     associados?: Registro[];
     contratos?: Registro[];
@@ -243,10 +249,10 @@ function dataHora(valor: unknown) {
   const data = new Date(texto(valor));
 
   if (!Number.isFinite(data.getTime())) {
-    return texto(valor) || "—";
+    return "—";
   }
 
-  return data.toLocaleString("pt-BR");
+  return data.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
 }
 
 function classeStatus(valor: unknown) {
@@ -767,9 +773,17 @@ export default function Admin() {
     );
   }
 
+  const pagamentosComissao = dashboard?.pagamentos_comissao;
+  const indicadoresComissao = pagamentosComissao?.indicadores;
   const cards: CardsDashboard = {
     ...cardsVazios,
     ...(dashboard?.cards || {}),
+    ...(indicadoresComissao && {
+      total_comissoes_pendentes: indicadoresComissao.total_pendente,
+      total_comissoes_pagas: indicadoresComissao.total_pago,
+      qtd_comissoes_nao_elegiveis: indicadoresComissao.qtd_em_conferencia
+        ?? dashboard?.cards?.qtd_comissoes_nao_elegiveis ?? 0,
+    }),
   };
 
   const listas = {
@@ -791,14 +805,19 @@ export default function Admin() {
   };
 
   const ranking = dashboard?.ranking_colaboradores || [];
-  const rankingComissoes = dashboard?.ranking_comissoes || [];
+  const rankingComissoes: RankingColaborador[] = pagamentosComissao
+    ? pagamentosComissao.colaboradores
+      .filter((item) => item.comissoes.length > 0)
+      .map((item) => ({ ...item, valor_total_comissao: item.total_gerado }))
+      .sort((a, b) => b.valor_total_comissao - a.valor_total_comissao)
+    : dashboard?.ranking_comissoes || [];
   const maiorVendaRanking = Math.max(
     1,
     ...ranking.map((item) => numero(item.total_recebido)),
   );
   const maiorComissaoRanking = Math.max(
     1,
-    ...rankingComissoes.map((item) => numero(item.total_comissoes)),
+    ...rankingComissoes.map((item) => numero(item.valor_total_comissao ?? item.total_comissoes)),
   );
 
   const conteudoTabela: Partial<
@@ -1043,7 +1062,7 @@ export default function Admin() {
                   {configuracaoAbas.find((item) => item.id === aba)?.nome}
                 </h1>
                 <p className="truncate text-xs font-semibold text-slate-500 md:text-sm">
-                  Atualizado em {dataHora(dashboard?.gerado_em)}
+                  Atualizado em {dataHora(dashboard?.atualizado_em ?? dashboard?.gerado_em)}
                 </p>
               </div>
             </div>
@@ -1109,7 +1128,11 @@ export default function Admin() {
                 <CartaoMetrica
                   titulo="Comissões pendentes"
                   valor={dinheiro(cards.total_comissoes_pendentes)}
-                  detalhe={`${cards.qtd_comissoes_pendentes} elegível(is) · ${cards.qtd_comissoes_nao_elegiveis} não elegível(is)`}
+                  detalhe={indicadoresComissao
+                    ? indicadoresComissao.total_devido_liberado === null
+                      ? "Conferência financeira indisponível"
+                      : `${dinheiro(indicadoresComissao.total_devido_liberado)} liberados`
+                    : `${cards.qtd_comissoes_pendentes} pendente(s)`}
                   icone={HandCoins}
                   cor="roxo"
                 />
@@ -1195,7 +1218,7 @@ export default function Admin() {
                       legenda={dinheiro(cards.total_pendente)}
                     />
                     <BarraComparativa
-                      titulo="Comissões devidas"
+                      titulo="Comissões pendentes"
                       valor={cards.total_comissoes_pendentes}
                       maximo={Math.max(cards.total_vendido, 1)}
                       legenda={dinheiro(cards.total_comissoes_pendentes)}
@@ -1239,7 +1262,7 @@ export default function Admin() {
               <section className="grid gap-5 xl:grid-cols-2">
                 <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
                   <h2 className="text-xl font-black text-slate-950">
-                    Ranking por comissões
+                    Ranking por comissões geradas
                   </h2>
 
                   <div className="mt-6 space-y-5">
@@ -1249,15 +1272,17 @@ export default function Admin() {
                         titulo={`${codigoColaborador(item.cod_colab)} · ${
                           item.nome_colab || "Sem nome"
                         }`}
-                        valor={numero(item.total_comissoes)}
+                        valor={numero(item.valor_total_comissao ?? item.total_comissoes)}
                         maximo={maiorComissaoRanking}
-                        legenda={dinheiro(item.total_comissoes)}
+                        legenda={item.total_pago !== undefined && item.total_pendente !== undefined
+                          ? `${dinheiro(item.valor_total_comissao)} · Pago ${dinheiro(item.total_pago)} · Pendente ${dinheiro(item.total_pendente)}`
+                          : dinheiro(item.valor_total_comissao ?? item.total_comissoes)}
                       />
                     ))}
 
                     {rankingComissoes.length === 0 && (
                       <p className="py-8 text-center font-semibold text-slate-500">
-                        Ainda não existem comissões elegíveis.
+                        Ainda não existem comissões no ranking.
                       </p>
                     )}
                   </div>
@@ -1304,6 +1329,13 @@ export default function Admin() {
                 </article>
               </section>
             </div>
+          ) : aba === "comissoes" && dashboard?.pagamentos_comissao ? (
+            <ComissoesAdmin
+              dados={dashboard.pagamentos_comissao}
+              token={sessionStorage.getItem(CHAVE_TOKEN_ADMIN) || ""}
+              onAtualizar={atualizarDashboard}
+              onSessaoExpirada={() => encerrarSessao("Sua sessão expirou. Entre novamente para continuar.")}
+            />
           ) : aba === "cortesias" ? (
             <CortesiasAdmin
               registros={listas.cortesias}

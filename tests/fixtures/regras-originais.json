@@ -26,14 +26,14 @@
     "dinheiro": "1f1be67738efa578a291a5d352b338cdc990869853dadeb39ec38a49b2603191",
     "codigoColaborador": "e76aab4ef2f902a8e991b4d8d1cde57eebd7d6c39e2cd34b1716c969b2a8f8cd",
     "cpfMascarado": "207a844836558397d0998c026634adaac37956b14aa552d898baab0eaca77ca2",
-    "dataHora": "e7f796c3be92336293de3fe5e1491f3d040ec53c6c96d7dc9919a843a74e4d24",
+    "dataHora": "8b0dcca8412b9f3d40376baddc6126706a948b5961110fd717cbad2d7759d3e8",
     "classeStatus": "36062631b414f59db399a47e84c38529406a34db1a757ed8f6e3880000b2490c",
     "valorCelula": "762506abcc2774141e1a2007b009bc3a430791d91c1a6f256f26a463a4808d6f",
     "sessaoAindaValida": "527c4b2da4d9424a53d4f2dcf6e47bc33d5b39d591fa2680d73e84492e948a48",
     "CartaoMetrica": "e1c96dfb680640c9fab443e94d9ab02b605e456ab74da091ae88be50e103ff2e",
     "BarraComparativa": "1c9f7081ad423ec10164780e9d7f7cb88832d1586f9d37d9e9154b839c7d731a",
     "TabelaDados": "00125ff310821790309ad6ca8ffe3b4a6f3fdf2b9b499d1a6e1e1d0d97b13694",
-    "Admin": "4ec58a3194ffe5e755383e43e38dfdb76defb8945daddfb3f41c4c644747dd73"
+    "Admin": "e2fcdfaae22b2a54ce512c143a8b394cb4eca02fa9a2820ff778b85c9b078962"
   },
   "src/coletivo/pages/ColaboradorDashboard.tsx": {
     "limparSessao": "1a527109095a9240db11d087174736f598747d213a6ce4ec4603a565570199c7",
