@@ -4,7 +4,7 @@ import type { ComissaoDetalhe, PagamentosComissao, ResumoComissoes } from "./dad
 export type { PagamentosComissao } from "./dadosComissoes";
 import { Admin_ENDPOINT_BAIXAS_COMISSOES } from "@/services/endpoints";
 import { enviarIntegracao } from "@/services/http";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 
 const indicadores = [
@@ -55,6 +55,10 @@ function Identificador({ id, numero }: { id: string; numero: number }) {
   );
 }
 
+function podeConferirBaixa(item: ComissaoDetalhe, baseValidada: boolean) {
+  return item.status_comissao === "PENDENTE" && podeSelecionar(item, baseValidada);
+}
+
 function DetalhesComissoes({ comissoes, baseValidada, selecionados, alternar, numeros }: {
   comissoes: ComissaoDetalhe[];
   baseValidada: boolean;
@@ -85,14 +89,15 @@ function DetalhesComissoes({ comissoes, baseValidada, selecionados, alternar, nu
           <li key={item.id_comissao} className="rounded-xl border border-slate-200 bg-white p-3 text-sm">
             <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
               <Identificador id={item.id_comissao} numero={numeros.get(item.id_comissao) ?? indice + 1} />
-              <label className="flex min-h-10 items-center gap-2 px-2 font-medium text-slate-700">
-                <input type="checkbox" value={item.id_comissao}
-                  aria-label={`Conferir comissão ${item.id_comissao}`}
-                  disabled={!podeSelecionar(item, baseValidada)}
-                  checked={selecionados.has(item.id_comissao) && podeSelecionar(item, baseValidada)}
-                  onChange={() => alternar(item.id_comissao)} className="h-5 w-5 accent-blue-700" />
-                Conferir baixa
-              </label>
+              {podeConferirBaixa(item, baseValidada) && (
+                <label className="flex min-h-10 items-center gap-2 px-2 font-medium text-slate-700">
+                  <input type="checkbox" value={item.id_comissao}
+                    aria-label={`Conferir comissão ${item.id_comissao}`}
+                    checked={selecionados.has(item.id_comissao)}
+                    onChange={() => alternar(item.id_comissao)} className="h-5 w-5 accent-blue-700" />
+                  Conferir baixa
+                </label>
+              )}
             </div>
             <dl className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3 2xl:grid-cols-5">
               {campos.map(([titulo, conteudo]) => (
@@ -146,10 +151,23 @@ export function ComissoesAdmin({ dados, token, onAtualizar, onSessaoExpirada }: 
   const [selecionados, setSelecionados] = useState<Set<string>>(() => new Set());
   const [dataPagamento, setDataPagamento] = useState("");
   const baseValidada = dados.conferencia_disponivel === true;
-  const colaboradores = Array.isArray(dados.colaboradores)
+  const colaboradores = useMemo(() => Array.isArray(dados.colaboradores)
     ? [...dados.colaboradores].sort((a, b) => porCodigo.compare(a.cod_colab, b.cod_colab))
-    : [];
-  const lancamentos = colaboradores.flatMap((colaborador) => colaborador.comissoes ?? []);
+    : [], [dados.colaboradores]);
+  const lancamentos = useMemo(
+    () => colaboradores.flatMap((colaborador) => colaborador.comissoes ?? []),
+    [colaboradores],
+  );
+  const idsAptos = useMemo(() => new Set(lancamentos
+    .filter((item) => podeConferirBaixa(item, baseValidada))
+    .map((item) => item.id_comissao)), [lancamentos, baseValidada]);
+
+  useEffect(() => {
+    setSelecionados((atuais) => {
+      const aptos = [...atuais].filter((id) => idsAptos.has(id));
+      return aptos.length === atuais.size ? atuais : new Set(aptos);
+    });
+  }, [idsAptos]);
   const competencias = [...new Set(lancamentos.map((item) => competenciaNormalizada(item.competencia)).filter(Boolean))].sort();
   const lotes = [...new Set(lancamentos.map((item) => item.data_prevista_iso).filter((data): data is string => Boolean(data)))].sort();
   const numeros = new Map(lancamentos.map((item, indice) => [item.id_comissao, indice + 1]));
@@ -163,7 +181,7 @@ export function ComissoesAdmin({ dados, token, onAtualizar, onSessaoExpirada }: 
   const indicadoresAtuais = filtrando
     ? resumir(visiveis.flatMap((item) => item.comissoes), baseValidada) : dados.indicadores;
   const itensSelecionados = [...new Map(lancamentos
-    .filter((item) => selecionados.has(item.id_comissao) && podeSelecionar(item, baseValidada))
+    .filter((item) => selecionados.has(item.id_comissao) && podeConferirBaixa(item, baseValidada))
     .map((item) => [item.id_comissao, item])).values()];
   const loteBaixa = {
     ids_comissoes: itensSelecionados.map((item) => item.id_comissao),
@@ -233,6 +251,7 @@ export function ComissoesAdmin({ dados, token, onAtualizar, onSessaoExpirada }: 
   }
 
   function alternar(id: string) {
+    if (!idsAptos.has(id)) return;
     setSelecionados((atuais) => {
       const novos = new Set(atuais);
       if (novos.has(id)) novos.delete(id);
